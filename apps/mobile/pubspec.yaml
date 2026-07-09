@@ -1,0 +1,63 @@
+name: brickback
+description: "Bring LEGO sets back from a pile of bricks."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:         # i18n (English default + Lithuanian)
+    sdk: flutter
+  intl: ^0.20.2                  # ARB / gen_l10n runtime
+  cupertino_icons: ^1.0.8
+
+  # Persist the chosen app language (single UI preference)
+  shared_preferences: ^2.3.2
+
+  # Backend / data
+  supabase_flutter: ^2.14.2      # user project (auth) + catalog reads
+  flutter_dotenv: ^6.0.1         # .env asset (client-safe keys)
+
+  # State + routing
+  flutter_riverpod: ^3.3.2       # hand-written providers, no codegen
+  go_router: ^17.3.0
+  flutter_slidable: ^4.0.3       # swipe-to-remove on the Home rebuild list
+
+  # Local-first storage (source of truth)
+  drift: ^2.34.0
+  drift_flutter: ^0.3.0
+  sqlite3_flutter_libs: ^0.6.0
+  uuid: ^4.5.3                    # client-generated ids for sync
+  path_provider: ^2.1.5
+
+  # Images
+  cached_network_image: ^3.4.1
+
+  # External links (BrickLink deep link from the part detail sheet)
+  url_launcher: ^6.3.2
+
+  # Party mode (Phase 6): QR invite code
+  qr_flutter: ^4.1.0
+
+  # Review & verification (Phase 4): wanted-list XML + report image/PDF share
+  share_plus: ^13.2.0            # share XML, report PNG, PDF
+  pdf: ^3.13.0                   # printable verification certificate
+  printing: ^5.15.0             # share/print the PDF
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift_dev: ^2.34.0
+  build_runner: ^2.15.0
+
+flutter:
+  uses-material-design: true
+  generate: true                 # gen_l10n from lib/l10n/*.arb (see l10n.yaml)
+  assets:
+    - .env

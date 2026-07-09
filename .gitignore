@@ -1,0 +1,26 @@
+# Secrets / env (publishable keys still shouldn't be committed with real values)
+.env
+.env.*
+!.env.example
+
+# Flutter / Dart
+apps/mobile/build/
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/ios/Pods/
+apps/mobile/android/.gradle/
+*.iml
+
+# Node / Next.js / turbo
+node_modules/
+.next/
+.turbo/
+dist/
+
+# Pipeline data (ephemeral)
+dataset/
+
+# OS / editor
+.DS_Store
+.idea/

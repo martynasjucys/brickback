@@ -1,0 +1,7 @@
+# BrickBack USER-data project. The LEGO catalog lives in a SEPARATE Supabase
+# project (whatabrick / rgmmkhbeizdsyvwczigm) and is NOT managed from this repo —
+# migrations here only ever touch the user project (nthbhcqufiuyrnioxglm).
+project_id = "brickback"
+
+[db]
+major_version = 17

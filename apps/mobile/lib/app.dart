@@ -1,0 +1,53 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/locale.dart';
+import 'core/sync/sync_service.dart';
+import 'l10n/l10n.dart';
+import 'router/app_router.dart';
+import 'theme/app_theme.dart';
+
+/// Root widget. Owns the app lifecycle hooks that flush/resume sync (no-ops until
+/// premium sync is enabled in Phase 5).
+class BrickBackApp extends ConsumerStatefulWidget {
+  const BrickBackApp({super.key});
+  @override
+  ConsumerState<BrickBackApp> createState() => _BrickBackAppState();
+}
+
+class _BrickBackAppState extends ConsumerState<BrickBackApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final sync = ref.read(syncControllerProvider);
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      sync.pushNow();
+    } else if (state == AppLifecycleState.resumed) {
+      sync.syncNow();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final router = ref.watch(routerProvider);
+    return MaterialApp.router(
+      title: 'BrickBack',
+      debugShowCheckedModeBanner: false,
+      theme: buildAppTheme(),
+      locale: ref.watch(localeControllerProvider),
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      routerConfig: router,
+    );
+  }
+}

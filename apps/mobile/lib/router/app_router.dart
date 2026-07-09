@@ -1,0 +1,161 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../core/supabase.dart';
+import '../features/shell/app_shell.dart';
+import '../features/home/home_screen.dart';
+import '../features/profile/profile_screen.dart';
+import '../features/search/search_screen.dart';
+import '../features/catalog/set_detail_screen.dart';
+import '../features/catalog/set_parts_screen.dart';
+import '../features/catalog/set_minifigs_screen.dart';
+import '../features/rebuild/rebuild_screen.dart';
+import '../features/review/review_screen.dart';
+import '../features/review/verification_report.dart';
+import '../features/auth/sign_in_screen.dart';
+import '../features/premium/paywall_screen.dart';
+import '../features/party/party_screen.dart';
+import '../features/party/party_join_screen.dart';
+import '../features/party/party_invite_screen.dart';
+import '../features/party/party_add_parts_screen.dart';
+import '../widgets/design_gallery.dart';
+
+final _rootKey = GlobalKey<NavigatorState>();
+
+/// Root-navigator screens render their own `ColoredBox`/`SafeArea` chrome without
+/// a `Scaffold`, so wrap them in a transparent [Material]. Without a Material
+/// ancestor, `Text` falls back to the framework's yellow-underlined debug style.
+/// The tab screens don't need this — [AppShell] already provides a `Scaffold`.
+Widget _rootPage(Widget child) => Material(type: MaterialType.transparency, child: child);
+
+/// App router. Local-first: the app is fully usable logged-out; there is no auth
+/// guard. The auth-refresh stream is wired now (used from Phase 5 onward).
+final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = GoRouterRefreshStream(userClient.auth.onAuthStateChange);
+  ref.onDispose(refresh.dispose);
+
+  return GoRouter(
+    navigatorKey: _rootKey,
+    initialLocation: '/',
+    refreshListenable: refresh,
+    // Local-first: no auth guard. Only bounce away from /sign-in once a session
+    // exists (the OAuth round-trip returns here).
+    redirect: (context, state) {
+      if (state.matchedLocation == '/sign-in' && userClient.auth.currentSession != null) {
+        return '/';
+      }
+      return null;
+    },
+    routes: [
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => AppShell(navigationShell: shell),
+        branches: [
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+          ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+          ]),
+        ],
+      ),
+      GoRoute(
+        path: '/search',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => _rootPage(const SearchScreen()),
+      ),
+      GoRoute(
+        path: '/set/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(SetDetailScreen(itemId: int.parse(state.pathParameters['id']!))),
+      ),
+      GoRoute(
+        path: '/set/:id/parts',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(SetPartsScreen(itemId: int.parse(state.pathParameters['id']!))),
+      ),
+      GoRoute(
+        path: '/set/:id/minifigs',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(SetMinifigsScreen(itemId: int.parse(state.pathParameters['id']!))),
+      ),
+      GoRoute(
+        path: '/rebuild/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(RebuildScreen(rebuildSetId: state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/review/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(ReviewScreen(rebuildSetId: state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/report/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(ReportScreen(rebuildSetId: state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/sign-in',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => _rootPage(const SignInScreen()),
+      ),
+      GoRoute(
+        path: '/paywall',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => _rootPage(const PaywallScreen()),
+      ),
+      // Party mode (Phase 6). `/party/join` MUST precede `/party/:id` so the
+      // literal 'join' segment isn't captured as an :id.
+      GoRoute(
+        path: '/party/join',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => _rootPage(const PartyJoinScreen()),
+      ),
+      GoRoute(
+        path: '/party/:id/invite',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(PartyInviteScreen(partyId: state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/party/:id/add',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) =>
+            _rootPage(PartyAddPartsScreen(partyId: state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/party/:id',
+        parentNavigatorKey: _rootKey,
+        builder: (_, state) => _rootPage(PartyScreen(partyId: state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/design',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => _rootPage(const DesignGallery()),
+      ),
+    ],
+  );
+});
+
+/// Bridges Supabase auth changes into go_router's refreshListenable.
+class GoRouterRefreshStream extends ChangeNotifier {
+  GoRouterRefreshStream(Stream<AuthState> stream) {
+    notifyListeners();
+    _sub = stream.asBroadcastStream().listen((_) => notifyListeners());
+  }
+  late final StreamSubscription<AuthState> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}

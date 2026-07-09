@@ -1,0 +1,22 @@
+{
+  "name": "@brickback/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "types": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./db/types": "./src/db/types.ts",
+    "./supabase/client": "./src/supabase/client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.107.0"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

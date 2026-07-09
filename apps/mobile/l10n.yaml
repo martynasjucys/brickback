@@ -1,0 +1,8 @@
+# gen_l10n config. ARB sources live in lib/l10n; generated Dart is written back
+# into lib/l10n (non-synthetic) so it's importable as a normal source file.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+output-dir: lib/l10n
+nullable-getter: false

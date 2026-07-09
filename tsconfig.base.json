@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "target": "ES2022",
+    "lib": ["esnext"],
+    "paths": {
+      "@brickback/shared": ["./packages/shared/src"],
+      "@brickback/shared/*": ["./packages/shared/src/*"]
+    }
+  }
+}

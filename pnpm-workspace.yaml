@@ -1,0 +1,13 @@
+packages:
+  - "apps/web"
+  - "packages/*"
+  - "services/*"
+# Deny native build scripts — none are needed for the marketing placeholder.
+# (sharp = optional Next.js image optimizer; unrs-resolver = oxc resolver.)
+# Flip to true here if a surface later needs the compiled binary.
+allowBuilds:
+  sharp: false
+  unrs-resolver: false
+
+# NOTE: apps/mobile is a Flutter app — managed by `flutter`/pub, NOT part of the
+# pnpm workspace. It is intentionally excluded here.
