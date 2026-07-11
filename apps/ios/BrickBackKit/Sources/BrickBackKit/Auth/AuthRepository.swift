@@ -10,9 +10,18 @@ public let kAuthRedirect = "com.brickback://login-callback"
 /// client is always anon (never send the user JWT there). The app is fully usable signed-out —
 /// sign-in only unlocks premium cloud sync.
 ///
-/// S1 exposes session state + sign-out + an auth-change stream (enough to drive the — inert —
-/// `SyncController`). The native sign-in sheets (Sign in with Apple / Google idToken / email
-/// OTP) land in S5 with their UI.
+/// S5 wires the three sign-in paths behind their UI:
+/// - **Apple** — native `ASAuthorizationController` (driven from the SwiftUI
+///   `SignInWithAppleButton`) yields an identity token + the nonce, exchanged here via
+///   `signInWithIdToken(.apple, …)` — the production-correct path App Store review requires.
+/// - **Google** — the web OAuth flow (`signInWithOAuth(.google, …)`) presented via
+///   `ASWebAuthenticationSession` inside supabase-swift; the `com.brickback://login-callback`
+///   redirect returns the session. Matches the Flutter app (no GoogleSignIn SDK dependency).
+/// - **Email OTP** — `signInWithOTP` mails a magic link that returns via the same deep link;
+///   `handleOpenURL` runs supabase-swift's PKCE exchange.
+///
+/// The live OAuth/SMTP round-trip depends on Supabase dashboard provider config (deferred to
+/// S8); the client logic here is complete and testable behind the debug force-premium path.
 public final class AuthRepository: @unchecked Sendable {
     private let client: SupabaseClient
 
@@ -22,6 +31,41 @@ public final class AuthRepository: @unchecked Sendable {
 
     public var isSignedIn: Bool { client.auth.currentUser != nil }
     public var currentUserId: String? { client.auth.currentUser?.id.uuidString.lowercased() }
+    public var currentUserEmail: String? { client.auth.currentUser?.email }
+
+    // MARK: - Sign-in
+
+    /// Complete a native Sign in with Apple: exchange the Apple-issued identity token (and the
+    /// raw nonce that was SHA-256'd into the authorization request) for a Supabase session.
+    public func signInWithApple(idToken: String, nonce: String) async throws {
+        try await client.auth.signInWithIdToken(
+            credentials: .init(provider: .apple, idToken: idToken, nonce: nonce)
+        )
+    }
+
+    /// Open Google in an `ASWebAuthenticationSession`; supabase-swift finishes the PKCE exchange
+    /// on the `com.brickback://login-callback` return and returns the session.
+    public func signInWithGoogle() async throws {
+        try await client.auth.signInWithOAuth(
+            provider: .google,
+            redirectTo: URL(string: kAuthRedirect),
+            queryParams: [("prompt", "select_account")]
+        )
+    }
+
+    /// Email magic-link / OTP: mails a link that returns via the same deep link.
+    public func signInWithEmail(_ email: String) async throws {
+        try await client.auth.signInWithOTP(
+            email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+            redirectTo: URL(string: kAuthRedirect)
+        )
+    }
+
+    /// Forward an incoming OAuth/OTP deep-link URL to supabase-swift, which runs the PKCE
+    /// exchange and emits on `signInStates()`. Registered from the app root's `.onOpenURL`.
+    public func handleOpenURL(_ url: URL) {
+        client.auth.handle(url)
+    }
 
     public func signOut() async throws {
         try await client.auth.signOut()

@@ -17,13 +17,16 @@
 		3DFED4AEC6DF5DB92DC14ACD /* Secrets.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = 84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */; };
 		40D1762A42C56F28144D5AAD /* DesignGalleryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */; };
 		48BBE177AB19B8083847AA5E /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C988995BB8097446496D700C /* HomeScreen.swift */; };
+		588A349B0C14DE6282691AD0 /* EntitlementController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F99490CAAB5A666BA04F79C5 /* EntitlementController.swift */; };
 		65853DBC6CB06DAAAA0352CF /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D98D4CE1547F6E63C370DAD /* HomeViewModel.swift */; };
 		70EAE9ABC9B80E7515FFC4BF /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D4288FA2862F3E617CC288 /* Router.swift */; };
 		72FE95F5F8E4A6E620284A5A /* Primitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */; };
 		78789B2601298A40834D26B5 /* SetDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E48BBE99662AC79AEF9234 /* SetDetailScreen.swift */; };
 		7CC84346248940C7504B2822 /* ReportViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E18F6930E4FD6857ED485AD /* ReportViewModel.swift */; };
+		85421FFAF8CDD5A64FD52BD9 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFB0F6E1F165E04629A500E /* SignInView.swift */; };
 		8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */; };
 		8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */; };
+		92A30BAE638B08DAEB5FFBC3 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76CF770271B624E993B8E4FB /* PaywallView.swift */; };
 		985E4A255F8481457FEEE914 /* RebuildViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F5ED8D19C4D353161ED70E6 /* RebuildViewModel.swift */; };
 		99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */; };
 		9F4C1CA0A434F44DE5FBA6DA /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FCBAA4ECF6ABD0CFCE15C5 /* ReviewView.swift */; };
@@ -52,14 +55,17 @@
 		4BEBD2CD0AC3D40FE747EA67 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		4E67D880D540AC55894A7181 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebuildSheets.swift; sourceTree = "<group>"; };
+		5FFB0F6E1F165E04629A500E /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		633A02930FB4ED5237080558 /* RebuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebuildView.swift; sourceTree = "<group>"; };
 		6E8302E6B9A35EBB0E738D71 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPartsScreen.swift; sourceTree = "<group>"; };
+		76CF770271B624E993B8E4FB /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetMinifigsScreen.swift; sourceTree = "<group>"; };
 		84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		923A877247FE3DC852A2D974 /* VerificationReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationReportView.swift; sourceTree = "<group>"; };
 		A42FD04275F4E3F5A5A0CF19 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		A6B75EB16D636E9E6D0A739A /* BrickBack.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BrickBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A790AE7E7B799457D0537A97 /* BrickBack.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = BrickBack.entitlements; sourceTree = "<group>"; };
 		AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogSupport.swift; sourceTree = "<group>"; };
 		B238E6464A94C9F0A6549271 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
 		B7E48BBE99662AC79AEF9234 /* SetDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetDetailScreen.swift; sourceTree = "<group>"; };
@@ -73,6 +79,7 @@
 		F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Primitives.swift; sourceTree = "<group>"; };
 		F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignGalleryScreen.swift; sourceTree = "<group>"; };
 		F610260AF2595DE9138FC9EF /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
+		F99490CAAB5A666BA04F79C5 /* EntitlementController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,9 +98,11 @@
 		1286D67068D77A7DC649CF87 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				819F1C45AB71DD2EFEDD11A1 /* Auth */,
 				9E98C6AC28A9259CB9BB9D26 /* Catalog */,
 				4045556352AACDCAA94A8C37 /* DesignGallery */,
 				551279A56588F3224315D40E /* Home */,
+				55889047785A2336E2D000B1 /* Premium */,
 				873AB8EB932A8A2F0B57B843 /* Profile */,
 				F2B7CA336B2960FD98CB3E13 /* Rebuild */,
 				812EB1EE5696D4EA348E16B1 /* Review */,
@@ -144,6 +153,15 @@
 			path = Home;
 			sourceTree = "<group>";
 		};
+		55889047785A2336E2D000B1 /* Premium */ = {
+			isa = PBXGroup;
+			children = (
+				F99490CAAB5A666BA04F79C5 /* EntitlementController.swift */,
+				76CF770271B624E993B8E4FB /* PaywallView.swift */,
+			);
+			path = Premium;
+			sourceTree = "<group>";
+		};
 		57BD5A061A6AED6153BDDE0E /* BrickBack */ = {
 			isa = PBXGroup;
 			children = (
@@ -178,6 +196,14 @@
 				923A877247FE3DC852A2D974 /* VerificationReportView.swift */,
 			);
 			path = Review;
+			sourceTree = "<group>";
+		};
+		819F1C45AB71DD2EFEDD11A1 /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				5FFB0F6E1F165E04629A500E /* SignInView.swift */,
+			);
+			path = Auth;
 			sourceTree = "<group>";
 		};
 		873AB8EB932A8A2F0B57B843 /* Profile */ = {
@@ -240,6 +266,7 @@
 			isa = PBXGroup;
 			children = (
 				4E67D880D540AC55894A7181 /* Assets.xcassets */,
+				A790AE7E7B799457D0537A97 /* BrickBack.entitlements */,
 				6E8302E6B9A35EBB0E738D71 /* Info.plist */,
 			);
 			path = Resources;
@@ -347,10 +374,12 @@
 				F35F98CCAE517F7B0C0212CF /* BrickBackApp.swift in Sources */,
 				8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */,
 				40D1762A42C56F28144D5AAD /* DesignGalleryScreen.swift in Sources */,
+				588A349B0C14DE6282691AD0 /* EntitlementController.swift in Sources */,
 				48BBE177AB19B8083847AA5E /* HomeScreen.swift in Sources */,
 				65853DBC6CB06DAAAA0352CF /* HomeViewModel.swift in Sources */,
 				3B6353D1E9EDF116BE67F70A /* LoadState.swift in Sources */,
 				0D5C055584BE845CE4CBC670 /* PartTile.swift in Sources */,
+				92A30BAE638B08DAEB5FFBC3 /* PaywallView.swift in Sources */,
 				72FE95F5F8E4A6E620284A5A /* Primitives.swift in Sources */,
 				8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */,
 				99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */,
@@ -366,6 +395,7 @@
 				160D46A66951553CC219CC0A /* SetMinifigsScreen.swift in Sources */,
 				1DFD1A6DD1A7AF4836E1E624 /* SetPartsScreen.swift in Sources */,
 				3B8406735773119F6AEBA9D7 /* ShareSheet.swift in Sources */,
+				85421FFAF8CDD5A64FD52BD9 /* SignInView.swift in Sources */,
 				2FC8F508BDECF73CC7ACFD1B /* Tokens.swift in Sources */,
 				D8A0233F8C9A23D1A27E26FF /* VerificationReportView.swift in Sources */,
 			);
@@ -446,6 +476,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BrickBack/Resources/BrickBack.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -528,6 +559,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = BrickBack/Resources/BrickBack.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;

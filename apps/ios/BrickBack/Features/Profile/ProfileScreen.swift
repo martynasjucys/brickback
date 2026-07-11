@@ -1,8 +1,9 @@
 import SwiftUI
 import BrickBackKit
 
-/// Profile tab — a static shell in S1. Sign-in, premium, and language settings fill in across
-/// S5/S7. A debug-only entry opens the design gallery.
+/// Profile tab — account & premium state (S5). Guest vs signed-in header, a Free/Premium badge,
+/// and the sync actions (Turn on Cloud Sync / Sync now / Sign out). Language settings land in S7;
+/// a debug-only entry opens the design gallery. Port of `profile_screen.dart`.
 struct ProfileScreen: View {
     @Environment(AppEnvironment.self) private var env
     @State private var showGallery = false
@@ -13,20 +14,16 @@ struct ProfileScreen: View {
 
             ScrollView {
                 VStack(spacing: AppSpacing.s12) {
-                    AppCard {
-                        VStack(alignment: .leading, spacing: AppSpacing.s8) {
-                            Text("Not signed in").font(AppText.title).foregroundStyle(AppColors.ink)
-                            Text("Sign in to unlock premium cloud sync and party mode. Everything else works offline.")
-                                .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                            AppButton("Sign in", variant: .secondary, icon: "person") {
-                                env.profileRouter.push(.signIn)
-                            }
-                            .padding(.top, AppSpacing.s4)
-                        }
-                    }
+                    AccountCard()
 
                     SettingsRow(icon: "star", title: "Premium", value: env.isPremium ? "Active" : "Free") {
                         env.profileRouter.push(.paywall)
+                    }
+                    if env.isSignedIn {
+                        SettingsRow(icon: "arrow.triangle.2.circlepath", title: "Sync now",
+                                    value: env.isPremium ? nil : "Premium") {
+                            if env.isPremium { env.syncNow() } else { env.profileRouter.push(.paywall) }
+                        }
                     }
                     SettingsRow(icon: "globe", title: "Language", value: "System") {}
 
@@ -46,6 +43,46 @@ struct ProfileScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
         .sheet(isPresented: $showGallery) { DesignGalleryScreen() }
+    }
+}
+
+/// Signed-out: sign-in CTA. Signed-in: the account email, a Free/Premium badge, and Sign out.
+private struct AccountCard: View {
+    @Environment(AppEnvironment.self) private var env
+
+    var body: some View {
+        AppCard {
+            if env.isSignedIn {
+                VStack(alignment: .leading, spacing: AppSpacing.s8) {
+                    HStack(spacing: AppSpacing.s8) {
+                        Text("Signed in").font(AppText.title).foregroundStyle(AppColors.ink)
+                        AppBadge(env.isPremium ? "Premium" : "Free",
+                                 color: env.isPremium ? AppColors.success : AppColors.inkSoft)
+                    }
+                    Text(env.userEmail ?? "Your account")
+                        .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                    if !env.isPremium {
+                        AppButton("Turn on Cloud Sync", variant: .primary, icon: "cloud") {
+                            env.profileRouter.push(.paywall)
+                        }
+                        .padding(.top, AppSpacing.s4)
+                    }
+                    AppButton("Sign out", variant: .secondary, icon: "rectangle.portrait.and.arrow.right") {
+                        env.signOut()
+                    }
+                }
+            } else {
+                VStack(alignment: .leading, spacing: AppSpacing.s8) {
+                    Text("Not signed in").font(AppText.title).foregroundStyle(AppColors.ink)
+                    Text("Sign in to unlock premium cloud sync and party mode. Everything else works offline.")
+                        .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                    AppButton("Sign in", variant: .secondary, icon: "person") {
+                        env.profileRouter.push(.signIn)
+                    }
+                    .padding(.top, AppSpacing.s4)
+                }
+            }
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 import Testing
 import Foundation
+import GRDB
 @testable import BrickBackKit
 
 @Suite("SyncService — push/pull convergence (ported from phase5)")
@@ -10,7 +11,12 @@ struct SyncServiceTests {
         let catalog = FakeCatalog()
         catalog.sets[999] = CatalogSet(itemId: 999, setNum: "999-1", name: "Test Set", year: 2024, numParts: 2, imageUrl: nil)
         catalog.partsBySet[999] = [makePart(1, 10, needed: 3), makePart(2, 20, needed: 5)]
+        catalog.minifigsBySet[999] = [CatalogMinifig(minifigItemId: 100, quantity: 1, figNum: "fig-100", name: "Emma", imageUrl: nil)]
         return catalog
+    }
+
+    private func dirtyCount(_ db: AppDatabase, _ table: String) async throws -> Int {
+        try await db.writer.read { d in try Int.fetchOne(d, sql: "SELECT COUNT(*) FROM \(table) WHERE dirty = 1") ?? 0 }
     }
 
     @Test("a set + counts made on device A appear on device B after sync (metadata re-derived)")
@@ -115,5 +121,70 @@ struct SyncServiceTests {
 
         let invB = try #require(try await repoB.detail(id))
         #expect(invB.have["2:20"] == 5)
+    }
+
+    @Test("push uploads dirty rows, clears exactly the pushed rows, cloud carries only the delta")
+    func pushClearsDirtyAndCarriesDelta() async throws {
+        let cloud = FakeSyncRemote(uid: "user-1")
+        let catalog = makeCatalog()
+
+        let dbA = try AppDatabase.inMemory()
+        let repoA = RebuildRepository(catalog: catalog, db: dbA)
+        let syncA = SyncService(db: dbA, rebuild: repoA, remote: cloud)
+
+        let id = try await repoA.addSet(999) // 1 set + 2 parts + 1 minifig, all dirty
+        #expect(try await dirtyCount(dbA, "rebuild_sets") == 1)
+        #expect(try await dirtyCount(dbA, "rebuild_parts") == 2)
+        #expect(try await dirtyCount(dbA, "rebuild_minifigs") == 1)
+
+        try await syncA.pushDirty()
+
+        // Dirty flags cleared for exactly the pushed rows.
+        #expect(try await dirtyCount(dbA, "rebuild_sets") == 0)
+        #expect(try await dirtyCount(dbA, "rebuild_parts") == 0)
+        #expect(try await dirtyCount(dbA, "rebuild_minifigs") == 0)
+
+        // The cloud set carries only the syncable delta (ids + total_parts + flags), never the
+        // catalog metadata — structurally guaranteed by the typed CloudSet (no name/theme).
+        let cloudSets = try await cloud.fetchSets()
+        #expect(cloudSets.count == 1)
+        #expect(cloudSets.first?.id == id)
+        #expect(cloudSets.first?.setItemId == 999)
+        #expect(cloudSets.first?.totalParts == 8)
+        #expect(try await cloud.fetchParts([id]).count == 2)
+        #expect(try await cloud.fetchMinifigs([id]).count == 1)
+    }
+
+    @Test("a verification (and the set's verified_at) syncs across devices")
+    func verificationSyncsAcrossDevices() async throws {
+        let cloud = FakeSyncRemote(uid: "user-1")
+        let catalog = makeCatalog()
+
+        let dbA = try AppDatabase.inMemory()
+        let repoA = RebuildRepository(catalog: catalog, db: dbA)
+        let syncA = SyncService(db: dbA, rebuild: repoA, remote: cloud)
+        let id = try await repoA.addSet(999)
+        _ = try await repoA.saveVerification(
+            rebuildSetId: id, setItemId: 999, completionPct: 1.0,
+            partsNeeded: 8, partsFound: 8, minifigsNeeded: 1, minifigsFound: 1,
+            flags: VerificationFlags(boxIncluded: true, allParts: true, minifigsIncluded: true),
+            notes: "looks great"
+        )
+        try await syncA.fullSync()
+
+        let dbB = try AppDatabase.inMemory()
+        let repoB = RebuildRepository(catalog: catalog, db: dbB)
+        let syncB = SyncService(db: dbB, rebuild: repoB, remote: cloud)
+        try await syncB.fullSync()
+
+        let v = try #require(try await repoB.latestVerification(id))
+        #expect(v.completionPct == 1.0)
+        #expect(v.partsFound == 8)
+        #expect(v.notes == "looks great")
+        #expect(v.flags.boxIncluded)
+        #expect(v.flags.allParts)
+        // And the set's verified_at synced too.
+        let invB = try #require(try await repoB.detail(id))
+        #expect(invB.summary.verified)
     }
 }

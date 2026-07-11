@@ -4,15 +4,16 @@ import Foundation
 /// Port of `SyncController` (sync_service.dart) — the Riverpod `Ref` coupling is replaced by
 /// injected closures so it stays testable without the SDK.
 ///
-/// **Inert until S5:** free/guest users are never `signedIn` and `isPremium` defaults to false,
-/// so the gate is closed and the app never touches the network for user data. The full
-/// algorithm is present and exercised by `SyncService` tests via a fake remote.
+/// **Live since S5:** the closures return real values (the app feeds `AuthRepository.isSignedIn`
+/// and the observable `EntitlementController.isPremium`). Free/guest users — and signed-in-but-free
+/// users — keep the gate closed, so the app never touches the network for user data. The closures
+/// are invoked on the main actor; `SyncControllerTests` drive the premium-enable triggers.
 @MainActor
 public final class SyncController {
     private let service: SyncService
-    private let isSignedIn: @Sendable () -> Bool
-    private let isPremium: @Sendable () -> Bool
-    private let refreshEntitlement: @Sendable () async -> Void
+    private let isSignedIn: () -> Bool
+    private let isPremium: () -> Bool
+    private let refreshEntitlement: () async -> Void
 
     private var running = false
     private var pendingEnable = false
@@ -21,9 +22,9 @@ public final class SyncController {
 
     public init(
         service: SyncService,
-        isSignedIn: @escaping @Sendable () -> Bool,
-        isPremium: @escaping @Sendable () -> Bool,
-        refreshEntitlement: @escaping @Sendable () async -> Void = {}
+        isSignedIn: @escaping () -> Bool,
+        isPremium: @escaping () -> Bool,
+        refreshEntitlement: @escaping () async -> Void = {}
     ) {
         self.service = service
         self.isSignedIn = isSignedIn

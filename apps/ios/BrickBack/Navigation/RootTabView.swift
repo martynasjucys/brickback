@@ -35,8 +35,7 @@ private struct TabNavigation<Root: View>: View {
     }
 }
 
-/// Resolves a `Route` to a screen. S1 ships placeholders for everything past the shell; each
-/// real screen lands in its phase.
+/// Resolves a `Route` to a screen. Every route now renders its real feature screen.
 struct RouteView: View {
     let route: Route
     @Environment(AppEnvironment.self) private var env
@@ -58,25 +57,9 @@ struct RouteView: View {
         case .report(let id):
             ReportView(rebuildSetId: id)
         case .signIn:
-            PlaceholderScreen(title: "Sign in", note: "Native sign-in lands in S5.", router: env.homeRouter)
+            SignInView()
         case .paywall:
-            PlaceholderScreen(title: "Premium", note: "The paywall lands in S5.", router: env.homeRouter)
+            PaywallView()
         }
-    }
-}
-
-/// A phase-stub screen: header (with back) + an empty-state note. Removed as each phase fills in.
-struct PlaceholderScreen: View {
-    let title: String
-    let note: String
-    let router: Router
-
-    var body: some View {
-        VStack(spacing: 0) {
-            ScreenHeader(title, onBack: { router.pop() })
-            EmptyState(title: title, message: note, icon: "hammer")
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppColors.canvas)
     }
 }

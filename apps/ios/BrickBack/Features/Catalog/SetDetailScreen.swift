@@ -3,7 +3,8 @@ import BrickBackKit
 
 /// Set detail (`.setDetail`). Renders catalog metadata and the primary "Start sorting" action,
 /// which snapshots the set into local GRDB and opens it. Port of `set_detail_screen.dart`.
-/// (The free-tier cap check on "Start sorting" is deliberately out until S5.)
+/// Non-premium users are capped at `kFreeRebuildCap` active rebuilds; a further add routes to
+/// the paywall instead (S5).
 struct SetDetailScreen: View {
     @Environment(AppEnvironment.self) private var env
     let itemId: Int
@@ -135,6 +136,15 @@ private struct StartSortingButton: View {
         loading = true
         Task {
             do {
+                // Free tier is capped; beyond it, upsell instead of adding another rebuild.
+                if !env.isPremium {
+                    let count = try await env.services.rebuild.activeCount()
+                    if count >= kFreeRebuildCap {
+                        loading = false
+                        env.homeRouter.push(.paywall)
+                        return
+                    }
+                }
                 let id = try await env.services.rebuild.addSet(itemId)
                 // Get the new rebuild to the cloud promptly once premium sync is live (no-op now).
                 env.sync.nudge()

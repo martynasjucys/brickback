@@ -5,27 +5,30 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S4** (review & verification — **MVP complete**).
-**Current state:** S0–S4 are **code-complete and verified**. **S4 closes the MVP**: `.review(id)`
-renders completion %, the exact **missing-parts list** (biggest shortfall first, tap → BrickLink),
-inline **minifig verification**, a **wanted-list XML** share, and a **Mark as verified** sheet that
-records a `verifications` row + stamps `rebuild_sets.verified_at`; `.report(id)` renders the
-certificate and exports it as a **@3× PNG** and a **printable A4 PDF** off the same SwiftUI view via
-`ImageRenderer`. All review math is local, off the same GRDB snapshot the counting screen uses, so
-the numbers line up exactly. Driven end-to-end on the iPhone 17 Pro sim (`idb`): flag → Review shows
-**"4 of 43 parts found · 24 types still missing"** (9% ring), the **Emma** minifig row (present
-toggle → **1/1** green + derived "Minifigures included"), and the shortfall list (need 5, 4, 4, 3,
-2…); **Mark as verified** (Box + Instructions ticked) → the certificate renders with the real set
-image, the **"9% · 39 parts missing"** badge, `Parts found 4 / 43`, `Minifigures 1 / 1`, the flag
-checklist, and **Verified 11 Jul 2026 · Verified with BrickBack**; **Share PDF** produced a valid
-**972 KB A4 PDF**; back on **Home** the card now shows the green **"Verified"** badge (proving the
-stamp landed + `ValueObservation` re-emitted). **26 unit tests pass** (the S3 eighteen + eight new:
-missing-parts math == ring, wanted-list XML with BL-id/part-num fallback + unmapped-part footnote,
-fully-counted → empty list + 100%, minifig rollup separate from parts, `saveVerification` →
-`latestVerification` round-trip with trimmed notes + `verified_at` stamp, flags JSON codec, XML
-builder edge cases, `Verification` getters). Build green, no warnings. Sync engine still **gated
-OFF** until S5 — but the `verifications` row is already `dirty` for the S5 mirror. Ready to start
-**S5** (auth & cloud sync — turns the sync engine ON).
+**Last updated:** end of **S5** (auth & cloud sync — **the sync engine is ON**).
+**Current state:** S0–S5 are **code-complete and verified**. **S5 turns the wired-but-inert sync
+skeleton live**: the gate is now `signedIn && isPremium` reading real values (an app-side
+`@Observable EntitlementController` = `debugForcePremium || profiles.is_premium`), so a signed-in
+premium user's rebuilds push/pull across devices **and clients** (cloud payload is
+catalog-independent → `importFromCloud` re-derives metadata on a fresh device). `AuthRepository`
+gained the three production-correct sign-in paths — native **Sign in with Apple** (SHA-256 nonce →
+`signInWithIdToken`), **Google** web OAuth (`ASWebAuthenticationSession`), **email OTP** (magic link
+→ `.onOpenURL` → PKCE exchange) — plus `handleOpenURL`/`currentUserEmail`. New surfaces: `SignInView`
+(Apple/Google/email), `PaywallView` (4 benefits + "Turn on Cloud Sync" + debug force-premium
+toggle), a reworked **Profile** (guest vs signed-in email, Free/Premium badge, Sync now, Sign out),
+and the **free-cap** on "Start sorting" (non-premium at `kFreeRebuildCap = 3` → paywall). Driven on
+the iPhone 17 Pro sim (`idb`): Home ("Catalog OK") → Profile shows **Not signed in / Premium: Free**
+→ **Sign in** renders the native Apple button + Google + email OTP → back → **Premium** renders the
+paywall (Cloud Sync · PREMIUM, four benefit cards, CTA, debug toggle) → flipping **Debug: force
+premium** flips Profile to **Premium: Active** (proving the nested-`@Observable` reactivity through
+`env.isPremium`, and `onPremiumEnabled()` fires harmlessly while signed-out — gate stays closed).
+**30 unit tests pass** (the S4 twenty-six + four new: push clears exactly the pushed dirty rows +
+cloud carries only the delta, a verification + `verified_at` sync across two devices, and two
+`SyncController` triggers — turning premium on while signed in pulls cloud sets with no manual sync,
+and a first-enable `requestEnableSync` → `markAllDirty` uploads existing local-only work). Build
+green, no warnings. **Live OAuth/SMTP round-trip waits for S8** (Supabase dashboard provider config
++ billing); the client logic is complete and testable behind the debug unlock + in-memory fakes.
+Ready to start **S6** (party mode).
 
 ---
 
@@ -36,8 +39,8 @@ OFF** until S5 — but the `verifications` row is already `dirty` for the S5 mir
 - [x] **S2 — Catalog & set selection** ✅ (done, verified)
 - [x] **S3 — Inventory collection (core loop)** ✅ (done, verified)
 - [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
-- [ ] **S5 — Auth & cloud sync (turns the sync engine ON)** ← NEXT
-- [ ] S6 — Party mode
+- [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
+- [ ] **S6 — Party mode** ← NEXT
 - [ ] S7 — Design polish & i18n
 - [ ] S8 — Launch / App Store
 
@@ -198,9 +201,11 @@ OFF** until S5 — but the `verifications` row is already `dirty` for the S5 mir
   computed **at render time** from `partSections(...)`; the extras section renders below when
   enabled.
 - `PartTile` — image-forward, colour-coded neutral → amber → green, check badge when complete.
-  **Tap vs long-press uses `LongPressGesture.exclusively(before: TapGesture)`** — the naive
-  `onTapGesture`+`onLongPressGesture` pair let a held press leak through as a tap (a real bug
-  caught on-device). `PartDetailSheet` / `PartSearchSheet` / `ViewSettingsSheet` round out the
+  **Tap vs long-press** (reworked in S5): a **`Button`** (tap → increment, press-scale via a
+  `ButtonStyle`) **+ `.simultaneousGesture(LongPressGesture(0.4))`** (long-press → detail) with a
+  `longPressed` suppression flag. The S3 `LongPressGesture.exclusively(before: TapGesture)` attached
+  via `.gesture` was replaced because it blocked ScrollView scrolling and swallowed the tap (see the
+  gotcha below). `PartDetailSheet` / `PartSearchSheet` / `ViewSettingsSheet` round out the
   sheets; grouping + show-extras persist via `@AppStorage` (keys `rebuild_grouping` /
   `rebuild_show_extras`), degrading to defaults.
 - `RouteView` `.rebuild(id)` now renders `RebuildView` (the S2 placeholder is gone). The
@@ -252,6 +257,55 @@ OFF** until S5 — but the `verifications` row is already `dirty` for the S5 mir
 
 ---
 
+## What's built (S5)
+
+### Auth + entitlement (`BrickBackKit`)
+- `AuthRepository` gained the three sign-in paths (the S1 skeleton was session-state + stream only):
+  **`signInWithApple(idToken:nonce:)`** → `signInWithIdToken(.apple, …)` (the native
+  `ASAuthorizationController` half runs in the app's `SignInWithAppleButton`, which SHA-256s a raw
+  nonce into the request; the repo just exchanges the token — the production-correct path App Store
+  review requires), **`signInWithGoogle()`** → the web `signInWithOAuth(.google, …)`
+  `ASWebAuthenticationSession` convenience (no GoogleSignIn SDK; matches the Flutter web-OAuth path,
+  `com.brickback://login-callback` redirect + `prompt=select_account`), **`signInWithEmail(_:)`** →
+  `signInWithOTP(email:redirectTo:)`, and **`handleOpenURL(_:)`** → `auth.handle(url)` (the PKCE
+  exchange for the OTP/OAuth deep-link return) + `currentUserEmail`.
+- `EntitlementService.fetchIsPremium()` was already ported in S1 (reads own `profiles.is_premium`,
+  degrades to false); S5 just wires it live. `kFreeRebuildCap = 3` (BrickBackKit).
+- `SyncController` gate closures changed from `@Sendable` to plain `@MainActor`-invoked closures so
+  they can read the app's `@Observable` premium state without an isolation warning. The engine
+  itself (`SyncService`/`SupabaseSyncRemote`, ported 1:1 in S1) is **unchanged** — S5 only flips the
+  gate on and feeds it real `isSignedIn`/`isPremium`.
+
+### App target
+- `Features/Premium/EntitlementController.swift` — app-side `@MainActor @Observable` mirror of the
+  Flutter `entitlementController` + `debugForcePremium` + `isPremium` trio: `debugForcePremium ||
+  lastEntitlement`, lazily false (no eager network), `refresh()` degrades to false. The synchronous
+  source of truth for the sync gate **and** the free-cap check.
+- `AppEnvironment` rework — owns the `EntitlementController`, exposes observable `isSignedIn` /
+  `userEmail` (mirrored from `signInStates()`), real `isPremium`, and the gate closures now return
+  real values. `startSyncWiring` updates the auth mirror + `dismissAuthScreens()` on sign-in +
+  `onAuthChanged()`. `setForcePremium(_:)` flips the debug unlock **and** triggers `onPremiumEnabled`
+  (premium-turning-on is its own sync trigger — auth state doesn't change). `syncNow` / `signOut`.
+- `Features/Auth/SignInView` — native `SignInWithAppleButton` (nonce via `SecRandomCopyBytes` +
+  CryptoKit `SHA256`, extract identity token in `onCompletion`), Continue with Google, an "or"
+  divider, email field + "Email me a sign-in link" (with sent/err inline states). Cancels are
+  swallowed (`ASAuthorizationError.canceled`, `CancellationError`).
+- `Features/Premium/PaywallView` — Cloud Sync + PREMIUM badge, four benefit cards, "Turn on Cloud
+  Sync" (`requestEnableSync()` then pop-if-signed-in / push `.signIn`), and a **DEBUG-only** force-
+  premium `Toggle`.
+- `Features/Profile/ProfileScreen` — guest (Sign in) vs signed-in (email + Free/Premium badge +
+  Turn on Cloud Sync when free + Sign out) account card, plus a **Sync now** row (premium → `syncNow`,
+  else → paywall).
+- `SetDetailScreen` "Start sorting" — the **free-cap** now enforced: non-premium at
+  `activeCount() >= kFreeRebuildCap` pushes `.paywall` instead of adding a 4th rebuild.
+- `RouteView` renders `SignInView` / `PaywallView` (the S1 placeholders + `PlaceholderScreen` are
+  gone); `BrickBackApp` registers `.onOpenURL { auth.handleOpenURL($0) }` at the root.
+- **Sign in with Apple capability**: `BrickBack/Resources/BrickBack.entitlements`
+  (`com.apple.developer.applesignin = [Default]`) wired via `CODE_SIGN_ENTITLEMENTS` in
+  `project.yml` (re-run `xcodegen generate`).
+
+---
+
 ## How to build / test / run
 
 ```sh
@@ -292,15 +346,44 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
 
 ---
 
+## Acceptance (parity vs. Flutter Phase 5) — all met · **sync engine ON**
+
+- **Push uploads dirty rows, clears exactly the pushed rows, cloud carries only the delta:**
+  unit-tested (`pushClearsDirtyAndCarriesDelta` — dirty counts 1/2/1 → 0/0/0; typed `CloudSet`
+  structurally carries no catalog metadata). ✅
+- **Pull re-derives catalog metadata + overlays `have_qty`; two devices converge with no dupes;
+  same-part edits resolve last-syncer-wins; tombstone propagates:** the S1 `SyncServiceTests`
+  (convergence, LWW, tombstone, `markAllDirty`) still green. ✅
+- **A verification syncs across devices** (and the set's `verified_at`): unit-tested
+  (`verificationSyncsAcrossDevices`). ✅
+- **`SyncController` premium triggers:** turning premium on while signed in pulls the cloud sets
+  with no manual sync (`premiumEnablePulls`); a first-enable `requestEnableSync` → `markAllDirty`
+  uploads existing local-only work (`firstEnableUploadsLocalWork`). ✅
+- **Sign-in + paywall render on the sim (routes + surfaces):** Profile (guest → **Free**) → Sign in
+  (native Apple + Google + email OTP) → Paywall (benefits + CTA + debug toggle) → force-premium →
+  Profile **Active** (reactive `env.isPremium`). ✅
+- **Free-cap:** non-premium at `kFreeRebuildCap` routes "Start sorting" → paywall (reads the same
+  `env.isPremium` proven reactive live; `activeCount` covered by repo tests). ✅
+- **Live OAuth/SMTP round-trip** is the one deferred item → **S8** (Supabase dashboard provider
+  config + billing); client logic complete + testable behind the debug unlock + fakes. ⏳ (S8)
+- `swift test` green (**30 tests**); `xcodebuild build` green, no warnings. ✅
+
+---
+
 ## Notes / gotchas for the next session
 
 - **`step_qty` divergence:** no such column and no v3 migration — intentional (00-architecture
   §5). Confirmed live in S3: the per-part step lives only in `RebuildViewModel.step` (default 1,
   reset when the set is left); `RebuildInventory` has no `step` field and there is no `setPartStep`.
-- **Tap-vs-long-press:** use `LongPressGesture.exclusively(before: TapGesture)`, **not**
-  `onTapGesture` + `onLongPressGesture` together — the latter lets a held press fire as a tap
-  (caught on-device: a "long-press to open detail" incremented the count instead). Applies to any
-  future dual-gesture tile/row.
+- **Tap-vs-long-press on a tile inside a ScrollView (revised in S5):** the S3
+  `LongPressGesture.exclusively(before: TapGesture)` attached via `.gesture(…)` was **wrong** — it
+  greedily claimed finger-down (so the grid **couldn't scroll**) and the exclusive composition ate
+  the quick tap (so **tap didn't increment**), leaving only the scale animation. The correct pattern
+  (`PartTile`): a **`Button`** for the tap (cooperates with the ScrollView's pan; press-scale via a
+  `ButtonStyle`'s `isPressed`) **+** a **`.simultaneousGesture(LongPressGesture(0.4))`** for detail,
+  with a `longPressed` flag so the button's trailing touch-up tap is suppressed after a long-press.
+  Verified live: grid scrolls, tap 0/1→1/1, long-press opens detail without incrementing. Applies to
+  any future dual-gesture tile/row — don't attach a greedy `.gesture` on scrollable cells.
 - **Search is client-authored, not `CatalogReader`:** `search`/`setDetail` live on the concrete
   `SupabaseCatalogRepository` (exposed via `AppServices`), mirroring the Dart split where the
   narrow `CatalogReader` interface only carries what sync/rebuild re-derive from the catalog.
@@ -333,8 +416,28 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
   minor stale-state note: after saving, we **push** `.report` on top of `.review`; popping back to
   review shows the pre-verify bottom bar until the screen is re-entered (its VM `load()` is
   once-only). Harmless for MVP; revisit if review needs to reflect a just-saved verification inline.
-- **S5 kick-off:** the sync engine is **fully ported and gated OFF** (`isPremium` closure returns
-  false). S4 already writes `verifications` + `rebuild_sets.verified_at` rows as `dirty`, so once
-  S5 flips the gate (auth + entitlement), the existing `SyncService.pushVerifications` /
-  `pullVerifications` carry them to the cloud with no data-layer change. S5 builds native sign-in
-  sheets, the entitlement read, and the first-enable `markAllDirty` path (all skeletoned in S1).
+- **Sync gate is now ON:** the gate is `signedIn && isPremium`, both real. `isPremium` reads the
+  app-side `EntitlementController` (`debugForcePremium || profiles.is_premium`). Free/guest and
+  signed-in-but-free users still never touch the network for user data (gate closed). The engine
+  (`SyncService`/`SupabaseSyncRemote`) is untouched from S1 — S5 only fed it real gate values.
+- **idb can't flip a standalone SwiftUI `Toggle` with a bare `ui tap`** — a zero-duration synthetic
+  tap doesn't register on the `UISwitch`. Use **`idb ui tap --duration 0.12 <x> <y>`** (a real
+  press), and land on the **switch control**, not the label (a standalone Toggle — outside a
+  Form/List — only flips when the switch itself is hit). This is what verified force-premium →
+  Profile "Active" live. Applies to any future switch (S7 settings).
+- **Two `Provider` enums in supabase-swift:** the top-level `Provider` (`.google`/`.apple`) for
+  `signInWithOAuth`, and the nested `OpenIDConnectCredentials.Provider` for `signInWithIdToken`
+  (`.apple`). Both resolve by context. Google uses the **web OAuth** `ASWebAuthenticationSession`
+  convenience (no GoogleSignIn SDK — matches Flutter); only Apple is native (`SignInWithAppleButton`).
+- **Sign in with Apple entitlement:** `BrickBack/Resources/BrickBack.entitlements`
+  (`com.apple.developer.applesignin`) + `CODE_SIGN_ENTITLEMENTS` in `project.yml`. **Simulator**
+  builds don't validate it (built + ran fine); a **device** build needs the capability on the App ID
+  — automatic signing with the paid team adds it. Re-run `xcodegen generate` after `project.yml`.
+- **Live OAuth/SMTP is external config → S8:** Apple/Google/email round-trips need Supabase
+  dashboard provider config (+ Apple provider on the user project). The client paths are complete;
+  the debug force-premium unlock + in-memory `FakeSyncRemote` cover the gate/sync/entitlement logic
+  without it. Don't "improve" LWW (last-*syncer*-wins is the sanctioned v1).
+- **S6 kick-off:** party mode. The counting header still ships flag→review / search / settings only
+  — the **party action lands in S6**. Party tables + RLS + the `join_party(code)` RPC already exist
+  on the user project (verified live in Flutter Phase 6); the sync engine + auth from S5 are the
+  substrate it builds on.
