@@ -19,6 +19,12 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
         self.images = images
     }
 
+    /// Strip characters that would break the PostgREST or-filter / ilike pattern.
+    private func sanitize(_ q: String) -> String {
+        q.replacingOccurrences(of: "[,()%*]", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
     // MARK: - Smoke read (S1)
 
     /// Fetch a single set's name to prove the anon catalog client works end-to-end on device
@@ -66,6 +72,69 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
             numParts: r.numParts ?? 0,
             imageUrl: imgs[r.itemId] ?? r.rebrickableImgUrl
         )
+    }
+
+    // MARK: - Search & set detail (S2)
+
+    /// Catalog search over sets by name or number. Buildable sets only
+    /// (`num_parts > 0` excludes books, bags, apparel). Debounced by the caller. Port of the
+    /// Dart `search` — same `or` filter, `_sanitize`, and CDN image join.
+    public func search(_ query: String, limit: Int = 25) async throws -> [CatalogResult] {
+        let q = sanitize(query)
+        guard !q.isEmpty else { return [] }
+        let rows: [SetRow] = try await client
+            .from("sets")
+            .select(Self.setCols)
+            .or("name.ilike.%\(q)%,set_num.ilike.\(q)%")
+            .gt("num_parts", value: 0)
+            .limit(limit)
+            .execute()
+            .value
+        let imgs = try await imageUrls(rows.map(\.itemId))
+        return rows.map { r in
+            CatalogResult(
+                itemId: r.itemId,
+                kind: .set,
+                ref: r.setNum ?? "",
+                name: r.name,
+                year: r.year,
+                numParts: r.numParts,
+                imageUrl: imgs[r.itemId] ?? r.rebrickableImgUrl
+            )
+        }
+    }
+
+    /// Set detail: set row + theme name (`items.theme_id → themes.name`) + minifig count
+    /// (sum of figure quantities). Port of the Dart `setDetail`.
+    public func setDetail(_ setItemId: Int) async throws -> SetDetail {
+        let rows: [SetRow] = try await client
+            .from("sets")
+            .select(Self.setCols)
+            .eq("item_id", value: setItemId)
+            .limit(1)
+            .execute()
+            .value
+        guard let row = rows.first else {
+            throw CatalogError.setNotFound(setItemId)
+        }
+        let imgs = try await imageUrls([setItemId])
+        let set = toSet(row, imgs)
+
+        // Theme name via items.theme_id -> themes.name (nullable; the set may have no theme).
+        var themeName: String?
+        let itemRows: [ItemThemeRow] = try await client
+            .from("items")
+            .select("theme_id, themes(name)")
+            .eq("id", value: setItemId)
+            .limit(1)
+            .execute()
+            .value
+        if let theme = itemRows.first?.themes { themeName = theme.name }
+
+        let figs = try await setMinifigs(setItemId)
+        let minifigCount = figs.reduce(0) { $0 + $1.quantity }
+
+        return SetDetail(set: set, themeName: themeName, minifigCount: minifigCount)
     }
 
     // MARK: - CatalogReader
@@ -168,6 +237,17 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
     }
 }
 
+/// Errors surfaced by the read-only catalog path.
+public enum CatalogError: Error, LocalizedError {
+    case setNotFound(Int)
+
+    public var errorDescription: String? {
+        switch self {
+        case .setNotFound(let id): return "Set #\(id) not found in the catalog."
+        }
+    }
+}
+
 // MARK: - Decodable DTOs (snake_case JSON via explicit CodingKeys; the PostgREST decoder
 // does not convert keys). Kept private to the repo.
 
@@ -199,6 +279,11 @@ private struct ImageRow: Decodable {
 
 private struct InventoryRow: Decodable {
     let id: Int
+}
+
+private struct ItemThemeRow: Decodable {
+    let themes: ThemeEmbed?
+    struct ThemeEmbed: Decodable { let name: String? }
 }
 
 private struct PartRow: Decodable {

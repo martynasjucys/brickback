@@ -1,4 +1,5 @@
 import SwiftUI
+import NukeUI
 
 /// Wireframe primitive views. Token-driven, no default chrome. Re-skinned to the brand in S7
 /// without changing their public API. Ports of `widgets/primitives.dart`.
@@ -249,9 +250,9 @@ struct ProgressRing: View {
 
 // MARK: - SetThumb
 
-/// Square catalog thumbnail. Renders the real image (via AsyncImage) when `imageUrl` is set,
-/// falling back to a wireframe placeholder box on nil or load failure.
-/// S2: swap AsyncImage → NukeUI `LazyImage` for disk caching.
+/// Square catalog thumbnail. Renders the real image via NukeUI's `LazyImage` (memory + disk
+/// cached) when `imageUrl` is set, falling back to a wireframe placeholder box on nil or load
+/// failure. Same public API as the S1 `AsyncImage` version.
 struct SetThumb: View {
     var imageUrl: String? = nil
     var size: CGFloat = 56
@@ -269,16 +270,13 @@ struct SetThumb: View {
     var body: some View {
         Group {
             if let imageUrl, let url = URL(string: imageUrl) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
+                LazyImage(url: url) { state in
+                    if let image = state.image {
                         image.resizable().scaledToFit().background(AppColors.card)
-                    case .failure:
+                    } else if state.error != nil {
                         placeholder
-                    case .empty:
+                    } else {
                         ZStack { AppColors.card; ProgressView().controlSize(.small) }
-                    @unknown default:
-                        placeholder
                     }
                 }
             } else {
@@ -296,6 +294,7 @@ struct SearchField: View {
     var hint: String = "Search…"
     @Binding var text: String
     var autofocus: Bool = false
+    @FocusState private var focused: Bool
 
     var body: some View {
         HStack(spacing: 8) {
@@ -306,6 +305,20 @@ struct SearchField: View {
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled()
                 .tint(AppColors.ink)
+                .focused($focused)
+            if !text.isEmpty {
+                Pressable(onTap: { text = "" }) {
+                    Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(AppColors.muted)
+                }
+            }
+        }
+        .onAppear {
+            // Raise the keyboard on first appear when requested (the Dart `autofocus: true`).
+            guard autofocus else { return }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(350))
+                focused = true
+            }
         }
         .padding(.horizontal, AppSpacing.s12)
         .padding(.vertical, AppSpacing.s12)

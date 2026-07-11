@@ -5,6 +5,8 @@ import SwiftUI
 /// phases; S1 renders them as "coming in Sx" placeholders.
 enum Route: Hashable {
     case setDetail(Int)   // catalog set detail — S2
+    case setParts(Int)    // set's unique-parts list — S2
+    case setMinifigs(Int) // set's minifig list — S2
     case rebuild(String)  // counting screen — S3
     case review(String)   // review + verify — S4
     case report(String)   // verification report — S4

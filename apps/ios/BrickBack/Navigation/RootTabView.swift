@@ -44,9 +44,13 @@ struct RouteView: View {
     var body: some View {
         switch route {
         case .search:
-            PlaceholderScreen(title: "Search", note: "Catalog search lands in S2.", router: env.homeRouter)
+            SearchScreen()
         case .setDetail(let id):
-            PlaceholderScreen(title: "Set #\(id)", note: "Set detail lands in S2.", router: env.homeRouter)
+            SetDetailScreen(itemId: id)
+        case .setParts(let id):
+            SetPartsScreen(itemId: id)
+        case .setMinifigs(let id):
+            SetMinifigsScreen(itemId: id)
         case .rebuild(let id):
             PlaceholderScreen(title: "Counting", note: "The tap-to-count grid lands in S3.\n(\(id))", router: env.homeRouter)
         case .review(let id):

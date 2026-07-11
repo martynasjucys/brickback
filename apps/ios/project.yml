@@ -16,6 +16,11 @@ configs:
 packages:
   BrickBackKit:
     path: BrickBackKit
+  # Image loading + disk cache for catalog thumbnails (S2). Only the SwiftUI app links this;
+  # the domain package (BrickBackKit) stays UI-free.
+  Nuke:
+    url: https://github.com/kean/Nuke
+    from: "12.8.0"
 
 settings:
   base:
@@ -35,6 +40,8 @@ targets:
     dependencies:
       - package: BrickBackKit
         product: BrickBackKit
+      - package: Nuke
+        product: NukeUI
     configFiles:
       Debug: BrickBack/Config/Debug.xcconfig
       Release: BrickBack/Config/Release.xcconfig

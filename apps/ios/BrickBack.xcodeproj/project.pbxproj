@@ -7,23 +7,31 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		160D46A66951553CC219CC0A /* SetMinifigsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */; };
+		1DFD1A6DD1A7AF4836E1E624 /* SetPartsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */; };
 		2FC8F508BDECF73CC7ACFD1B /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE4EB6806C761C92697613C /* Tokens.swift */; };
+		3B6353D1E9EDF116BE67F70A /* LoadState.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA6B0EC4CAE350186236C60 /* LoadState.swift */; };
 		3DFED4AEC6DF5DB92DC14ACD /* Secrets.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = 84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */; };
 		40D1762A42C56F28144D5AAD /* DesignGalleryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */; };
 		48BBE177AB19B8083847AA5E /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C988995BB8097446496D700C /* HomeScreen.swift */; };
 		65853DBC6CB06DAAAA0352CF /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D98D4CE1547F6E63C370DAD /* HomeViewModel.swift */; };
 		70EAE9ABC9B80E7515FFC4BF /* Router.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00D4288FA2862F3E617CC288 /* Router.swift */; };
 		72FE95F5F8E4A6E620284A5A /* Primitives.swift in Sources */ = {isa = PBXBuildFile; fileRef = F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */; };
+		78789B2601298A40834D26B5 /* SetDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E48BBE99662AC79AEF9234 /* SetDetailScreen.swift */; };
+		8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */; };
 		8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */; };
 		A91D9A694B815864A9BD05AA /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD035666999A65E898B62A56 /* RootTabView.swift */; };
 		BDF07383BD8F1CBFF6D32038 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E67D880D540AC55894A7181 /* Assets.xcassets */; };
 		D06B4D0AA92EFFDA9369ADA8 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40FC2187EFE55CB24A51F26D /* AppEnvironment.swift */; };
 		DB7775C69409BD5F5B61EDD3 /* BrickBackKit in Frameworks */ = {isa = PBXBuildFile; productRef = AF947FE53E6322510253B5C4 /* BrickBackKit */; };
 		F35F98CCAE517F7B0C0212CF /* BrickBackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD689AE1F0C1C11C4BF9F2B /* BrickBackApp.swift */; };
+		F5090E2878FCDC4C8EE33082 /* SearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19546E50D1239498DD1FD16F /* SearchScreen.swift */; };
+		F6FFF66BC6A197AD3FF577EF /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = 7CA4C30743EB84D499196D10 /* NukeUI */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		00D4288FA2862F3E617CC288 /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
+		19546E50D1239498DD1FD16F /* SearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchScreen.swift; sourceTree = "<group>"; };
 		2FE4EB6806C761C92697613C /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
 		3D98D4CE1547F6E63C370DAD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
@@ -31,15 +39,20 @@
 		4BEBD2CD0AC3D40FE747EA67 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		4E67D880D540AC55894A7181 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		6E8302E6B9A35EBB0E738D71 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPartsScreen.swift; sourceTree = "<group>"; };
+		78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetMinifigsScreen.swift; sourceTree = "<group>"; };
 		84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		A42FD04275F4E3F5A5A0CF19 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		A6B75EB16D636E9E6D0A739A /* BrickBack.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BrickBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CatalogSupport.swift; sourceTree = "<group>"; };
 		B238E6464A94C9F0A6549271 /* Shared.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Shared.xcconfig; sourceTree = "<group>"; };
+		B7E48BBE99662AC79AEF9234 /* SetDetailScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetDetailScreen.swift; sourceTree = "<group>"; };
 		C5C02FB75C71B1A99A08F452 /* BrickBackKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BrickBackKit; path = BrickBackKit; sourceTree = SOURCE_ROOT; };
 		C988995BB8097446496D700C /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		CD035666999A65E898B62A56 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CDD689AE1F0C1C11C4BF9F2B /* BrickBackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrickBackApp.swift; sourceTree = "<group>"; };
 		D426EE71408364787FC3DD8F /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		DAA6B0EC4CAE350186236C60 /* LoadState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadState.swift; sourceTree = "<group>"; };
 		F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Primitives.swift; sourceTree = "<group>"; };
 		F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignGalleryScreen.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -50,6 +63,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				DB7775C69409BD5F5B61EDD3 /* BrickBackKit in Frameworks */,
+				F6FFF66BC6A197AD3FF577EF /* NukeUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,9 +73,11 @@
 		1286D67068D77A7DC649CF87 /* Features */ = {
 			isa = PBXGroup;
 			children = (
+				9E98C6AC28A9259CB9BB9D26 /* Catalog */,
 				4045556352AACDCAA94A8C37 /* DesignGallery */,
 				551279A56588F3224315D40E /* Home */,
 				873AB8EB932A8A2F0B57B843 /* Profile */,
+				4A4F4157E18DF9F4F1AAB1DA /* Search */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -91,6 +107,14 @@
 			path = DesignGallery;
 			sourceTree = "<group>";
 		};
+		4A4F4157E18DF9F4F1AAB1DA /* Search */ = {
+			isa = PBXGroup;
+			children = (
+				19546E50D1239498DD1FD16F /* SearchScreen.swift */,
+			);
+			path = Search;
+			sourceTree = "<group>";
+		};
 		551279A56588F3224315D40E /* Home */ = {
 			isa = PBXGroup;
 			children = (
@@ -108,6 +132,7 @@
 				1286D67068D77A7DC649CF87 /* Features */,
 				6A2E76356EAF0E5616AB3156 /* Navigation */,
 				B7413FCB6C16CB45AC5940C6 /* Resources */,
+				886C91DC54F720422676EB50 /* Support */,
 				40FC2187EFE55CB24A51F26D /* AppEnvironment.swift */,
 				CDD689AE1F0C1C11C4BF9F2B /* BrickBackApp.swift */,
 			);
@@ -131,12 +156,31 @@
 			path = Profile;
 			sourceTree = "<group>";
 		};
+		886C91DC54F720422676EB50 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				DAA6B0EC4CAE350186236C60 /* LoadState.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
 		8F651454E513DA2D2573FD54 /* Primitives */ = {
 			isa = PBXGroup;
 			children = (
 				F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */,
 			);
 			path = Primitives;
+			sourceTree = "<group>";
+		};
+		9E98C6AC28A9259CB9BB9D26 /* Catalog */ = {
+			isa = PBXGroup;
+			children = (
+				AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */,
+				B7E48BBE99662AC79AEF9234 /* SetDetailScreen.swift */,
+				78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */,
+				73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */,
+			);
+			path = Catalog;
 			sourceTree = "<group>";
 		};
 		A9609106F729D00F92945269 /* Config */ = {
@@ -195,6 +239,7 @@
 			name = BrickBack;
 			packageProductDependencies = (
 				AF947FE53E6322510253B5C4 /* BrickBackKit */,
+				7CA4C30743EB84D499196D10 /* NukeUI */,
 			);
 			productName = BrickBack;
 			productReference = A6B75EB16D636E9E6D0A739A /* BrickBack.app */;
@@ -225,6 +270,7 @@
 			mainGroup = B657D98D29F8CB3256E6902F;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				5DB6C2B724948338CE536525 /* XCRemoteSwiftPackageReference "Nuke" */,
 				62280DBFA6B3CF99854C35B7 /* XCLocalSwiftPackageReference "BrickBackKit" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -256,13 +302,19 @@
 			files = (
 				D06B4D0AA92EFFDA9369ADA8 /* AppEnvironment.swift in Sources */,
 				F35F98CCAE517F7B0C0212CF /* BrickBackApp.swift in Sources */,
+				8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */,
 				40D1762A42C56F28144D5AAD /* DesignGalleryScreen.swift in Sources */,
 				48BBE177AB19B8083847AA5E /* HomeScreen.swift in Sources */,
 				65853DBC6CB06DAAAA0352CF /* HomeViewModel.swift in Sources */,
+				3B6353D1E9EDF116BE67F70A /* LoadState.swift in Sources */,
 				72FE95F5F8E4A6E620284A5A /* Primitives.swift in Sources */,
 				8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */,
 				A91D9A694B815864A9BD05AA /* RootTabView.swift in Sources */,
 				70EAE9ABC9B80E7515FFC4BF /* Router.swift in Sources */,
+				F5090E2878FCDC4C8EE33082 /* SearchScreen.swift in Sources */,
+				78789B2601298A40834D26B5 /* SetDetailScreen.swift in Sources */,
+				160D46A66951553CC219CC0A /* SetMinifigsScreen.swift in Sources */,
+				1DFD1A6DD1A7AF4836E1E624 /* SetPartsScreen.swift in Sources */,
 				2FC8F508BDECF73CC7ACFD1B /* Tokens.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -471,7 +523,23 @@
 		};
 /* End XCLocalSwiftPackageReference section */
 
+/* Begin XCRemoteSwiftPackageReference section */
+		5DB6C2B724948338CE536525 /* XCRemoteSwiftPackageReference "Nuke" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/kean/Nuke";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.8.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
+		7CA4C30743EB84D499196D10 /* NukeUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5DB6C2B724948338CE536525 /* XCRemoteSwiftPackageReference "Nuke" */;
+			productName = NukeUI;
+		};
 		AF947FE53E6322510253B5C4 /* BrickBackKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = BrickBackKit;

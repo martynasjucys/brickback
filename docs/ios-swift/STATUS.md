@@ -5,18 +5,19 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S0 + S1** (foundation).
-**Current state:** S0 (project/tooling bootstrap) and S1 (core: clients, local store, app
-shell, sync skeleton, design system) are **code-complete and verified**. The app builds green
-(`xcodebuild` — no real warnings), boots to the two-tab wireframe shell with the Home empty
-state, and the anon catalog smoke read renders a real set name on the iPhone 17 Pro simulator
-(**"Catalog OK · Ninjago: Book of Adventures"** — proving the two-client + anon-key path
-end-to-end on device, matching Flutter Phase 1). **6 unit tests pass** via `swift test`
-(schema parity + record round-trips + the full push/pull sync algorithm: two-device
-convergence, last-writer, tombstone propagation, `markAllDirty`) against an in-memory GRDB DB
-with a fake `SyncRemote`/`CatalogReader` — the regression net proving Swift == Flutter for the
-data/sync layer. The sync engine is present but **gated OFF** until S5. Ready to start **S2**
-(catalog search + set detail + add-set snapshot).
+**Last updated:** end of **S2** (catalog & set selection).
+**Current state:** S0–S2 are **code-complete and verified**. S2 adds the full read-only
+catalog path + the one online write of the app (`addSet` → local snapshot). The whole flow was
+driven on the iPhone 17 Pro simulator (via `idb`): empty Home → **Add set** → search **"3931"**
+finds **Emma's Splash Pool** → set detail shows **43 parts / 26 unique / 1 minifig** (theme
+"Friends" resolved, image loaded via Nuke) → the unique-parts list (26 rows, sorted by colour,
+real thumbnails + swatches) and minifig list render → **Start sorting** snapshots into GRDB and
+opens the counting screen (S3 placeholder), collapsing the add-flow so **Back returns straight
+to Home** → Home lists the rebuild at **0 / 43 · 0%** → **swipe-to-remove** tombstones it and
+the live `ValueObservation` empties the list. **8 unit tests pass** via `swift test` (the S1 six
++ two new: `addSet` snapshots the expected row counts/`totalParts`/dirty flags, and duplicate
+copies auto-number `#1 / #2`). Build is green (`xcodebuild`, no real warnings). The sync engine
+is present but **gated OFF** until S5. Ready to start **S3** (interactive tap-to-count grid).
 
 ---
 
@@ -24,8 +25,8 @@ data/sync layer. The sync engine is present but **gated OFF** until S5. Ready to
 
 - [x] **S0 — Project & tooling bootstrap** ✅ (done, verified)
 - [x] **S1 — Core: clients, local store, shell, sync skeleton** ✅ (done, verified)
-- [ ] **S2 — Catalog & set selection** ← NEXT
-- [ ] S3 — Inventory collection (core loop)
+- [x] **S2 — Catalog & set selection** ✅ (done, verified)
+- [ ] **S3 — Inventory collection (core loop)** ← NEXT
 - [ ] S4 — Review & verification — **MVP complete gate**
 - [ ] S5 — Auth & cloud sync (turns the sync engine ON)
 - [ ] S6 — Party mode
@@ -116,6 +117,51 @@ data/sync layer. The sync engine is present but **gated OFF** until S5. Ready to
 
 ---
 
+## What's built (S2)
+
+### Catalog reads (`BrickBackKit/Catalog`)
+- `SupabaseCatalogRepository` gained the two S2 reads, **ported verbatim** from
+  `catalog_repository.dart`: `search(_:limit:)` (the `sanitize` strip of `,()%*`, the
+  `or("name.ilike.%q%,set_num.ilike.q%")` + `gt("num_parts", 0)` filter, CDN image join,
+  `limit 25`) and `setDetail(_:)` (set row + `items.theme_id → themes(name)` + minifig count).
+  A `CatalogError.setNotFound` replaces the Dart `.single()` throw. `expandSetParts` /
+  `setMinifigs` / `getSetSpares` already shipped in S1 on the `CatalogReader` protocol.
+- `AppServices` exposes `searchCatalog` + `setDetail` (the two are concrete, like the Dart
+  `CatalogRepository`; the narrow `CatalogReader` protocol still covers what sync/rebuild need).
+
+### The one online write (`BrickBackKit/Rebuild`)
+- `addSet` / `listSummaries` / `remove` were already ported in S1; **S2 adds their unit test**
+  (`RebuildRepositoryTests`): `addSet` writes 1 set + N parts + M minifigs + K extras in one
+  transaction, `totalParts = Σ neededQty`, rows `dirty=true`; duplicates auto-number `#1/#2`.
+
+### App target — catalog & search screens (`BrickBack/Features`)
+- `Search/SearchScreen` — debounced via `.task(id: query)` + a 300 ms `Task.sleep` (a new
+  keystroke cancels the in-flight search); `<2` chars shows the prompt state. Rows push
+  `.setDetail`.
+- `Catalog/SetDetailScreen` — 200 px image, `set_num · theme · year`, parts caption, two
+  tappable stat cards (**Unique parts**, lazily counted via `expandSetParts`, → `.setParts`;
+  **Minifigs** → `.setMinifigs`), and **Start sorting** → `addSet` → `sync.nudge()` (no-op) →
+  `homeRouter.popToRoot()` + push `.rebuild(id)` so the add-flow collapses out of the stack.
+  The free-tier cap check is deliberately **deferred to S5**.
+- `Catalog/SetPartsScreen` / `SetMinifigsScreen` — the two preview lists (thumbnail, name,
+  colour swatch + `colour · part-num`, `×qty`), parts sorted by colour then name. `swatchColor`
+  ports the Dart `FF$rgb` hex parse.
+- `LoadState<T>` (`Support/`) — a tiny `idle/loading/loaded/failed` enum, the SwiftUI analog of
+  Riverpod's `AsyncValue.when`, so one-shot loads stay inline (no VM for a simple fetch).
+- `Home` — added the **continue-rebuilding** strip (in-progress sets, horizontal) and
+  **swipe-to-remove** (a `List` with `.swipeActions` + `.listStyle(.plain)` for AppCard rows);
+  removal tombstones via the VM and the live `ValueObservation` drops the row.
+- Two new `Route` cases: `.setParts(Int)`, `.setMinifigs(Int)`; `RouteView` now renders the real
+  S2 screens (the S1 placeholders are gone for search / set-detail / parts / minifigs).
+
+### Images
+- **Nuke 12.8.0** added to `project.yml` (app target only — `BrickBackKit` stays UI-free).
+  `SetThumb` swapped `AsyncImage` → NukeUI `LazyImage` (memory + disk cache), same public API.
+- `SearchField` autofocus is now implemented (`@FocusState`, ~350 ms after appear) plus a clear
+  (✕) button — the `autofocus:` param was inert in S1.
+
+---
+
 ## How to build / test / run
 
 ```sh
@@ -133,28 +179,41 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
 
 ---
 
-## Acceptance (parity vs. Flutter Phase 1) — all met
+## Acceptance (parity vs. Flutter Phase 2) — all met
 
-- App boots to the two-tab wireframe shell; Home shows the empty state. ✅
-- Catalog smoke read renders a real set name (proves `catalogClient` + anon key on device),
-  matching the Flutter "Catalog OK · …" banner. ✅
-- In-memory DB test: five tables, migrations apply cleanly, round-trip insert/fetch of each
-  record. ✅ (+ `category_name` present, `step_qty` absent)
-- Sync engine push/pull convergence / tombstone / `markAllDirty` proven with a fake remote. ✅
-- `swift test` green (6 tests); `xcodebuild build` green, no real warnings. ✅
+- The full e2e reproduced on-device (iPhone 17 Pro sim, driven with `idb`): empty Home →
+  **Add set** → search **"3931"** → *Emma's Splash Pool* → set detail **43 parts / 26 unique /
+  1 minifig** → parts + minifig preview lists → **Start sorting** snapshots into GRDB → Home
+  lists at **0 / 43 · 0%**. ✅ (screenshots in the S2 session scratchpad)
+- **Start sorting collapses the add-flow:** Back from the counting screen returns to Home (not
+  Set-detail → Search), via `homeRouter.popToRoot()` + push. ✅
+- **Swipe-to-remove** tombstones the rebuild; the live `ValueObservation` empties the list. ✅
+- **Offline-capable by construction:** Home's list + `detail()` read GRDB only (never the
+  network) — the online catalog is touched *only* at add-time. Proven by the `addSet` unit test
+  writing the snapshot into an in-memory DB via a fake `CatalogReader`. ✅
+- `swift test` green (**8 tests**); `xcodebuild build` green, no real warnings. ✅
 
 ---
 
 ## Notes / gotchas for the next session
 
 - **`step_qty` divergence:** no such column and no v3 migration — this is intentional, not an
-  omission (00-architecture §5). The counting step is view-model session state in S3.
-- **Two decode/init bugs fixed during S1:** a reversed `dirty`/`deleted` init arg in
-  `SyncService`, and the smoke read decoding a `select("name")` response into a type that
-  required `item_id` (surfaced as a misleading "Catalog unreachable" — it was a decode bug,
-  **not** the LuLu firewall, whose extension is currently "terminated waiting to uninstall on
-  reboot"). Always check the real error before blaming the network.
-- **`Package.resolved` is committed** so a clean checkout resolves the same GRDB/supabase pins.
-- **S2 kick-off:** the catalog read layer + rebuild add/import/count/list are already ported;
-  S2 mainly adds the search + set-detail screens, wires add-set, and swaps `AsyncImage` →
-  NukeUI `LazyImage`.
+  omission (00-architecture §5). The counting step is view-model session state in **S3 (next)**.
+- **Search is client-authored, not `CatalogReader`:** `search`/`setDetail` live on the concrete
+  `SupabaseCatalogRepository` (exposed via `AppServices`), mirroring the Dart split where the
+  narrow `CatalogReader` interface only carries what sync/rebuild re-derive from the catalog.
+- **Nuke is app-target-only:** added to `project.yml` (not `BrickBackKit/Package.swift`) so the
+  domain package stays UI-free. Re-run `xcodegen generate` after the `project.yml` edit. Declared
+  as `from: "12.8.0"`; resolving the app scheme wrote the concrete pin (**Nuke 12.9.0**) into the
+  committed `BrickBackKit/Package.resolved` alongside GRDB/supabase (xcodebuild folds the local
+  package's resolved file into the app graph — run `xcodebuild -resolvePackageDependencies
+  -scheme BrickBack` to refresh it).
+- **UI driving:** `idb` (+ `idb_companion --udid <sim> --grpc-port <p>` then `idb connect
+  localhost <p>`) drives sim taps/typing; `idb ui describe-all` gives the accessibility tree
+  (points, not pixels — iPhone 17 Pro is 402×874 @3x). `idb ui text` types into the *focused*
+  field only, which is why `SearchField` autofocus had to be implemented for the flow to work.
+- **`Package.resolved` is committed** so a clean checkout resolves the same GRDB/supabase/Nuke pins.
+- **S3 kick-off:** the local snapshot (parts/minifigs/extras + `have`) and the absolute-write
+  counting methods (`setPartHave` / `setMinifigHave` / `setExtraHave`) are already ported and
+  live; S3 mainly builds the tap-to-count grid, the in-memory per-part step, live progress, and
+  the group-by / extras view settings on top of `RebuildRepository.detail()` + `observeSummaries()`.

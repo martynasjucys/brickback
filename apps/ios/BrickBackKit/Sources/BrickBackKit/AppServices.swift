@@ -42,4 +42,16 @@ public final class AppServices: @unchecked Sendable {
     public func smokeReadSetName() async throws -> String? {
         try await catalogRepo.smokeReadSetName()
     }
+
+    // MARK: - Catalog reads for the S2 UI (search + set detail; `catalog` covers the rest)
+
+    /// Debounced catalog search (sets by name / number). See `SupabaseCatalogRepository.search`.
+    public func searchCatalog(_ query: String) async throws -> [CatalogResult] {
+        try await catalogRepo.search(query)
+    }
+
+    /// Set-detail payload (metadata + theme + minifig count). Backs the set detail screen.
+    public func setDetail(_ itemId: Int) async throws -> SetDetail {
+        try await catalogRepo.setDetail(itemId)
+    }
 }

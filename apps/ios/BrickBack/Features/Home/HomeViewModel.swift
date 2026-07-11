@@ -51,6 +51,12 @@ final class HomeViewModel {
         }
     }
 
+    /// Soft-delete (tombstone) a rebuild. The live `ValueObservation` drops it from `summaries`
+    /// on its own — no manual reload. Sync is nudged by the caller (it owns the controller).
+    func remove(_ id: String) async {
+        try? await services.rebuild.remove(id)
+    }
+
     func stop() {
         summariesTask?.cancel() // AsyncStream cancellation tears down the GRDB observation
         summariesTask = nil
