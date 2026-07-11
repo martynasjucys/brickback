@@ -54,9 +54,9 @@ struct RouteView: View {
         case .rebuild(let id):
             RebuildView(rebuildSetId: id)
         case .review(let id):
-            PlaceholderScreen(title: "Review", note: "Review + verify lands in S4.\n(\(id))", router: env.homeRouter)
+            ReviewView(rebuildSetId: id)
         case .report(let id):
-            PlaceholderScreen(title: "Report", note: "The verification report lands in S4.\n(\(id))", router: env.homeRouter)
+            ReportView(rebuildSetId: id)
         case .signIn:
             PlaceholderScreen(title: "Sign in", note: "Native sign-in lands in S5.", router: env.homeRouter)
         case .paywall:

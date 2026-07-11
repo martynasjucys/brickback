@@ -5,7 +5,7 @@ import GRDB
 /// (set metadata, `expand_set_parts`, minifigs) is fetched online **only** when a set is
 /// *added* and then snapshotted, so counting works fully offline. Cloud sync is an S5
 /// premium mirror — rows are marked `dirty` for it now. Port of `rebuild_repository.dart`
-/// (minus the verification-save + wanted-list helpers, which land in S4, and `step_qty`,
+/// (plus the S4 verification-save + wanted-list helpers, minus `step_qty`,
 /// which is dropped — see 00-architecture §5).
 public final class RebuildRepository: @unchecked Sendable {
     private let catalog: CatalogReader
@@ -228,6 +228,72 @@ public final class RebuildRepository: @unchecked Sendable {
             return RebuildInventory(
                 summary: summary, parts: parts, have: have, minifigs: minifigs,
                 extras: extras, extraHave: extraHave
+            )
+        }
+    }
+
+    // MARK: - Verification (S4 review)
+
+    /// BrickLink wanted-list XML for a rebuild's shortfall. Uses the BL part id when present, else
+    /// the part number (BrickLink accepts either as `<ITEMID>`). Pure over the snapshot's
+    /// `missingParts`, so it lines up exactly with the review list.
+    public func wantedListXml(_ inv: RebuildInventory) -> String {
+        WantedList.buildWantedListXML(inv.missingParts.map {
+            WantedItem(blItemId: $0.blPartId ?? $0.partNum ?? "", blColorId: $0.blColorId, minQty: $0.needed)
+        })
+    }
+
+    /// Record an Inventory Verification: insert a `verifications` row and stamp
+    /// `rebuild_sets.verified_at` in **one transaction**. Both are marked `dirty` for the S5 cloud
+    /// mirror. Notes are trimmed (blank → nil). Returns the persisted record for the report.
+    @discardableResult
+    public func saveVerification(
+        rebuildSetId: String, setItemId: Int, completionPct: Double,
+        partsNeeded: Int, partsFound: Int, minifigsNeeded: Int, minifigsFound: Int,
+        flags: VerificationFlags, notes: String?
+    ) async throws -> Verification {
+        let id = UUID().uuidString.lowercased()
+        let now = Date()
+        let trimmed = (notes ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let finalNotes = trimmed.isEmpty ? nil : trimmed
+        let flagsJSON = flags.encode()
+
+        try await writer.write { db in
+            var rec = VerificationRecord(
+                id: id, rebuildSetId: rebuildSetId, setItemId: setItemId, completionPct: completionPct,
+                partsNeeded: partsNeeded, partsFound: partsFound,
+                minifigsNeeded: minifigsNeeded, minifigsFound: minifigsFound,
+                flags: flagsJSON, notes: finalNotes, verifiedAt: now, updatedAt: now, dirty: true
+            )
+            try rec.insert(db)
+            try db.execute(
+                sql: "UPDATE rebuild_sets SET verified_at = ?, dirty = 1, updated_at = ? WHERE id = ?",
+                arguments: [now, now, rebuildSetId]
+            )
+        }
+
+        return Verification(
+            id: id, rebuildSetId: rebuildSetId, setItemId: setItemId, completionPct: completionPct,
+            partsNeeded: partsNeeded, partsFound: partsFound,
+            minifigsNeeded: minifigsNeeded, minifigsFound: minifigsFound,
+            flags: flags, notes: finalNotes, verifiedAt: now
+        )
+    }
+
+    /// The most recent verification for a rebuild (for re-showing the report after a
+    /// force-quit/reopen), or nil if never verified.
+    public func latestVerification(_ rebuildSetId: String) async throws -> Verification? {
+        try await writer.read { db in
+            guard let row = try VerificationRecord
+                .filter(Column("rebuild_set_id") == rebuildSetId && Column("deleted") == false)
+                .order(Column("verified_at").desc)
+                .fetchOne(db)
+            else { return nil }
+            return Verification(
+                id: row.id, rebuildSetId: row.rebuildSetId, setItemId: row.setItemId, completionPct: row.completionPct,
+                partsNeeded: row.partsNeeded ?? 0, partsFound: row.partsFound ?? 0,
+                minifigsNeeded: row.minifigsNeeded ?? 0, minifigsFound: row.minifigsFound ?? 0,
+                flags: VerificationFlags.decode(row.flags), notes: row.notes, verifiedAt: row.verifiedAt
             )
         }
     }
