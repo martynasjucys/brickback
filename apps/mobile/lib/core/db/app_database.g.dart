@@ -762,6 +762,18 @@ class $RebuildPartsTable extends RebuildParts
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _stepQtyMeta = const VerificationMeta(
+    'stepQty',
+  );
+  @override
+  late final GeneratedColumn<int> stepQty = GeneratedColumn<int>(
+    'step_qty',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _partNameMeta = const VerificationMeta(
     'partName',
   );
@@ -909,6 +921,7 @@ class $RebuildPartsTable extends RebuildParts
     colorId,
     neededQty,
     haveQty,
+    stepQty,
     partName,
     partNum,
     partCatId,
@@ -974,6 +987,12 @@ class $RebuildPartsTable extends RebuildParts
       context.handle(
         _haveQtyMeta,
         haveQty.isAcceptableOrUnknown(data['have_qty']!, _haveQtyMeta),
+      );
+    }
+    if (data.containsKey('step_qty')) {
+      context.handle(
+        _stepQtyMeta,
+        stepQty.isAcceptableOrUnknown(data['step_qty']!, _stepQtyMeta),
       );
     }
     if (data.containsKey('part_name')) {
@@ -1080,6 +1099,10 @@ class $RebuildPartsTable extends RebuildParts
         DriftSqlType.int,
         data['${effectivePrefix}have_qty'],
       )!,
+      stepQty: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}step_qty'],
+      )!,
       partName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}part_name'],
@@ -1143,6 +1166,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
   final int colorId;
   final int neededQty;
   final int haveQty;
+  final int stepQty;
   final String partName;
   final String? partNum;
   final int? partCatId;
@@ -1161,6 +1185,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
     required this.colorId,
     required this.neededQty,
     required this.haveQty,
+    required this.stepQty,
     required this.partName,
     this.partNum,
     this.partCatId,
@@ -1182,6 +1207,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
     map['color_id'] = Variable<int>(colorId);
     map['needed_qty'] = Variable<int>(neededQty);
     map['have_qty'] = Variable<int>(haveQty);
+    map['step_qty'] = Variable<int>(stepQty);
     map['part_name'] = Variable<String>(partName);
     if (!nullToAbsent || partNum != null) {
       map['part_num'] = Variable<String>(partNum);
@@ -1220,6 +1246,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
       colorId: Value(colorId),
       neededQty: Value(neededQty),
       haveQty: Value(haveQty),
+      stepQty: Value(stepQty),
       partName: Value(partName),
       partNum: partNum == null && nullToAbsent
           ? const Value.absent()
@@ -1262,6 +1289,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
       colorId: serializer.fromJson<int>(json['colorId']),
       neededQty: serializer.fromJson<int>(json['neededQty']),
       haveQty: serializer.fromJson<int>(json['haveQty']),
+      stepQty: serializer.fromJson<int>(json['stepQty']),
       partName: serializer.fromJson<String>(json['partName']),
       partNum: serializer.fromJson<String?>(json['partNum']),
       partCatId: serializer.fromJson<int?>(json['partCatId']),
@@ -1285,6 +1313,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
       'colorId': serializer.toJson<int>(colorId),
       'neededQty': serializer.toJson<int>(neededQty),
       'haveQty': serializer.toJson<int>(haveQty),
+      'stepQty': serializer.toJson<int>(stepQty),
       'partName': serializer.toJson<String>(partName),
       'partNum': serializer.toJson<String?>(partNum),
       'partCatId': serializer.toJson<int?>(partCatId),
@@ -1306,6 +1335,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
     int? colorId,
     int? neededQty,
     int? haveQty,
+    int? stepQty,
     String? partName,
     Value<String?> partNum = const Value.absent(),
     Value<int?> partCatId = const Value.absent(),
@@ -1324,6 +1354,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
     colorId: colorId ?? this.colorId,
     neededQty: neededQty ?? this.neededQty,
     haveQty: haveQty ?? this.haveQty,
+    stepQty: stepQty ?? this.stepQty,
     partName: partName ?? this.partName,
     partNum: partNum.present ? partNum.value : this.partNum,
     partCatId: partCatId.present ? partCatId.value : this.partCatId,
@@ -1348,6 +1379,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
       colorId: data.colorId.present ? data.colorId.value : this.colorId,
       neededQty: data.neededQty.present ? data.neededQty.value : this.neededQty,
       haveQty: data.haveQty.present ? data.haveQty.value : this.haveQty,
+      stepQty: data.stepQty.present ? data.stepQty.value : this.stepQty,
       partName: data.partName.present ? data.partName.value : this.partName,
       partNum: data.partNum.present ? data.partNum.value : this.partNum,
       partCatId: data.partCatId.present ? data.partCatId.value : this.partCatId,
@@ -1373,6 +1405,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
           ..write('colorId: $colorId, ')
           ..write('neededQty: $neededQty, ')
           ..write('haveQty: $haveQty, ')
+          ..write('stepQty: $stepQty, ')
           ..write('partName: $partName, ')
           ..write('partNum: $partNum, ')
           ..write('partCatId: $partCatId, ')
@@ -1396,6 +1429,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
     colorId,
     neededQty,
     haveQty,
+    stepQty,
     partName,
     partNum,
     partCatId,
@@ -1418,6 +1452,7 @@ class RebuildPartRow extends DataClass implements Insertable<RebuildPartRow> {
           other.colorId == this.colorId &&
           other.neededQty == this.neededQty &&
           other.haveQty == this.haveQty &&
+          other.stepQty == this.stepQty &&
           other.partName == this.partName &&
           other.partNum == this.partNum &&
           other.partCatId == this.partCatId &&
@@ -1438,6 +1473,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
   final Value<int> colorId;
   final Value<int> neededQty;
   final Value<int> haveQty;
+  final Value<int> stepQty;
   final Value<String> partName;
   final Value<String?> partNum;
   final Value<int?> partCatId;
@@ -1457,6 +1493,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
     this.colorId = const Value.absent(),
     this.neededQty = const Value.absent(),
     this.haveQty = const Value.absent(),
+    this.stepQty = const Value.absent(),
     this.partName = const Value.absent(),
     this.partNum = const Value.absent(),
     this.partCatId = const Value.absent(),
@@ -1477,6 +1514,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
     required int colorId,
     this.neededQty = const Value.absent(),
     this.haveQty = const Value.absent(),
+    this.stepQty = const Value.absent(),
     this.partName = const Value.absent(),
     this.partNum = const Value.absent(),
     this.partCatId = const Value.absent(),
@@ -1499,6 +1537,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
     Expression<int>? colorId,
     Expression<int>? neededQty,
     Expression<int>? haveQty,
+    Expression<int>? stepQty,
     Expression<String>? partName,
     Expression<String>? partNum,
     Expression<int>? partCatId,
@@ -1519,6 +1558,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
       if (colorId != null) 'color_id': colorId,
       if (neededQty != null) 'needed_qty': neededQty,
       if (haveQty != null) 'have_qty': haveQty,
+      if (stepQty != null) 'step_qty': stepQty,
       if (partName != null) 'part_name': partName,
       if (partNum != null) 'part_num': partNum,
       if (partCatId != null) 'part_cat_id': partCatId,
@@ -1541,6 +1581,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
     Value<int>? colorId,
     Value<int>? neededQty,
     Value<int>? haveQty,
+    Value<int>? stepQty,
     Value<String>? partName,
     Value<String?>? partNum,
     Value<int?>? partCatId,
@@ -1561,6 +1602,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
       colorId: colorId ?? this.colorId,
       neededQty: neededQty ?? this.neededQty,
       haveQty: haveQty ?? this.haveQty,
+      stepQty: stepQty ?? this.stepQty,
       partName: partName ?? this.partName,
       partNum: partNum ?? this.partNum,
       partCatId: partCatId ?? this.partCatId,
@@ -1594,6 +1636,9 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
     }
     if (haveQty.present) {
       map['have_qty'] = Variable<int>(haveQty.value);
+    }
+    if (stepQty.present) {
+      map['step_qty'] = Variable<int>(stepQty.value);
     }
     if (partName.present) {
       map['part_name'] = Variable<String>(partName.value);
@@ -1645,6 +1690,7 @@ class RebuildPartsCompanion extends UpdateCompanion<RebuildPartRow> {
           ..write('colorId: $colorId, ')
           ..write('neededQty: $neededQty, ')
           ..write('haveQty: $haveQty, ')
+          ..write('stepQty: $stepQty, ')
           ..write('partName: $partName, ')
           ..write('partNum: $partNum, ')
           ..write('partCatId: $partCatId, ')
@@ -4149,6 +4195,7 @@ typedef $$RebuildPartsTableCreateCompanionBuilder =
       required int colorId,
       Value<int> neededQty,
       Value<int> haveQty,
+      Value<int> stepQty,
       Value<String> partName,
       Value<String?> partNum,
       Value<int?> partCatId,
@@ -4170,6 +4217,7 @@ typedef $$RebuildPartsTableUpdateCompanionBuilder =
       Value<int> colorId,
       Value<int> neededQty,
       Value<int> haveQty,
+      Value<int> stepQty,
       Value<String> partName,
       Value<String?> partNum,
       Value<int?> partCatId,
@@ -4216,6 +4264,11 @@ class $$RebuildPartsTableFilterComposer
 
   ColumnFilters<int> get haveQty => $composableBuilder(
     column: $table.haveQty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get stepQty => $composableBuilder(
+    column: $table.stepQty,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4314,6 +4367,11 @@ class $$RebuildPartsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get stepQty => $composableBuilder(
+    column: $table.stepQty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get partName => $composableBuilder(
     column: $table.partName,
     builder: (column) => ColumnOrderings(column),
@@ -4403,6 +4461,9 @@ class $$RebuildPartsTableAnnotationComposer
   GeneratedColumn<int> get haveQty =>
       $composableBuilder(column: $table.haveQty, builder: (column) => column);
 
+  GeneratedColumn<int> get stepQty =>
+      $composableBuilder(column: $table.stepQty, builder: (column) => column);
+
   GeneratedColumn<String> get partName =>
       $composableBuilder(column: $table.partName, builder: (column) => column);
 
@@ -4478,6 +4539,7 @@ class $$RebuildPartsTableTableManager
                 Value<int> colorId = const Value.absent(),
                 Value<int> neededQty = const Value.absent(),
                 Value<int> haveQty = const Value.absent(),
+                Value<int> stepQty = const Value.absent(),
                 Value<String> partName = const Value.absent(),
                 Value<String?> partNum = const Value.absent(),
                 Value<int?> partCatId = const Value.absent(),
@@ -4497,6 +4559,7 @@ class $$RebuildPartsTableTableManager
                 colorId: colorId,
                 neededQty: neededQty,
                 haveQty: haveQty,
+                stepQty: stepQty,
                 partName: partName,
                 partNum: partNum,
                 partCatId: partCatId,
@@ -4518,6 +4581,7 @@ class $$RebuildPartsTableTableManager
                 required int colorId,
                 Value<int> neededQty = const Value.absent(),
                 Value<int> haveQty = const Value.absent(),
+                Value<int> stepQty = const Value.absent(),
                 Value<String> partName = const Value.absent(),
                 Value<String?> partNum = const Value.absent(),
                 Value<int?> partCatId = const Value.absent(),
@@ -4537,6 +4601,7 @@ class $$RebuildPartsTableTableManager
                 colorId: colorId,
                 neededQty: neededQty,
                 haveQty: haveQty,
+                stepQty: stepQty,
                 partName: partName,
                 partNum: partNum,
                 partCatId: partCatId,

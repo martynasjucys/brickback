@@ -189,8 +189,6 @@ class _RebuildCard extends ConsumerWidget {
         onTap: () => context.push('/rebuild/${rebuild.id}'),
         child: Row(
           children: [
-            ProgressRing(value: rebuild.progress, size: 52, stroke: 6),
-            const SizedBox(width: AppSpacing.s12),
             SetThumb(imageUrl: rebuild.imageUrl, size: 48),
             const SizedBox(width: AppSpacing.s12),
             Expanded(
@@ -201,7 +199,7 @@ class _RebuildCard extends ConsumerWidget {
                     children: [
                       Flexible(
                         child: Text(rebuild.name,
-                            maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.h2),
+                            maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.title),
                       ),
                       if (rebuild.verified) ...[
                         const SizedBox(width: AppSpacing.s8),

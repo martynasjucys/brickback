@@ -86,9 +86,14 @@ void main() {
     await tester.pump();
     expect(find.textContaining('1 of 5 parts'), findsOneWidget);
 
-    // Switch to step +5 and tap again → capped at the needed qty (2), not 6.
+    // Give this part its OWN step of +5 via its detail sheet (long-press), then a
+    // single tile tap must cap at the needed qty (2), not jump to 6.
+    await tester.longPress(find.text('Brick 2x4'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('+5'));
     await tester.pump();
+    await tester.tapAt(const Offset(400, 20)); // dismiss the sheet via its scrim
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Brick 2x4'));
     await tester.pump();
     expect(find.textContaining('2 of 5 parts'), findsOneWidget);
@@ -105,12 +110,14 @@ void main() {
     expect(find.text('Brick 2x4'), findsNothing);
     expect(find.text('Plate 1x1'), findsOneWidget);
 
-    // Debounced write (~350 ms) lands in Drift.
+    // Debounced have-write (~350 ms) lands in Drift; the per-part step was
+    // persisted the moment it was chosen.
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
     final inv = await RebuildRepository(CatalogRepository('http://cdn.test'), db).detail('r1');
     expect(inv.have['10:1'], 2);
     expect(inv.haveTotal, 2);
+    expect(inv.step['10:1'], 5);
   });
 
   testWidgets('reopening restores counts from the snapshot', (tester) async {

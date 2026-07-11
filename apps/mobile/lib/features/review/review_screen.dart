@@ -325,27 +325,24 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         color: AppColors.card,
         border: Border(top: BorderSide(color: AppColors.line)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           if (inv.summary.verified) ...[
-            Expanded(
-              child: AppButton(
-                context.l10n.reviewViewReport,
-                icon: Icons.workspace_premium_outlined,
-                variant: AppButtonVariant.secondary,
-                expand: true,
-                onPressed: () => context.push('/report/${widget.rebuildSetId}'),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.s12),
-          ],
-          Expanded(
-            child: AppButton(
-              inv.summary.verified ? context.l10n.reviewReverify : context.l10n.reviewMarkAsVerified,
-              icon: Icons.verified_outlined,
+            AppButton(
+              context.l10n.reviewViewReport,
+              icon: Icons.workspace_premium_outlined,
+              variant: AppButtonVariant.secondary,
               expand: true,
-              onPressed: () => _markVerified(inv),
+              onPressed: () => context.push('/report/${widget.rebuildSetId}'),
             ),
+            const SizedBox(height: AppSpacing.s12),
+          ],
+          AppButton(
+            inv.summary.verified ? context.l10n.reviewReverify : context.l10n.reviewMarkAsVerified,
+            icon: Icons.verified_outlined,
+            expand: true,
+            onPressed: () => _markVerified(inv),
           ),
         ],
       ),

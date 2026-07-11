@@ -19,6 +19,11 @@ class _BrickBackAppState extends ConsumerState<BrickBackApp> with WidgetsBinding
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // Instantiate the sync controller at startup so its auth + premium listeners
+    // are live from launch — otherwise they only wire up on the first lifecycle
+    // callback and could miss the initial session restore or an early premium
+    // flip.
+    ref.read(syncControllerProvider);
   }
 
   @override

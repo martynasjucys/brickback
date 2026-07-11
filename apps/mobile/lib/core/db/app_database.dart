@@ -36,6 +36,9 @@ class RebuildParts extends Table {
   IntColumn get colorId => integer()(); // catalog colors.id
   IntColumn get neededQty => integer().withDefault(const Constant(0))();
   IntColumn get haveQty => integer().withDefault(const Constant(0))();
+  // Per-part tap increment for counting. Device-local UX helper (not in the
+  // cloud schema), so it's never marked dirty / synced. v3.
+  IntColumn get stepQty => integer().withDefault(const Constant(1))();
   // Metadata snapshot (taken from the catalog at add-time; enables offline UI)
   TextColumn get partName => text().withDefault(const Constant(''))();
   TextColumn get partNum => text().nullable()();
@@ -127,16 +130,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         // v1 -> v2: "group by type" + the extras (spares) list.
+        // v2 -> v3: per-part counting step.
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(rebuildParts, rebuildParts.categoryName);
             await m.createTable(rebuildExtraParts);
+          }
+          if (from < 3) {
+            await m.addColumn(rebuildParts, rebuildParts.stepQty);
           }
         },
       );

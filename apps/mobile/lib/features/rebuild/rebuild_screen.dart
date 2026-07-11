@@ -33,7 +33,7 @@ import 'rebuild_repository.dart';
 /// is **grouping parts into colour sections** (the snapshot carries `colorName`
 /// offline; `part_cat_id` has no name until Phase 3+), which mirrors how a builder
 /// sorts a real pile.
-const _stepOptions = [1, 5, 10, 25];
+const _stepOptions = [1, 5, 10, 20];
 
 class RebuildScreen extends ConsumerStatefulWidget {
   const RebuildScreen({super.key, required this.rebuildSetId});
@@ -54,11 +54,17 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   final Map<String, Timer> _extraTimers = {};
   final Map<String, ExpandedPart> _extraPending = {};
 
+  // Per-part tap increment, keyed '$partItemId:$colorId'. Loaded from the
+  // snapshot (persisted in Drift), edited in the part detail sheet. Missing
+  // key ⇒ default step of 1.
+  final Map<String, int> _stepFor = {};
+
   bool _initialized = false;
   bool _remainingOnly = false;
   bool _startingParty = false;
-  int _step = 1;
   RebuildInventory? _inv;
+
+  int _stepOf(ExpandedPart part) => _stepFor[part.key] ?? 1;
 
   @override
   void initState() {
@@ -144,7 +150,7 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
     });
   }
 
-  /// Tap a tile to add the current step, capped at needed. Light bump when the
+  /// Tap a tile to add that part's step, capped at needed. Light bump when the
   /// part is already complete; a satisfying medium impact when a tap finishes it.
   void _tapPart(ExpandedPart part) {
     final have = _have[part.key] ?? 0;
@@ -152,9 +158,18 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
       HapticFeedback.lightImpact();
       return;
     }
-    final next = (have + _step).clamp(0, part.neededQty);
+    final next = (have + _stepOf(part)).clamp(0, part.neededQty);
     _setHave(part, next);
     if (next >= part.neededQty) HapticFeedback.mediumImpact();
+  }
+
+  /// Persist a part's per-tap step (edited from the detail sheet). Device-local
+  /// only, so it's written straight through — no debounce, no dirty/sync.
+  void _setStepFor(ExpandedPart part, int step) {
+    setState(() => _stepFor[part.key] = step);
+    ref
+        .read(rebuildRepositoryProvider)
+        .setPartStep(widget.rebuildSetId, part.partItemId, part.colorId, step);
   }
 
   /// Live-set an extra/spare part's "found" count, debounced to Drift. Mirrors
@@ -178,7 +193,8 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
       HapticFeedback.lightImpact();
       return;
     }
-    final next = (have + _step).clamp(0, part.neededQty);
+    // Extras have no detail sheet, so no per-part step — always count by one.
+    final next = (have + 1).clamp(0, part.neededQty);
     _setExtraHave(part, next);
     if (next >= part.neededQty) HapticFeedback.mediumImpact();
   }
@@ -248,9 +264,9 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
       builder: (_) => _PartDetailSheet(
         part: p,
         initialHave: _have[p.key] ?? 0,
-        step: _step,
+        step: _stepOf(p),
         onChanged: (q) => _setHave(p, q),
-        onStepChanged: (s) => setState(() => _step = s),
+        onStepChanged: (s) => _setStepFor(p, s),
       ),
     );
   }
@@ -314,6 +330,7 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
               _inv = inv;
               for (final p in inv.parts) {
                 _have[p.key] = inv.have[p.key] ?? 0;
+                _stepFor[p.key] = inv.step[p.key] ?? 1;
               }
               for (final e in inv.extras) {
                 _extraHave[e.key] = inv.extraHave[e.key] ?? 0;
@@ -352,12 +369,7 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
             children: [
               _BackButton(onTap: _onBack),
               const Spacer(),
-              AppButton(
-                context.l10n.countReview,
-                icon: Icons.flag_outlined,
-                variant: AppButtonVariant.secondary,
-                onPressed: _onReview,
-              ),
+              _CircleButton(icon: Icons.flag_outlined, onTap: _onReview),
               const SizedBox(width: AppSpacing.s8),
               if (_startingParty)
                 const SizedBox(
@@ -426,22 +438,6 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
                   ],
                 ),
               ),
-            ],
-          ),
-        ),
-        // Step selector
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.s12),
-          child: Row(
-            children: [
-              Text(context.l10n.countStep, style: AppText.caption),
-              const SizedBox(width: AppSpacing.s8),
-              ..._stepOptions.map((s) => Padding(
-                    padding: const EdgeInsets.only(right: AppSpacing.s8),
-                    child: _StepChip(
-                        value: s, selected: _step == s, onTap: () => setState(() => _step = s)),
-                  )),
             ],
           ),
         ),

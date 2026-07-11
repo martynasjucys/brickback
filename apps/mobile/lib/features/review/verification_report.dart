@@ -133,27 +133,24 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.s20),
-                        Row(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            Expanded(
-                              child: AppButton(
-                                context.l10n.reportShareImage,
-                                icon: Icons.image_outlined,
-                                variant: AppButtonVariant.secondary,
-                                expand: true,
-                                loading: _busy,
-                                onPressed: _shareImage,
-                              ),
+                            AppButton(
+                              context.l10n.reportShareImage,
+                              icon: Icons.image_outlined,
+                              variant: AppButtonVariant.secondary,
+                              expand: true,
+                              loading: _busy,
+                              onPressed: _shareImage,
                             ),
-                            const SizedBox(width: AppSpacing.s12),
-                            Expanded(
-                              child: AppButton(
-                                context.l10n.reportSharePdf,
-                                icon: Icons.picture_as_pdf_outlined,
-                                expand: true,
-                                loading: _busy,
-                                onPressed: _sharePdf,
-                              ),
+                            const SizedBox(height: AppSpacing.s12),
+                            AppButton(
+                              context.l10n.reportSharePdf,
+                              icon: Icons.picture_as_pdf_outlined,
+                              expand: true,
+                              loading: _busy,
+                              onPressed: _sharePdf,
                             ),
                           ],
                         ),

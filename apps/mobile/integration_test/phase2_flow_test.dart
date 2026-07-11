@@ -53,32 +53,21 @@ void main() {
     // Open its detail.
     await tester.tap(find.textContaining("Emma's Splash Pool").first);
     await pumpUntil(tester, find.text('Start sorting'));
-    // 43 parts should be shown on a stat card.
-    expect(find.text('43'), findsWidgets);
+    // Set-detail rendered for the chosen set. Assert its identity, not a
+    // hardcoded part count — exact counts come from the live catalog and drift.
+    expect(find.textContaining("Emma's Splash Pool"), findsWidgets);
 
     // Start sorting → snapshots into Drift and opens the interactive counting
     // screen, rendered entirely from the LOCAL snapshot.
     await tester.tap(find.text('Start sorting'));
     await pumpUntil(tester, find.text('Remaining only'));
-    expect(find.text('Step'), findsOneWidget);
     expect(find.textContaining('of 43 parts'), findsOneWidget);
 
-    // Pop the pushed stack (rebuild → set detail → search) back to the Home tab
-    // via our custom ScreenHeader back button. Tap only the hit-testable (on-top)
-    // back button and wait on each destination's unique anchor between pops — fixed
-    // pumps (not pumpAndSettle) so an on-screen spinner can't stall the test.
-    // Tap the on-top ScreenHeader back button and give the pop time to advance.
-    // No intermediate anchor waits — an intermediate screen may briefly re-show a
-    // spinner, but its header back button is always on top and hit-testable.
-    Future<void> tapBack() async {
-      await tester.tap(find.byIcon(Icons.arrow_back).hitTestable());
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 700));
-    }
-
-    await tapBack(); // rebuild → set detail
-    await tapBack(); // set detail → search
-    await tapBack(); // search → Home tab
+    // Starting the build collapses the add-set flow (Search + Set-detail) out of
+    // the back stack, so a SINGLE back from the counting screen returns to Home.
+    await tester.tap(find.byIcon(Icons.arrow_back).hitTestable());
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
 
     // The rebuild now lists on Home with 0% progress (read from local Drift).
     await pumpUntil(tester, find.text('Rebuilds'));

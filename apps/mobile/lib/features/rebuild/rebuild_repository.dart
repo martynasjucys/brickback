@@ -311,6 +311,7 @@ class RebuildRepository {
         ),
     ];
     final have = {for (final p in partRows) '${p.partItemId}:${p.colorId}': p.haveQty};
+    final step = {for (final p in partRows) '${p.partItemId}:${p.colorId}': p.stepQty};
     final extras = [
       for (final e in extraRows)
         ExpandedPart(
@@ -356,10 +357,24 @@ class RebuildRepository {
       summary: summary,
       parts: parts,
       have: have,
+      step: step,
       minifigs: minifigs,
       extras: extras,
       extraHave: extraHave,
     );
+  }
+
+  /// Set a part's per-tap counting step. Device-local UX only — NOT part of the
+  /// cloud schema, so the row is deliberately left un-`dirty` (no sync push) and
+  /// `updatedAt` is untouched (no spurious last-write-wins bump).
+  Future<void> setPartStep(String rebuildSetId, int partItemId, int colorId, int step) async {
+    final clamped = step.clamp(1, 100000);
+    await (_db.update(_db.rebuildParts)
+          ..where((t) =>
+              t.rebuildSetId.equals(rebuildSetId) &
+              t.partItemId.equals(partItemId) &
+              t.colorId.equals(colorId)))
+        .write(RebuildPartsCompanion(stepQty: Value(clamped)));
   }
 
   /// Absolute-write an extra/spare part's "found" count. Device-local only (the

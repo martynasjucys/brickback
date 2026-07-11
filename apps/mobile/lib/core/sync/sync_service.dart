@@ -310,7 +310,9 @@ class SyncService {
 /// listener) lives in [syncControllerProvider], not the constructor, so tests
 /// can subclass this without pulling in Supabase.
 class SyncController {
-  SyncController(this._ref);
+  SyncController(this._ref, {SyncService? service, bool Function()? isSignedIn})
+      : _service = service,
+        _isSignedIn = isSignedIn;
   final Ref _ref;
   Timer? _debounce;
   Timer? _periodic;
@@ -318,7 +320,13 @@ class SyncController {
   bool _pendingEnable = false;
   SyncService? _service;
 
-  bool get _signedIn => userClient.auth.currentSession != null;
+  // Test seam (the class is intentionally driveable without Supabase): overrides
+  // the live session check so the gating + trigger logic can be exercised without
+  // an authenticated client.
+  final bool Function()? _isSignedIn;
+
+  bool get _signedIn => (_isSignedIn ?? _defaultSignedIn)();
+  static bool _defaultSignedIn() => userClient.auth.currentSession != null;
   bool get _enabled => _signedIn && _ref.read(isPremiumProvider);
 
   SyncService _sync() => _service ??= SyncService(
@@ -334,6 +342,22 @@ class SyncController {
     if (!_signedIn) return;
     await _ref.read(entitlementControllerProvider.notifier).refresh();
     if (!_ref.read(isPremiumProvider)) return;
+    if (_pendingEnable) {
+      _pendingEnable = false;
+      await _guard(() => _sync().markAllDirty());
+    }
+    await syncNow();
+  }
+
+  /// Premium just turned ON (a purchase completing, or the debug unlock) while
+  /// the user is ALREADY signed in. [onAuthChanged] only fires on auth changes,
+  /// so without reacting to the entitlement flip here the first pull would wait
+  /// for an app resume or a manual "Sync now". Uploads existing local work on a
+  /// first enable, then pulls cloud state — so a returning user's sets appear on
+  /// their own. No-op until signed-in + premium (idempotent; the `syncNow` guard
+  /// coalesces with any concurrent auth-change sync).
+  Future<void> onPremiumEnabled() async {
+    if (!_enabled) return;
     if (_pendingEnable) {
       _pendingEnable = false;
       await _guard(() => _sync().markAllDirty());
@@ -402,6 +426,13 @@ final syncControllerProvider = Provider<SyncController>((ref) {
   // Re-sync whenever auth flips (sign-in uploads local work; token refresh is a
   // cheap no-op when already synced).
   ref.listen(authStateProvider, (_, _) => controller.onAuthChanged());
+  // Premium turning ON is itself a sync trigger. Enabling sync while already
+  // signed in (a purchase completing, or the debug unlock) changes no auth
+  // state, so without this the first pull would wait for a manual "Sync now" or
+  // an app resume.
+  ref.listen(isPremiumProvider, (prev, next) {
+    if (next && prev != true) controller.onPremiumEnabled();
+  });
   ref.onDispose(controller.dispose);
   return controller;
 });

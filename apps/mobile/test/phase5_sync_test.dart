@@ -6,9 +6,11 @@
 // tombstone propagation, verification sync, and the first-premium markAllDirty.
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:drift/native.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:brickback/core/db/app_database.dart';
+import 'package:brickback/core/entitlement.dart';
 import 'package:brickback/core/sync/sync_remote.dart';
 import 'package:brickback/core/sync/sync_service.dart';
 import 'package:brickback/features/catalog/catalog_models.dart';
@@ -344,6 +346,82 @@ void main() {
       await a.service.markAllDirty();
       expect(await a.dirtySets(), 1);
       expect(await a.dirtyParts(), 2);
+    });
+  });
+
+  // The reported bug: a returning user signs in on a fresh device, their sets are
+  // in the cloud, but nothing appears until they press "Sync now". `SyncController`
+  // only reacted to auth changes, not to premium turning ON while already signed
+  // in — so enabling premium now triggers a pull on its own.
+  group('premium enable auto-syncs (controller)', () {
+    test('turning premium on while signed in pulls the cloud sets — no manual sync',
+        () async {
+      final remote = _FakeRemote();
+
+      // A previously-synced device seeds the cloud with the user's set + counts.
+      final seed = _Device.create(remote);
+      addTearDown(seed.db.close);
+      final id = await seed.repo.addSet(42);
+      await seed.repo.setPartHave(id, 10, 1, 2);
+      await seed.service.fullSync();
+
+      // A fresh device: empty local DB, its own controller (signed-in seam on).
+      final localDb = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(localDb.close);
+      final localRepo = RebuildRepository(_FakeCatalog(), localDb);
+      final localService = SyncService(localDb, localRepo, remote);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final ctrlProvider = Provider<SyncController>(
+        (ref) => SyncController(ref, service: localService, isSignedIn: () => true),
+      );
+
+      // Fresh device is empty even though the cloud already has the set.
+      expect(await localRepo.listSummaries(), isEmpty);
+
+      // Not premium yet → enabling is a no-op (mirrors the free-tier gate).
+      await container.read(ctrlProvider).onPremiumEnabled();
+      expect(await localRepo.listSummaries(), isEmpty);
+
+      // Premium flips on → the controller pulls cloud state without a manual sync.
+      container.read(debugForcePremiumProvider.notifier).set(true);
+      await container.read(ctrlProvider).onPremiumEnabled();
+
+      expect((await localRepo.listSummaries()).length, 1);
+      final inv = await localRepo.detail(id);
+      expect(inv.summary.name, 'Fake Set'); // metadata re-derived from the catalog
+      expect(inv.have['10:1'], 2); // have-counts pulled from the cloud
+    });
+
+    test('first enable uploads existing local-only work, then converges', () async {
+      final remote = _FakeRemote();
+
+      // A fresh device that already has local work done offline (all dirty).
+      final localDb = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(localDb.close);
+      final localRepo = RebuildRepository(_FakeCatalog(), localDb);
+      final localService = SyncService(localDb, localRepo, remote);
+      final id = await localRepo.addSet(42);
+      await localRepo.setPartHave(id, 10, 1, 1);
+
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final ctrlProvider = Provider<SyncController>(
+        (ref) => SyncController(ref, service: localService, isSignedIn: () => true),
+      );
+      final ctrl = container.read(ctrlProvider);
+
+      // The enable flow marks the next enable as a first-time upload.
+      ctrl.requestEnableSync();
+      container.read(debugForcePremiumProvider.notifier).set(true);
+
+      await ctrl.onPremiumEnabled();
+
+      // Local work reached the cloud (markAllDirty + push ran on enable).
+      expect(remote.sets.length, 1);
+      expect(remote.parts.length, 2);
+      expect(remote.parts['$id|10|1']!['have_qty'], 1);
     });
   });
 }

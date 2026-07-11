@@ -141,6 +141,7 @@ class RebuildInventory {
     required this.parts,
     required this.have,
     required this.minifigs,
+    this.step = const {},
     this.extras = const [],
     this.extraHave = const {},
   });
@@ -148,6 +149,12 @@ class RebuildInventory {
   final RebuildSummary summary;
   final List<ExpandedPart> parts;
   final Map<String, int> have; // key -> have_qty
+
+  /// Per-part tap increment ("step"), keyed by [ExpandedPart.key]. Each part
+  /// carries its own step so bulk pieces (e.g. Technic pins) count 10/20 at a
+  /// tap while a one-off brick counts by 1. Missing key ⇒ default step of 1.
+  final Map<String, int> step;
+
   final List<RebuildMinifigLine> minifigs;
 
   /// The set's spare / extra parts (needed side). A countable bonus that is

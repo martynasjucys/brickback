@@ -173,7 +173,13 @@ class _StartSortingButtonState extends ConsumerState<_StartSortingButton> {
       // Clear loading before navigating: push() keeps this screen mounted, so
       // otherwise the button stays stuck spinning when the user pops back here.
       setState(() => _loading = false);
-      context.push('/rebuild/$id');
+      // Starting the build ends the "add set" flow, so collapse it out of the
+      // back stack: reset to Home, then push the build. Back from counting now
+      // returns straight to Home instead of walking back through Set-detail →
+      // Search. (Both go() and push() apply in one frame — no Home flash.)
+      final router = GoRouter.of(context);
+      router.go('/');
+      router.push('/rebuild/$id');
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
