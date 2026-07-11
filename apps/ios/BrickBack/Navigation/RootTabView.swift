@@ -52,7 +52,7 @@ struct RouteView: View {
         case .setMinifigs(let id):
             SetMinifigsScreen(itemId: id)
         case .rebuild(let id):
-            PlaceholderScreen(title: "Counting", note: "The tap-to-count grid lands in S3.\n(\(id))", router: env.homeRouter)
+            RebuildView(rebuildSetId: id)
         case .review(let id):
             PlaceholderScreen(title: "Review", note: "Review + verify lands in S4.\n(\(id))", router: env.homeRouter)
         case .report(let id):

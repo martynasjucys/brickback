@@ -3,7 +3,7 @@ import Foundation
 /// One (part, colour) line — the "needed" side of a rebuild. Sourced from the catalog
 /// `expand_set_parts` RPC at add-time and then snapshotted into GRDB, so it round-trips from
 /// either the catalog (add) or local storage (offline UI). Port of `rebuild_models.dart`.
-public struct ExpandedPart: Sendable, Hashable {
+public struct ExpandedPart: Sendable, Hashable, Identifiable {
     public let partItemId: Int // catalog parts.item_id
     public let colorId: Int // catalog colors.id
     public let neededQty: Int
@@ -37,8 +37,10 @@ public struct ExpandedPart: Sendable, Hashable {
     }
 
     /// Part identity within a rebuild — the whatabrick convention (`partItemId:colorId`),
-    /// reused verbatim so progress math and the wanted-list export line up.
+    /// reused verbatim so progress math and the wanted-list export line up. Also serves as the
+    /// `Identifiable` id (unique among a set's parts).
     public var key: String { "\(partItemId):\(colorId)" }
+    public var id: String { key }
 }
 
 /// One minifig line for a rebuild (verified separately from parts in S4).

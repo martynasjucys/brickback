@@ -5,19 +5,22 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S2** (catalog & set selection).
-**Current state:** S0–S2 are **code-complete and verified**. S2 adds the full read-only
-catalog path + the one online write of the app (`addSet` → local snapshot). The whole flow was
-driven on the iPhone 17 Pro simulator (via `idb`): empty Home → **Add set** → search **"3931"**
-finds **Emma's Splash Pool** → set detail shows **43 parts / 26 unique / 1 minifig** (theme
-"Friends" resolved, image loaded via Nuke) → the unique-parts list (26 rows, sorted by colour,
-real thumbnails + swatches) and minifig list render → **Start sorting** snapshots into GRDB and
-opens the counting screen (S3 placeholder), collapsing the add-flow so **Back returns straight
-to Home** → Home lists the rebuild at **0 / 43 · 0%** → **swipe-to-remove** tombstones it and
-the live `ValueObservation` empties the list. **8 unit tests pass** via `swift test` (the S1 six
-+ two new: `addSet` snapshots the expected row counts/`totalParts`/dirty flags, and duplicate
-copies auto-number `#1 / #2`). Build is green (`xcodebuild`, no real warnings). The sync engine
-is present but **gated OFF** until S5. Ready to start **S3** (interactive tap-to-count grid).
+**Last updated:** end of **S3** (inventory collection — the core loop).
+**Current state:** S0–S3 are **code-complete and verified**. S3 is the heart of the app: an
+interactive **tap-to-count grid** that reads and writes the local snapshot only — **zero
+network during counting**. Driven end-to-end on the iPhone 17 Pro sim (`idb`): Start sorting →
+the counting screen renders from the GRDB snapshot with **colour sections** (swatch + per-section
+`have/needed`), a live **ProgressRing**, real part images (Nuke), and **"0 of 43 parts · 26
+types"**; tapping the flower tile 3× drives it to **3/3** (green fill + check), the ring to
+**7%**, and the header to "3 of 43"; **Remaining only** hides completed sections; the **view
+settings** sheet re-sections the grid (Color → Progress → Remaining/Complete) and toggles extras;
+long-press opens the **part-detail sheet** (−/＋/clear stepper, {1,5,10,20} step selector, View
+on BrickLink, disabled price/3D slots). A full app relaunch **restored 4 / 43 · 9%** from GRDB —
+proving the ~350 ms debounced writes land and the snapshot rehydrates. **18 unit tests pass**
+(the S2 eight + ten new: tap-cap, the four groupings, section visibility, setPartHave↔detail
+round-trip, extras excluded from completion + clamp, session-only step, BrickLink URLs). Build
+green, no warnings. Sync engine still **gated OFF** until S5. Ready to start **S4** (review &
+verification — the MVP-complete gate).
 
 ---
 
@@ -26,8 +29,8 @@ is present but **gated OFF** until S5. Ready to start **S3** (interactive tap-to
 - [x] **S0 — Project & tooling bootstrap** ✅ (done, verified)
 - [x] **S1 — Core: clients, local store, shell, sync skeleton** ✅ (done, verified)
 - [x] **S2 — Catalog & set selection** ✅ (done, verified)
-- [ ] **S3 — Inventory collection (core loop)** ← NEXT
-- [ ] S4 — Review & verification — **MVP complete gate**
+- [x] **S3 — Inventory collection (core loop)** ✅ (done, verified)
+- [ ] **S4 — Review & verification — MVP complete gate** ← NEXT
 - [ ] S5 — Auth & cloud sync (turns the sync engine ON)
 - [ ] S6 — Party mode
 - [ ] S7 — Design polish & i18n
@@ -162,6 +165,44 @@ is present but **gated OFF** until S5. Ready to start **S3** (interactive tap-to
 
 ---
 
+## What's built (S3)
+
+### Counting domain (`BrickBackKit/Rebuild/Counting.swift`, `Support/BrickLink.swift`)
+- Pure, unit-tested helpers the grid is built on (ports `_buildGroups` / `_PartGroup` / the
+  tap-cap): `PartGrouping {color,category,status,none}`, `tapIncrement(current:step:needed:)`
+  (never over-counts), `PartSection` (+ `haveIn` / `visible`), `partSections(_:grouping:have:)`
+  (the dynamic Progress split reads live `have`), and `extrasSection`. A **documented exception**
+  to "BrickBackKit is string-free": the few fallback section titles (All parts / Unknown / Other /
+  Remaining / Complete) live here as English, moving to the String Catalog in S7.
+- `BrickLink.url(...)` / `hasLink(...)` — part-page deep link, else search-by-part-number.
+- `ExpandedPart` is now `Identifiable` (`id == key`) so it drives `.sheet(item:)`.
+- **No new persistence:** `detail` / `setPartHave` / `setExtraHave` were already ported in S1;
+  there is **no `setPartStep`** and `RebuildInventory` has **no `step`** field — the per-part step
+  is view-model session state, never GRDB (00-architecture §5).
+
+### Counting UI (`BrickBack/Features/Rebuild`)
+- `RebuildViewModel` (`@Observable @MainActor`) — the session source of truth: live `have` /
+  `extraHave` maps + the **in-memory `step` map** (default 1, discarded on teardown). Each edit
+  is optimistic in memory and **debounced ~350 ms** to GRDB via a per-key `Task`; `flush()` awaits
+  all pending writes and is called from the back button, `.onDisappear`, and scenePhase
+  `.background` (force-quit safety). Haptics map: selection tick per count, medium impact on
+  finishing a part, light on touching a done one.
+- `RebuildView` — header (back + flag→review, search, settings; **party deferred to S6**), the
+  `ProgressRing` + "N of M parts · K types" + **Remaining only** toggle, and a `ScrollView` of
+  `LazyVGrid` sections (`.adaptive` columns ≈ Flutter's `maxCrossAxisExtent 176`). Groups are
+  computed **at render time** from `partSections(...)`; the extras section renders below when
+  enabled.
+- `PartTile` — image-forward, colour-coded neutral → amber → green, check badge when complete.
+  **Tap vs long-press uses `LongPressGesture.exclusively(before: TapGesture)`** — the naive
+  `onTapGesture`+`onLongPressGesture` pair let a held press leak through as a tap (a real bug
+  caught on-device). `PartDetailSheet` / `PartSearchSheet` / `ViewSettingsSheet` round out the
+  sheets; grouping + show-extras persist via `@AppStorage` (keys `rebuild_grouping` /
+  `rebuild_show_extras`), degrading to defaults.
+- `RouteView` `.rebuild(id)` now renders `RebuildView` (the S2 placeholder is gone). The
+  continue-rebuilding strip on Home (added in S2) now lights up once a rebuild has progress.
+
+---
+
 ## How to build / test / run
 
 ```sh
@@ -179,26 +220,34 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
 
 ---
 
-## Acceptance (parity vs. Flutter Phase 2) — all met
+## Acceptance (parity vs. Flutter Phase 3) — all met
 
-- The full e2e reproduced on-device (iPhone 17 Pro sim, driven with `idb`): empty Home →
-  **Add set** → search **"3931"** → *Emma's Splash Pool* → set detail **43 parts / 26 unique /
-  1 minifig** → parts + minifig preview lists → **Start sorting** snapshots into GRDB → Home
-  lists at **0 / 43 · 0%**. ✅ (screenshots in the S2 session scratchpad)
-- **Start sorting collapses the add-flow:** Back from the counting screen returns to Home (not
-  Set-detail → Search), via `homeRouter.popToRoot()` + push. ✅
-- **Swipe-to-remove** tombstones the rebuild; the live `ValueObservation` empties the list. ✅
-- **Offline-capable by construction:** Home's list + `detail()` read GRDB only (never the
-  network) — the online catalog is touched *only* at add-time. Proven by the `addSet` unit test
-  writing the snapshot into an in-memory DB via a fake `CatalogReader`. ✅
-- `swift test` green (**8 tests**); `xcodebuild build` green, no real warnings. ✅
+- Counting screen renders **from the local snapshot** with colour sections, ProgressRing, and
+  "0 of 43 parts · 26 types". ✅
+- **Tap = +step, capped at needed;** tapping the flower 3× → 3/3 (green + check), ring 7%,
+  header "3 of 43". A completed part can't be pushed over needed (`tapIncrement` unit test). ✅
+- **Remaining only** hides completed sections; **view settings** re-sections the grid
+  (Color → Progress) and toggles extras (correct "has extras" body text). ✅
+- **Part-detail sheet** (long-press) shows the stepper, {1,5,10,20} step selector, View on
+  BrickLink, and disabled price/3D slots. ✅
+- **Debounced write + restore:** a full app relaunch rehydrated **4 / 43 · 9%** from GRDB; unit
+  test confirms `setPartHave` → `detail().have["10:1"] == 2`, `haveTotal == 2`. ✅
+- **Extras excluded from completion** (unit test: all build parts done ⇒ `complete == true`
+  regardless of extras; `setExtraHave` clamps + persists). ✅
+- **Zero network during counting** — the screen only reads/writes GRDB. ✅
+- `swift test` green (**18 tests**); `xcodebuild build` green, no warnings. ✅
 
 ---
 
 ## Notes / gotchas for the next session
 
-- **`step_qty` divergence:** no such column and no v3 migration — this is intentional, not an
-  omission (00-architecture §5). The counting step is view-model session state in **S3 (next)**.
+- **`step_qty` divergence:** no such column and no v3 migration — intentional (00-architecture
+  §5). Confirmed live in S3: the per-part step lives only in `RebuildViewModel.step` (default 1,
+  reset when the set is left); `RebuildInventory` has no `step` field and there is no `setPartStep`.
+- **Tap-vs-long-press:** use `LongPressGesture.exclusively(before: TapGesture)`, **not**
+  `onTapGesture` + `onLongPressGesture` together — the latter lets a held press fire as a tap
+  (caught on-device: a "long-press to open detail" incremented the count instead). Applies to any
+  future dual-gesture tile/row.
 - **Search is client-authored, not `CatalogReader`:** `search`/`setDetail` live on the concrete
   `SupabaseCatalogRepository` (exposed via `AppServices`), mirroring the Dart split where the
   narrow `CatalogReader` interface only carries what sync/rebuild re-derive from the catalog.
@@ -213,7 +262,11 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
   (points, not pixels — iPhone 17 Pro is 402×874 @3x). `idb ui text` types into the *focused*
   field only, which is why `SearchField` autofocus had to be implemented for the flow to work.
 - **`Package.resolved` is committed** so a clean checkout resolves the same GRDB/supabase/Nuke pins.
-- **S3 kick-off:** the local snapshot (parts/minifigs/extras + `have`) and the absolute-write
-  counting methods (`setPartHave` / `setMinifigHave` / `setExtraHave`) are already ported and
-  live; S3 mainly builds the tap-to-count grid, the in-memory per-part step, live progress, and
-  the group-by / extras view settings on top of `RebuildRepository.detail()` + `observeSummaries()`.
+- **Party (S6) header button is not present yet:** S3 ships flag→review, search, settings only,
+  and the review flag pushes the S4 `.review` placeholder. The party action lands in S6.
+- **S4 kick-off:** all the review math is **already live** on `RebuildInventory` (`partsFound`,
+  `missingParts`, `minifigs*`, completion %) and `RebuildView`'s flag button already pushes
+  `.review(id)`. S4 builds the review/verification screen (completion %, missing-parts list,
+  minifig verify), the verification report (image + PDF via `ImageRenderer`), the
+  verification-save (a new `verifications` write + `rebuild_sets.verified_at`), and the BrickLink
+  wanted-list export — on top of the already-ported `MissingPart` / `exportable` model.

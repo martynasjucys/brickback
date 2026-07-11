@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0D5C055584BE845CE4CBC670 /* PartTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131E5602E9431B332DB867CA /* PartTile.swift */; };
+		14082D1E143615AD4B225E32 /* RebuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633A02930FB4ED5237080558 /* RebuildView.swift */; };
 		160D46A66951553CC219CC0A /* SetMinifigsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */; };
 		1DFD1A6DD1A7AF4836E1E624 /* SetPartsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */; };
 		2FC8F508BDECF73CC7ACFD1B /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE4EB6806C761C92697613C /* Tokens.swift */; };
@@ -20,6 +22,8 @@
 		78789B2601298A40834D26B5 /* SetDetailScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E48BBE99662AC79AEF9234 /* SetDetailScreen.swift */; };
 		8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */; };
 		8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */; };
+		985E4A255F8481457FEEE914 /* RebuildViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F5ED8D19C4D353161ED70E6 /* RebuildViewModel.swift */; };
+		99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */; };
 		A91D9A694B815864A9BD05AA /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD035666999A65E898B62A56 /* RootTabView.swift */; };
 		BDF07383BD8F1CBFF6D32038 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E67D880D540AC55894A7181 /* Assets.xcassets */; };
 		D06B4D0AA92EFFDA9369ADA8 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40FC2187EFE55CB24A51F26D /* AppEnvironment.swift */; };
@@ -31,13 +35,17 @@
 
 /* Begin PBXFileReference section */
 		00D4288FA2862F3E617CC288 /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
+		131E5602E9431B332DB867CA /* PartTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartTile.swift; sourceTree = "<group>"; };
 		19546E50D1239498DD1FD16F /* SearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchScreen.swift; sourceTree = "<group>"; };
 		2FE4EB6806C761C92697613C /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
 		3D98D4CE1547F6E63C370DAD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
+		3F5ED8D19C4D353161ED70E6 /* RebuildViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebuildViewModel.swift; sourceTree = "<group>"; };
 		40FC2187EFE55CB24A51F26D /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		4BEBD2CD0AC3D40FE747EA67 /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		4E67D880D540AC55894A7181 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebuildSheets.swift; sourceTree = "<group>"; };
+		633A02930FB4ED5237080558 /* RebuildView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebuildView.swift; sourceTree = "<group>"; };
 		6E8302E6B9A35EBB0E738D71 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetPartsScreen.swift; sourceTree = "<group>"; };
 		78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetMinifigsScreen.swift; sourceTree = "<group>"; };
@@ -77,6 +85,7 @@
 				4045556352AACDCAA94A8C37 /* DesignGallery */,
 				551279A56588F3224315D40E /* Home */,
 				873AB8EB932A8A2F0B57B843 /* Profile */,
+				F2B7CA336B2960FD98CB3E13 /* Rebuild */,
 				4A4F4157E18DF9F4F1AAB1DA /* Search */,
 			);
 			path = Features;
@@ -221,6 +230,17 @@
 			name = Packages;
 			sourceTree = "<group>";
 		};
+		F2B7CA336B2960FD98CB3E13 /* Rebuild */ = {
+			isa = PBXGroup;
+			children = (
+				131E5602E9431B332DB867CA /* PartTile.swift */,
+				5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */,
+				633A02930FB4ED5237080558 /* RebuildView.swift */,
+				3F5ED8D19C4D353161ED70E6 /* RebuildViewModel.swift */,
+			);
+			path = Rebuild;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -307,8 +327,12 @@
 				48BBE177AB19B8083847AA5E /* HomeScreen.swift in Sources */,
 				65853DBC6CB06DAAAA0352CF /* HomeViewModel.swift in Sources */,
 				3B6353D1E9EDF116BE67F70A /* LoadState.swift in Sources */,
+				0D5C055584BE845CE4CBC670 /* PartTile.swift in Sources */,
 				72FE95F5F8E4A6E620284A5A /* Primitives.swift in Sources */,
 				8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */,
+				99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */,
+				14082D1E143615AD4B225E32 /* RebuildView.swift in Sources */,
+				985E4A255F8481457FEEE914 /* RebuildViewModel.swift in Sources */,
 				A91D9A694B815864A9BD05AA /* RootTabView.swift in Sources */,
 				70EAE9ABC9B80E7515FFC4BF /* Router.swift in Sources */,
 				F5090E2878FCDC4C8EE33082 /* SearchScreen.swift in Sources */,
