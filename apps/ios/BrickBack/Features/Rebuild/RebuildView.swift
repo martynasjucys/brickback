@@ -4,7 +4,8 @@ import BrickBackKit
 /// The core loop — interactive tap-to-count inventory (`.rebuild(id)`). Fully offline &
 /// local-first: reads the snapshotted checklist from GRDB, the session `have` map is the live
 /// source of truth, and writes are debounced (flushed on leave/background). Port of
-/// `RebuildScreen`. Party (S6) and Review (S4) header actions are stubbed for now.
+/// `RebuildScreen`. The flag button flushes then opens the S4 review; the party (S6) action is
+/// still stubbed.
 struct RebuildView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.scenePhase) private var scenePhase

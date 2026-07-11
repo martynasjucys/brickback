@@ -5,22 +5,27 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S3** (inventory collection — the core loop).
-**Current state:** S0–S3 are **code-complete and verified**. S3 is the heart of the app: an
-interactive **tap-to-count grid** that reads and writes the local snapshot only — **zero
-network during counting**. Driven end-to-end on the iPhone 17 Pro sim (`idb`): Start sorting →
-the counting screen renders from the GRDB snapshot with **colour sections** (swatch + per-section
-`have/needed`), a live **ProgressRing**, real part images (Nuke), and **"0 of 43 parts · 26
-types"**; tapping the flower tile 3× drives it to **3/3** (green fill + check), the ring to
-**7%**, and the header to "3 of 43"; **Remaining only** hides completed sections; the **view
-settings** sheet re-sections the grid (Color → Progress → Remaining/Complete) and toggles extras;
-long-press opens the **part-detail sheet** (−/＋/clear stepper, {1,5,10,20} step selector, View
-on BrickLink, disabled price/3D slots). A full app relaunch **restored 4 / 43 · 9%** from GRDB —
-proving the ~350 ms debounced writes land and the snapshot rehydrates. **18 unit tests pass**
-(the S2 eight + ten new: tap-cap, the four groupings, section visibility, setPartHave↔detail
-round-trip, extras excluded from completion + clamp, session-only step, BrickLink URLs). Build
-green, no warnings. Sync engine still **gated OFF** until S5. Ready to start **S4** (review &
-verification — the MVP-complete gate).
+**Last updated:** end of **S4** (review & verification — **MVP complete**).
+**Current state:** S0–S4 are **code-complete and verified**. **S4 closes the MVP**: `.review(id)`
+renders completion %, the exact **missing-parts list** (biggest shortfall first, tap → BrickLink),
+inline **minifig verification**, a **wanted-list XML** share, and a **Mark as verified** sheet that
+records a `verifications` row + stamps `rebuild_sets.verified_at`; `.report(id)` renders the
+certificate and exports it as a **@3× PNG** and a **printable A4 PDF** off the same SwiftUI view via
+`ImageRenderer`. All review math is local, off the same GRDB snapshot the counting screen uses, so
+the numbers line up exactly. Driven end-to-end on the iPhone 17 Pro sim (`idb`): flag → Review shows
+**"4 of 43 parts found · 24 types still missing"** (9% ring), the **Emma** minifig row (present
+toggle → **1/1** green + derived "Minifigures included"), and the shortfall list (need 5, 4, 4, 3,
+2…); **Mark as verified** (Box + Instructions ticked) → the certificate renders with the real set
+image, the **"9% · 39 parts missing"** badge, `Parts found 4 / 43`, `Minifigures 1 / 1`, the flag
+checklist, and **Verified 11 Jul 2026 · Verified with BrickBack**; **Share PDF** produced a valid
+**972 KB A4 PDF**; back on **Home** the card now shows the green **"Verified"** badge (proving the
+stamp landed + `ValueObservation` re-emitted). **26 unit tests pass** (the S3 eighteen + eight new:
+missing-parts math == ring, wanted-list XML with BL-id/part-num fallback + unmapped-part footnote,
+fully-counted → empty list + 100%, minifig rollup separate from parts, `saveVerification` →
+`latestVerification` round-trip with trimmed notes + `verified_at` stamp, flags JSON codec, XML
+builder edge cases, `Verification` getters). Build green, no warnings. Sync engine still **gated
+OFF** until S5 — but the `verifications` row is already `dirty` for the S5 mirror. Ready to start
+**S5** (auth & cloud sync — turns the sync engine ON).
 
 ---
 
@@ -30,8 +35,8 @@ verification — the MVP-complete gate).
 - [x] **S1 — Core: clients, local store, shell, sync skeleton** ✅ (done, verified)
 - [x] **S2 — Catalog & set selection** ✅ (done, verified)
 - [x] **S3 — Inventory collection (core loop)** ✅ (done, verified)
-- [ ] **S4 — Review & verification — MVP complete gate** ← NEXT
-- [ ] S5 — Auth & cloud sync (turns the sync engine ON)
+- [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
+- [ ] **S5 — Auth & cloud sync (turns the sync engine ON)** ← NEXT
 - [ ] S6 — Party mode
 - [ ] S7 — Design polish & i18n
 - [ ] S8 — Launch / App Store
@@ -203,6 +208,50 @@ verification — the MVP-complete gate).
 
 ---
 
+## What's built (S4)
+
+### Verification domain (`BrickBackKit`)
+- `Rebuild/Verification.swift` — **`VerificationFlags`** (Codable; box / instructions / stickers +
+  derived `all_parts` / `minifigs`, JSON keys matching the cloud schema, tolerant `decode`) and the
+  **`Verification`** domain model (id, counts, decoded flags, notes, verifiedAt + `partsMissing` /
+  `partsComplete` / `minifigsComplete` / `pctLabel` getters). Named `Verification` to avoid a
+  collision with the pre-existing GRDB storage record `VerificationRecord` (both port the one Dart
+  `VerificationRecord`). `MissingPart` (+ `.exportable`) and the `RebuildInventory.missingParts`
+  getter already shipped in the S1/S3 models.
+- `Support/WantedList.swift` — `WantedList.buildWantedListXML(_:)` + `WantedItem`. **Verbatim port**
+  of `wanted_list.dart` (`<ITEMID>` = BL part id else part number, `<COLOR>` omitted when unknown,
+  `<MINQTY>` = shortfall; XML-escaped).
+- `RebuildRepository` gained the three S4 helpers: **`wantedListXml(_:)`** (maps `missingParts` →
+  `WantedItem`s), **`saveVerification(...)`** (insert a `verifications` row **and** stamp
+  `rebuild_sets.verified_at` in **one transaction**, both `dirty`; notes trimmed; returns a
+  `Verification`), and **`latestVerification(_:)`** (newest non-deleted row → `Verification`). The
+  `verifications` table + GRDB `VerificationRecord` + `verified_at` column already existed (S1
+  schema); `setMinifigHave` was already ported in S1.
+
+### Review + report UI (`BrickBack/Features/Review`)
+- `ReviewViewModel` (`@Observable @MainActor`) — reads the snapshot once; holds the live minifig
+  `have` map (each toggle writes **straight to GRDB**, no debounce — minifigs are few) + `onNudge`
+  to keep Home live; `markVerified(...)` derives the two count-flags and calls `saveVerification`.
+- `ReviewView` — header (back + **share** the wanted-list XML, shown only when parts are missing),
+  the completion **summary card** (ring == counting ring, "N of M parts found", complete/missing
+  types line), the **minifig section** (present/absent toggle for needed×1, ±stepper for needed>1),
+  the **missing-parts list** (thumbnail, colour swatch, `need N`, tap → BrickLink), the "not
+  exportable" footnote, and the bottom bar (**Mark as verified** / **Re-verify** + **View report**
+  once verified). `MarkVerifiedSheet` (box/instructions/stickers flags + notes) → `markVerified` →
+  push `.report`.
+- `ReportViewModel` + `ReportView` + `VerificationReportCard` — the certificate (INVENTORY
+  VERIFICATION header + seal, set image, name, completion badge, parts/minifig stats, the flag
+  checklist, date, notes, "Verified with BrickBack"). `ReportViewModel` **pre-fetches the set image
+  into a `UIImage`** (via `URLSession`) so the off-screen `ImageRenderer` bakes it into the export —
+  a plain `LazyImage` wouldn't have loaded off-screen. Both exports come from the **same** card:
+  `renderer.scale = 3` → `uiImage` PNG, and an `ImageRenderer.renderedPDF` extension (`render` →
+  `UIGraphicsPDFRenderer`, one A4 page, fit-to-margins, vector) so print matches the shared image.
+- `ShareSheet.swift` — `ActivityView` (`UIActivityViewController` bridge) presented via
+  `.sheet(item:)` (avoids the iPad popover-anchor issue) + `safeFileStem`. Used for the XML and the
+  report PNG/PDF. `RouteView` `.review`/`.report` now render the real screens (placeholders gone).
+
+---
+
 ## How to build / test / run
 
 ```sh
@@ -220,22 +269,26 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
 
 ---
 
-## Acceptance (parity vs. Flutter Phase 3) — all met
+## Acceptance (parity vs. Flutter Phase 4) — all met · **MVP complete**
 
-- Counting screen renders **from the local snapshot** with colour sections, ProgressRing, and
-  "0 of 43 parts · 26 types". ✅
-- **Tap = +step, capped at needed;** tapping the flower 3× → 3/3 (green + check), ring 7%,
-  header "3 of 43". A completed part can't be pushed over needed (`tapIncrement` unit test). ✅
-- **Remaining only** hides completed sections; **view settings** re-sections the grid
-  (Color → Progress) and toggles extras (correct "has extras" body text). ✅
-- **Part-detail sheet** (long-press) shows the stepper, {1,5,10,20} step selector, View on
-  BrickLink, and disabled price/3D slots. ✅
-- **Debounced write + restore:** a full app relaunch rehydrated **4 / 43 · 9%** from GRDB; unit
-  test confirms `setPartHave` → `detail().have["10:1"] == 2`, `haveTotal == 2`. ✅
-- **Extras excluded from completion** (unit test: all build parts done ⇒ `complete == true`
-  regardless of extras; `setExtraHave` clamps + persists). ✅
-- **Zero network during counting** — the screen only reads/writes GRDB. ✅
-- `swift test` green (**18 tests**); `xcodebuild build` green, no warnings. ✅
+- **Completion % == the counting ring:** review reads `inv.progress` off the same snapshot; live
+  sim showed a 9% ring + "4 of 43 parts found" matching the counting screen (unit test:
+  `progress == 1/6`). ✅
+- **Missing-parts list:** shortfall per still-short part, complete parts excluded, sorted biggest
+  first, unmapped part surfaced (not dropped) with a "not exportable" footnote — unit-tested + seen
+  live (need 5, 4, 4, 3, 2…). ✅
+- **Wanted-list XML:** BL part id or part-number fallback as `<ITEMID>`, colour omitted when
+  unknown, unmapped part absent; fully-counted rebuild → no `<ITEM>` (unit-tested). ✅
+- **Minifig verification rolls up separately from parts:** present toggle drove Emma 0/1 → 1/1
+  (green) and set the derived "Minifigures included" flag, while parts stayed 9% (unit test:
+  `minifigsComplete` independent of `complete`). ✅
+- **Mark verified persists + report renders:** `saveVerification` wrote the `verifications` row
+  (notes trimmed) + stamped `verified_at` in one txn; `latestVerification` reads it back
+  (unit-tested); live Home shows the green **"Verified"** badge; the certificate rendered with the
+  set image, "9% · 39 parts missing" badge, `4 / 43`, `1 / 1`, the flag checklist, and the date. ✅
+- **Share-as-image + printable PDF** off the **same** SwiftUI card via `ImageRenderer` (@3× PNG +
+  A4 PDF); **Share PDF produced a valid 972 KB A4 document** in the system share sheet. ✅
+- `swift test` green (**26 tests**); `xcodebuild build` green, no warnings. ✅
 
 ---
 
@@ -262,11 +315,26 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
   (points, not pixels — iPhone 17 Pro is 402×874 @3x). `idb ui text` types into the *focused*
   field only, which is why `SearchField` autofocus had to be implemented for the flow to work.
 - **`Package.resolved` is committed** so a clean checkout resolves the same GRDB/supabase/Nuke pins.
-- **Party (S6) header button is not present yet:** S3 ships flag→review, search, settings only,
-  and the review flag pushes the S4 `.review` placeholder. The party action lands in S6.
-- **S4 kick-off:** all the review math is **already live** on `RebuildInventory` (`partsFound`,
-  `missingParts`, `minifigs*`, completion %) and `RebuildView`'s flag button already pushes
-  `.review(id)`. S4 builds the review/verification screen (completion %, missing-parts list,
-  minifig verify), the verification report (image + PDF via `ImageRenderer`), the
-  verification-save (a new `verifications` write + `rebuild_sets.verified_at`), and the BrickLink
-  wanted-list export — on top of the already-ported `MissingPart` / `exportable` model.
+- **Party (S6) header button is not present yet:** the counting header ships flag→review, search,
+  settings only. The party action lands in S6.
+- **Two `VerificationRecord`s, on purpose:** the GRDB **storage** record is `VerificationRecord`
+  (in `Records.swift`, `flags` as a raw JSON string, used by sync); the **domain** model the repo
+  returns is `Verification` (in `Verification.swift`, `flags` decoded to `VerificationFlags`). Both
+  port the single Dart `VerificationRecord`; the rename dodges the name clash and keeps the SwiftUI
+  layer off GRDB. The `flags` string is package-agnostic end-to-end (sync passes it through), so the
+  S5 cloud mirror needs no change.
+- **`ImageRenderer` off-screen sizing + async images:** the report card is rendered at a **fixed
+  `.frame(width: 360)`** so its off-screen layout is deterministic; `ReportViewModel` **pre-fetches
+  the set image into a `UIImage`** because a `LazyImage`/`AsyncImage` wouldn't have loaded when
+  `ImageRenderer` captures. PNG uses `renderer.scale = 3`; the A4 PDF uses the `renderedPDF`
+  extension (`render` → `UIGraphicsPDFRenderer`), which must be `@MainActor` (like `render`).
+- **Share sheet:** use `ActivityView` (a `UIActivityViewController` bridge) via `.sheet(item:)`,
+  **not** a bare activity controller — the sheet presentation handles the iPad popover anchor. One
+  minor stale-state note: after saving, we **push** `.report` on top of `.review`; popping back to
+  review shows the pre-verify bottom bar until the screen is re-entered (its VM `load()` is
+  once-only). Harmless for MVP; revisit if review needs to reflect a just-saved verification inline.
+- **S5 kick-off:** the sync engine is **fully ported and gated OFF** (`isPremium` closure returns
+  false). S4 already writes `verifications` + `rebuild_sets.verified_at` rows as `dirty`, so once
+  S5 flips the gate (auth + entitlement), the existing `SyncService.pushVerifications` /
+  `pullVerifications` carry them to the cloud with no data-layer change. S5 builds native sign-in
+  sheets, the entitlement read, and the first-enable `markAllDirty` path (all skeletoned in S1).
