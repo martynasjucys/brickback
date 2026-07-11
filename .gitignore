@@ -3,6 +3,17 @@
 .env.*
 !.env.example
 
+# iOS / Xcode (native Swift app at apps/ios)
+apps/ios/BrickBack.xcodeproj/xcuserdata/
+apps/ios/BrickBack.xcodeproj/project.xcworkspace/xcuserdata/
+apps/ios/**/xcuserdata/
+apps/ios/DerivedData/
+apps/ios/build/
+apps/ios/.build/
+apps/ios/**/.build/
+apps/ios/BrickBack/Config/Secrets.xcconfig
+!apps/ios/BrickBack/Config/Secrets.xcconfig.example
+
 # Flutter / Dart
 apps/mobile/build/
 apps/mobile/.dart_tool/

@@ -1,0 +1,45 @@
+import Foundation
+import Supabase
+
+/// The composition root for the domain/data layer — the "providers root" from
+/// 00-architecture §4/§7. Builds both Supabase clients and every repository once, keeping
+/// GRDB and supabase-swift **entirely inside this package**: the SwiftUI app holds an
+/// `AppServices` and never imports either SDK.
+///
+/// Two clients, never conflated (00-architecture §7):
+/// - `catalogClient` — anon, session-less, read-only LEGO catalog (whatabrick project).
+/// - `userClient`    — auth-bearing; auth + premium cloud sync (BrickBack user project).
+public final class AppServices: @unchecked Sendable {
+    public let config: AppConfig
+    public let db: AppDatabase
+
+    private let userClient: SupabaseClient
+    private let catalogClient: SupabaseClient
+    private let catalogRepo: SupabaseCatalogRepository
+
+    public var catalog: CatalogReader { catalogRepo }
+    public let rebuild: RebuildRepository
+    public let auth: AuthRepository
+    public let entitlement: EntitlementService
+    public let syncService: SyncService
+
+    public init(config: AppConfig, db: AppDatabase? = nil) throws {
+        self.config = config
+        self.db = try db ?? AppDatabase.live()
+
+        self.userClient = SupabaseClient(supabaseURL: config.userSupabaseURL, supabaseKey: config.userSupabaseAnonKey)
+        self.catalogClient = SupabaseClient(supabaseURL: config.catalogSupabaseURL, supabaseKey: config.catalogSupabaseAnonKey)
+
+        let images = ImageResolver(cdnURL: config.cdnURL)
+        self.catalogRepo = SupabaseCatalogRepository(client: catalogClient, images: images)
+        self.rebuild = RebuildRepository(catalog: catalogRepo, db: self.db)
+        self.auth = AuthRepository(client: userClient)
+        self.entitlement = EntitlementService(client: userClient)
+        self.syncService = SyncService(db: self.db, rebuild: rebuild, remote: SupabaseSyncRemote(client: userClient))
+    }
+
+    /// Prove the anon catalog client end-to-end on device (the Flutter "Catalog OK · …" check).
+    public func smokeReadSetName() async throws -> String? {
+        try await catalogRepo.smokeReadSetName()
+    }
+}

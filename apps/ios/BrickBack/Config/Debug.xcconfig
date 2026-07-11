@@ -1,0 +1,7 @@
+#include "Shared.xcconfig"
+// Optional so a fresh checkout still parses; AppConfig then fails fast at launch.
+#include? "Secrets.xcconfig"
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) DEBUG
+SWIFT_OPTIMIZATION_LEVEL = -Onone
+ONLY_ACTIVE_ARCH = YES

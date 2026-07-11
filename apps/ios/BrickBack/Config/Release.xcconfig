@@ -1,0 +1,4 @@
+#include "Shared.xcconfig"
+#include? "Secrets.xcconfig"
+
+SWIFT_OPTIMIZATION_LEVEL = -O

@@ -1,0 +1,13 @@
+// Shared build config — committed. Non-secret defaults only.
+//
+// The five publishable config values below default to EMPTY here and are overridden
+// by the gitignored Secrets.xcconfig (generated from apps/mobile/.env). If Secrets is
+// missing, Info.plist substitution yields empty strings and AppConfig fails fast at
+// launch with a clear message (ports the Env._req guard from env.dart). Publishable
+// keys only — never a server secret.
+
+USER_SUPABASE_URL =
+USER_SUPABASE_ANON_KEY =
+CATALOG_SUPABASE_URL =
+CATALOG_SUPABASE_ANON_KEY =
+CDN_URL =
