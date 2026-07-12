@@ -1,74 +1,27 @@
 import SwiftUI
 
-/// The two-tab wireframe shell (Rebuilds + Profile), each with its own `NavigationStack`.
-/// Replaces go_router's `StatefulShellRoute` (00-architecture §4).
+/// The two-tab shell (Rebuilds + Profile), each with its own `NavigationStack`. Replaces
+/// go_router's `StatefulShellRoute` (00-architecture §4). Adding a set now lives in the Home
+/// header (search + scan), so there's no separate bottom add control.
 struct RootTabView: View {
     @Environment(AppEnvironment.self) private var env
     @State private var selection = 0
-
-    /// The add-set pill belongs to the Rebuilds list — show it only on that tab's root, not on
-    /// Profile or any pushed screen (search, counting, review…).
-    private var showAddSet: Bool { selection == 0 && env.homeRouter.path.isEmpty }
 
     var body: some View {
         TabView(selection: $selection) {
             TabNavigation(router: env.homeRouter) { HomeScreen() }
                 .tag(0)
-                .tabItem { Label("Rebuilds", systemImage: "square.grid.2x2") }
+                // Stacked-bricks glyph: monochrome template when inactive, red/green/blue-filled
+                // (RebuildsActive, rendered original) when this tab is selected.
+                .tabItem { Label("Rebuilds", image: selection == 0 ? "RebuildsActive" : "RebuildsTab") }
 
             TabNavigation(router: env.profileRouter) { ProfileScreen() }
                 .tag(1)
-                .tabItem { Label("Profile", systemImage: "person") }
+                // LEGO-minifig head: monochrome template when inactive, yellow-filled
+                // (ProfileActive) when this tab is selected.
+                .tabItem { Label("Profile", image: selection == 1 ? "ProfileActive" : "LegoHead") }
         }
         .tint(AppColors.ink)
-        // A quick-add control that reads as part of the bottom navigation: a separate pill,
-        // trailing-aligned inline with the tab bar, in the same glass style (the iOS 26
-        // detached-button pattern) rather than a free-floating FAB.
-        .overlay(alignment: .bottomTrailing) {
-            if showAddSet {
-                AddSetPill { env.homeRouter.push(.search) }
-                    .padding(.trailing, AppSpacing.screen)
-                    .padding(.bottom, AppSpacing.s20)
-                    // The tab bar floats down into the home-indicator safe area; nudge the pill
-                    // to match so the two sit on the same line.
-                    .offset(y: 28)
-                    .transition(.opacity)
-            }
-        }
-        .animation(.easeOut(duration: 0.2), value: showAddSet)
-    }
-}
-
-/// Circular "add a set" control that sits beside the tab bar, matching its material. Uses the
-/// native Liquid Glass on iOS 26, degrading to a translucent material on the iOS 17 floor.
-private struct AddSetPill: View {
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            Image(systemName: "plus")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(AppColors.ink)
-                .frame(width: 56, height: 56)
-                .contentShape(Circle())
-        }
-        .buttonStyle(PressableStyle())
-        .modifier(NavPillBackground())
-        .accessibilityLabel("Add a set")
-    }
-}
-
-/// The tab-bar-matching pill surface, factored out so the `#available` split stays in one place.
-private struct NavPillBackground: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.glassEffect(.regular, in: Circle())
-        } else {
-            content
-                .background(.regularMaterial, in: Circle())
-                .overlay(Circle().stroke(AppColors.line.opacity(0.5), lineWidth: 0.5))
-                .shadow(color: AppColors.ink.opacity(0.12), radius: 8, y: 2)
-        }
     }
 }
 

@@ -1,12 +1,41 @@
 import SwiftUI
 import NukeUI
 
-/// Wireframe primitive views. Token-driven, no default chrome. Re-skinned to the brand in S7
-/// without changing their public API. Ports of `widgets/primitives.dart`.
+/// Branded primitive views (S7). Token-driven, no default chrome. The public API is unchanged
+/// from the S1 wireframe versions — this pass swaps their internals for the LEGO-toy identity:
+/// every interactive surface is a **brick plate** (`BrickSurface`) that sits raised on a darker
+/// bottom lip and clicks down when pressed.
+
+// MARK: - BrickSurface (the signature)
+
+/// A raised "brick plate": a rounded, continuous-corner face sitting `depth` points above a
+/// darker `edge` lip — the app's core surface treatment. When `pressed`, the face travels down
+/// onto its lip (the satisfying "click into place"), while the overall height stays constant so
+/// layout never shifts. Drive `pressed` from a `ButtonStyle` for tappable surfaces.
+struct BrickSurface<Content: View>: View {
+    var fill: Color
+    var edge: Color
+    var radius: CGFloat = AppRadius.lg
+    var depth: CGFloat = AppDepth.brick
+    var pressed: Bool = false
+    var stroke: Color? = nil // optional hairline around the face (defines white plates on cream)
+    @ViewBuilder var content: () -> Content
+
+    private var shape: RoundedRectangle { RoundedRectangle(cornerRadius: radius, style: .continuous) }
+
+    var body: some View {
+        content()
+            .background(shape.fill(fill))
+            .overlay { if let stroke { shape.strokeBorder(stroke, lineWidth: 1).offset(y: pressed ? depth : 0) } }
+            .offset(y: pressed ? depth : 0)
+            .padding(.bottom, depth)
+            .background(shape.fill(edge)) // the lip: full height, stays put
+    }
+}
 
 // MARK: - Pressable
 
-/// Scale-on-press button style (replaces InkWell; no splash).
+/// Scale-on-press button style (kept for content that isn't a brick — thumbnails, icon taps).
 struct PressableStyle: ButtonStyle {
     var scale: CGFloat = 0.97
     func makeBody(configuration: Configuration) -> some View {
@@ -29,6 +58,50 @@ struct Pressable<Content: View>: View {
         } else {
             content()
         }
+    }
+}
+
+// MARK: - BrickButtonStyle
+
+/// Presents a button's label on a `BrickSurface` that clicks down when pressed. `ghost` skips the
+/// plate and just dims. Springy so the press reads as physical.
+struct BrickButtonStyle: ButtonStyle {
+    var fill: Color
+    var edge: Color
+    var radius: CGFloat = AppRadius.md
+    var depth: CGFloat = AppDepth.tile
+    var stroke: Color? = nil
+    var ghost: Bool = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        Group {
+            if ghost {
+                configuration.label.opacity(configuration.isPressed ? 0.55 : 1)
+            } else {
+                BrickSurface(fill: fill, edge: edge, radius: radius, depth: depth,
+                             pressed: configuration.isPressed, stroke: stroke) {
+                    configuration.label
+                }
+            }
+        }
+        .animation(.spring(response: 0.16, dampingFraction: 0.62), value: configuration.isPressed)
+    }
+}
+
+// MARK: - BrickBackWordmark
+
+/// The app wordmark — chunky rounded white caps, sized to sit on the brand-blue header.
+struct BrickBackWordmark: View {
+    var size: CGFloat = 30
+
+    var body: some View {
+        Text("BRICKBACK")
+            .font(.system(size: size, weight: .black, design: .rounded))
+            .tracking(0.5)
+            .foregroundStyle(.white)
+            .shadow(color: AppColors.brandEdge.opacity(0.6), radius: 0, y: 1.5) // subtle brick emboss
+            .accessibilityLabel("BrickBack")
+            .accessibilityAddTraits(.isHeader)
     }
 }
 
@@ -55,11 +128,13 @@ struct AppButton: View {
 
     private var isPrimary: Bool { variant == .primary }
     private var isGhost: Bool { variant == .ghost }
-    private var bg: Color { isPrimary ? AppColors.primary : (isGhost ? .clear : AppColors.card) }
+    private var bg: Color { isPrimary ? AppColors.primary : AppColors.card }
+    private var edge: Color { isPrimary ? AppColors.primaryEdge : AppColors.cardEdge }
+    private var stroke: Color? { (isPrimary || isGhost) ? nil : AppColors.line }
     private var fg: Color { isPrimary ? AppColors.onPrimary : AppColors.ink }
 
     var body: some View {
-        Pressable(onTap: loading ? nil : onTap) {
+        Button(action: { if !loading { onTap?() } }) {
             HStack(spacing: 8) {
                 if loading {
                     ProgressView()
@@ -69,7 +144,7 @@ struct AppButton: View {
                         .frame(width: 16, height: 16)
                 } else {
                     if let icon {
-                        Image(systemName: icon).font(.system(size: 18, weight: .semibold)).foregroundStyle(fg)
+                        Image(systemName: icon).font(.system(size: 18, weight: .bold)).foregroundStyle(fg)
                     }
                     Text(label).font(AppText.label).foregroundStyle(fg)
                 }
@@ -77,13 +152,9 @@ struct AppButton: View {
             .frame(maxWidth: expand ? .infinity : nil)
             .padding(.horizontal, AppSpacing.s20)
             .padding(.vertical, AppSpacing.s12)
-            .background(bg)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-            .overlay(
-                RoundedRectangle(cornerRadius: AppRadius.md)
-                    .stroke(isPrimary ? AppColors.primary : AppColors.line, lineWidth: isGhost ? 0 : 1)
-            )
         }
+        .buttonStyle(BrickButtonStyle(fill: bg, edge: edge, radius: AppRadius.md, stroke: stroke, ghost: isGhost))
+        .disabled(loading)
     }
 }
 
@@ -94,17 +165,20 @@ struct AppCard<Content: View>: View {
     var onTap: (() -> Void)?
     @ViewBuilder var content: () -> Content
 
-    var body: some View {
-        let card = content()
+    private var body_: some View {
+        content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(AppColors.card)
-            .clipShape(RoundedRectangle(cornerRadius: AppRadius.lg))
-            .overlay(RoundedRectangle(cornerRadius: AppRadius.lg).stroke(AppColors.line, lineWidth: 1))
+    }
+
+    var body: some View {
         if let onTap {
-            Pressable(onTap: onTap) { card }
+            Button(action: onTap) { body_ }
+                .buttonStyle(BrickButtonStyle(fill: AppColors.card, edge: AppColors.cardEdge,
+                                              radius: AppRadius.lg, depth: AppDepth.brick, stroke: AppColors.line))
         } else {
-            card
+            BrickSurface(fill: AppColors.card, edge: AppColors.cardEdge, radius: AppRadius.lg,
+                         depth: AppDepth.brick, stroke: AppColors.line) { body_ }
         }
     }
 }
@@ -122,13 +196,13 @@ struct AppBadge: View {
 
     var body: some View {
         Text(text)
-            .font(AppText.caption.weight(.semibold))
+            .font(.system(size: 11, weight: .bold, design: .rounded))
             .foregroundStyle(color)
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 9)
             .padding(.vertical, 3)
-            .background(color.opacity(0.10))
+            .background(color.opacity(0.12))
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(color.opacity(0.35), lineWidth: 1))
+            .overlay(Capsule().stroke(color.opacity(0.30), lineWidth: 1))
     }
 }
 
@@ -151,7 +225,12 @@ struct ScreenHeader<Trailing: View>: View {
         HStack(alignment: .center, spacing: AppSpacing.s8) {
             if let onBack {
                 Pressable(onTap: onBack) {
-                    Image(systemName: "arrow.left").foregroundStyle(AppColors.ink)
+                    Image(systemName: "arrow.left")
+                        .font(.system(size: 17, weight: .bold))
+                        .foregroundStyle(AppColors.ink)
+                        .frame(width: 36, height: 36)
+                        .background(Circle().fill(AppColors.card))
+                        .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
                 }
             }
             VStack(alignment: .leading, spacing: 2) {
@@ -186,16 +265,21 @@ struct EmptyState<Action: View>: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Image(systemName: icon).font(.system(size: 40)).foregroundStyle(AppColors.muted)
-            Spacer().frame(height: AppSpacing.s16)
-            Text(title).font(AppText.title).foregroundStyle(AppColors.ink).multilineTextAlignment(.center)
+            // Icon on a soft brand-yellow round plate — the empty state's one spot of colour.
+            Image(systemName: icon)
+                .font(.system(size: 34, weight: .semibold))
+                .foregroundStyle(AppColors.brandDeep)
+                .frame(width: 84, height: 84)
+                .background(Circle().fill(AppColors.brand.opacity(0.18)))
+            Spacer().frame(height: AppSpacing.s20)
+            Text(title).font(AppText.h2).foregroundStyle(AppColors.ink).multilineTextAlignment(.center)
             if let message {
                 Spacer().frame(height: AppSpacing.s8)
-                Text(message).font(AppText.caption).foregroundStyle(AppColors.inkSoft).multilineTextAlignment(.center)
+                Text(message).font(AppText.body).foregroundStyle(AppColors.inkSoft).multilineTextAlignment(.center)
             }
             let a = action()
             if !(a is EmptyView) {
-                Spacer().frame(height: AppSpacing.s20)
+                Spacer().frame(height: AppSpacing.s24)
                 a
             }
         }
@@ -216,8 +300,8 @@ struct AppProgressBar: View {
             ZStack(alignment: .leading) {
                 Capsule().fill(AppColors.faint)
                 Capsule()
-                    .fill(v >= 1 ? AppColors.success : AppColors.primary)
-                    .frame(width: max(geo.size.width * v, v == 0 ? 0 : 2))
+                    .fill(v >= 1 ? AppColors.success : AppColors.info)
+                    .frame(width: max(geo.size.width * v, v == 0 ? 0 : height))
             }
         }
         .frame(height: height)
@@ -238,10 +322,10 @@ struct ProgressRing: View {
             Circle().stroke(AppColors.faint, lineWidth: stroke)
             Circle()
                 .trim(from: 0, to: v)
-                .stroke(v >= 1 ? AppColors.success : AppColors.primary, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
+                .stroke(v >= 1 ? AppColors.success : AppColors.info, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int((v * 100).rounded()))%")
-                .font(AppText.caption.weight(.bold))
+                .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
                 .foregroundStyle(AppColors.ink)
         }
         .frame(width: size, height: size)
@@ -262,7 +346,9 @@ struct SetThumb: View {
     private var placeholder: some View {
         ZStack {
             AppColors.faint
-            Text(label ?? "[img]").font(AppText.caption).foregroundStyle(AppColors.muted)
+            Image(systemName: "cube.box")
+                .font(.system(size: size * 0.34))
+                .foregroundStyle(AppColors.muted)
         }
         .frame(width: size, height: size)
     }
@@ -284,7 +370,8 @@ struct SetThumb: View {
             }
         }
         .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: radius))
+        .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(AppColors.line, lineWidth: 1))
     }
 }
 
@@ -297,20 +384,25 @@ struct SearchField: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").font(.system(size: 18)).foregroundStyle(AppColors.muted)
-            TextField(hint, text: $text)
-                .font(AppText.body)
-                .foregroundStyle(AppColors.ink)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .tint(AppColors.ink)
-                .focused($focused)
-            if !text.isEmpty {
-                Pressable(onTap: { text = "" }) {
-                    Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(AppColors.muted)
+        BrickSurface(fill: AppColors.card, edge: AppColors.cardEdge, radius: AppRadius.md,
+                     depth: AppDepth.tile, stroke: AppColors.line) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").font(.system(size: 18, weight: .semibold)).foregroundStyle(AppColors.muted)
+                TextField(hint, text: $text)
+                    .font(AppText.body)
+                    .foregroundStyle(AppColors.ink)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .tint(AppColors.primary)
+                    .focused($focused)
+                if !text.isEmpty {
+                    Pressable(onTap: { text = "" }) {
+                        Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(AppColors.muted)
+                    }
                 }
             }
+            .padding(.horizontal, AppSpacing.s12)
+            .padding(.vertical, AppSpacing.s12)
         }
         .onAppear {
             // Raise the keyboard on first appear when requested (the Dart `autofocus: true`).
@@ -320,10 +412,5 @@ struct SearchField: View {
                 focused = true
             }
         }
-        .padding(.horizontal, AppSpacing.s12)
-        .padding(.vertical, AppSpacing.s12)
-        .background(AppColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
-        .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.line, lineWidth: 1))
     }
 }

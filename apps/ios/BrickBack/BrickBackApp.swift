@@ -27,6 +27,9 @@ struct BrickBackApp: App {
                 .environment(env)
                 .tint(AppColors.ink)
                 .background(AppColors.canvas)
+                // The branded palette is light-only for now; the full dark-mode pass (incl. a
+                // proper per-screen status-bar style over the blue header) is the rest of S7.
+                .preferredColorScheme(.light)
                 .task { env.startSyncWiring() }
                 // OAuth/OTP deep-link return (com.brickback://login-callback): supabase-swift
                 // runs the PKCE exchange and emits on the auth-change stream.
