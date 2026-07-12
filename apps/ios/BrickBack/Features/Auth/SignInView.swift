@@ -15,6 +15,8 @@ struct SignInView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.colorScheme) private var colorScheme
 
+    @Environment(\.activeRouter) private var activeRouter
+
     @State private var email = ""
     @State private var busy: String?      // in-flight action: "apple" | "google" | "email"
     @State private var errorMessage: String?
@@ -22,7 +24,9 @@ struct SignInView: View {
     /// Raw nonce for the in-flight Apple request; SHA-256'd into `request.nonce`.
     @State private var appleNonce: String?
 
-    private var router: Router { env.profileRouter }
+    // Reachable from both tabs (Profile and the Rebuilds party/paywall flow), so follow the
+    // stack we're actually on rather than a hardcoded tab. See `activeRouter`.
+    private var router: Router { activeRouter ?? env.profileRouter }
 
     var body: some View {
         ScrollView {

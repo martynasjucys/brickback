@@ -6,8 +6,7 @@ import Supabase
 /// list, minifigs and spares are fetched here and snapshotted into GRDB at add-time so the
 /// rest of the app works fully offline. Port of `CatalogRepository`.
 ///
-/// S1 ships the reads the sync/rebuild layer needs (`CatalogReader`) plus a `smokeReadSetName`
-/// probe for the Home banner. Search + set detail are S2.
+/// S1 ships the reads the sync/rebuild layer needs (`CatalogReader`). Search + set detail are S2.
 public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable {
     private let client: SupabaseClient
     private let images: ImageResolver
@@ -23,22 +22,6 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
     private func sanitize(_ q: String) -> String {
         q.replacingOccurrences(of: "[,()%*]", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    // MARK: - Smoke read (S1)
-
-    /// Fetch a single set's name to prove the anon catalog client works end-to-end on device
-    /// — the same check the Flutter Phase 1 "Catalog OK · …" banner used.
-    public func smokeReadSetName() async throws -> String? {
-        struct NameRow: Decodable { let name: String }
-        let rows: [NameRow] = try await client
-            .from("sets")
-            .select("name")
-            .gt("num_parts", value: 0)
-            .limit(1)
-            .execute()
-            .value
-        return rows.first?.name
     }
 
     // MARK: - Image resolution

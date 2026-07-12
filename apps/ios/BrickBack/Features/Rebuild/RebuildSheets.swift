@@ -246,6 +246,11 @@ struct ViewSettingsSheet: View {
     let hasExtras: Bool
     @AppStorage("rebuild_grouping") private var groupingRaw = PartGrouping.color.rawValue
     @AppStorage("rebuild_show_extras") private var showExtras = false
+    /// Measured content height so the sheet hugs its content instead of snapping to a
+    /// half-screen `.medium` detent that leaves a large empty gap below the controls.
+    /// Seeded with a close estimate so the first frame isn't a zero-height sheet; the
+    /// overlay below measures the real height and settles the detent on the first layout.
+    @State private var sheetHeight: CGFloat = 240
 
     private func label(_ g: PartGrouping) -> String {
         switch g {
@@ -290,10 +295,30 @@ struct ViewSettingsSheet: View {
         .padding(.top, AppSpacing.s20)
         .padding(.bottom, AppSpacing.s24)
         .frame(maxWidth: .infinity, alignment: .leading)
+        // Keep the content at its natural (fully-wrapped) height so the fitted detent
+        // can't squeeze the 2-line description into a truncated single line.
+        .fixedSize(horizontal: false, vertical: true)
         .background(AppColors.card)
-        .presentationDetents([.medium])
+        .overlay {
+            GeometryReader { proxy in
+                Color.clear.preference(key: SheetHeightKey.self, value: proxy.size.height)
+            }
+        }
+        .onPreferenceChange(SheetHeightKey.self) { if $0 > 0 { sheetHeight = $0 } }
+        .presentationDetents([.height(sheetHeight)])
+        // Force an opaque background: iOS 26 sheets default to a translucent glass
+        // material, which would show the dimmed screen through any area the (shorter)
+        // content doesn't cover.
+        .presentationBackground(AppColors.card)
         .presentationDragIndicator(.visible)
     }
+}
+
+/// Publishes the intrinsic height of a sheet's content so it can drive a fitted
+/// `.height` presentation detent.
+private struct SheetHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
 /// A simple wrapping row of choice chips (the grouping options always fit one/two rows).

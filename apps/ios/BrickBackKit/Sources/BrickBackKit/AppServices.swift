@@ -42,11 +42,6 @@ public final class AppServices: @unchecked Sendable {
         self.party = PartyRepository(remote: SupabasePartyRemote(client: userClient), catalog: catalogRepo, rebuild: rebuild)
     }
 
-    /// Prove the anon catalog client end-to-end on device (the Flutter "Catalog OK · …" check).
-    public func smokeReadSetName() async throws -> String? {
-        try await catalogRepo.smokeReadSetName()
-    }
-
     // MARK: - Catalog reads for the S2 UI (search + set detail; `catalog` covers the rest)
 
     /// Debounced catalog search (sets by name / number). See `SupabaseCatalogRepository.search`.

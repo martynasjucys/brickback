@@ -8,6 +8,7 @@ import BrickBackKit
 /// Port of `paywall_screen.dart`.
 struct PaywallView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
 
     private let benefits: [(String, String)] = [
         ("Cloud sync", "Your rebuilds follow you to every device, always up to date."),
@@ -16,7 +17,9 @@ struct PaywallView: View {
         ("Party mode", "Sort a big set together with friends in real time."),
     ]
 
-    private var router: Router { env.profileRouter }
+    // The paywall is reachable from both tabs (Profile settings and the Rebuilds party button),
+    // so pop/push on whichever stack we're actually on — not a hardcoded tab. See `activeRouter`.
+    private var router: Router { activeRouter ?? env.profileRouter }
 
     var body: some View {
         ScrollView {
