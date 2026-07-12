@@ -18,6 +18,8 @@ struct RebuildView: View {
     @State private var detailPart: ExpandedPart?
     @State private var showSearch = false
     @State private var showSettings = false
+    @State private var startingParty = false
+    @State private var partyError: String?
 
     private var grouping: PartGrouping { PartGrouping(rawValue: groupingRaw) ?? .color }
 
@@ -66,6 +68,14 @@ struct RebuildView: View {
         .sheet(isPresented: $showSettings) {
             ViewSettingsSheet(hasExtras: vm?.inv?.hasExtras ?? false)
         }
+        .alert("Couldn't start party", isPresented: Binding(
+            get: { partyError != nil },
+            set: { if !$0 { partyError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(partyError ?? "")
+        }
     }
 
     // MARK: - Content
@@ -110,11 +120,39 @@ struct RebuildView: View {
             }
             Spacer()
             CircleIconButton(icon: "flag") { Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) } }
+            if startingParty {
+                ProgressView().tint(AppColors.primary).frame(width: 40, height: 40)
+            } else {
+                CircleIconButton(icon: "person.2") { onParty(vm: vm) }
+            }
             CircleIconButton(icon: "magnifyingglass") { showSearch = true }
             CircleIconButton(icon: "slider.horizontal.3") { showSettings = true }
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.vertical, AppSpacing.s8)
+    }
+
+    /// Host a realtime party on this rebuild. Premium + account only (the paywall / sign-in bounce
+    /// mirrors the free-cap gate). `create_party` resolves the rebuild server-side, so flush + push
+    /// this device's work to the cloud first, then open the party hub. Port of `_onParty`.
+    private func onParty(vm: RebuildViewModel) {
+        guard !startingParty else { return }
+        if !env.isPremium { env.homeRouter.push(.paywall); return }
+        if !env.isSignedIn { env.homeRouter.push(.signIn); return }
+        startingParty = true
+        Task {
+            await vm.flush()
+            do {
+                await env.sync.pushNow()
+                let name = vm.inv?.summary.name ?? "Sort party"
+                let party = try await env.services.party.createParty(rebuildSetId, name: name)
+                startingParty = false
+                env.homeRouter.push(.party(party.id))
+            } catch {
+                startingParty = false
+                partyError = "\(error)"
+            }
+        }
     }
 
     private func progressBlock(vm: RebuildViewModel, inv: RebuildInventory) -> some View {

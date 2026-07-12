@@ -22,6 +22,7 @@ public final class AppServices: @unchecked Sendable {
     public let auth: AuthRepository
     public let entitlement: EntitlementService
     public let syncService: SyncService
+    public let party: PartyRepository
 
     public init(config: AppConfig, db: AppDatabase? = nil) throws {
         self.config = config
@@ -36,6 +37,9 @@ public final class AppServices: @unchecked Sendable {
         self.auth = AuthRepository(client: userClient)
         self.entitlement = EntitlementService(client: userClient)
         self.syncService = SyncService(db: self.db, rebuild: rebuild, remote: SupabaseSyncRemote(client: userClient))
+        // Party mode (S6) — realtime collaborative counting on the user project. Reuses the anon
+        // catalog reader (for the client-side picker) + the local rebuild store (for reconcile).
+        self.party = PartyRepository(remote: SupabasePartyRemote(client: userClient), catalog: catalogRepo, rebuild: rebuild)
     }
 
     /// Prove the anon catalog client end-to-end on device (the Flutter "Catalog OK · …" check).

@@ -16,6 +16,8 @@ struct ProfileScreen: View {
                 VStack(spacing: AppSpacing.s12) {
                     AccountCard()
 
+                    PartyCard()
+
                     SettingsRow(icon: "star", title: "Premium", value: env.isPremium ? "Active" : "Free") {
                         env.profileRouter.push(.paywall)
                     }
@@ -82,6 +84,38 @@ private struct AccountCard: View {
                     .padding(.top, AppSpacing.s4)
                 }
             }
+        }
+    }
+}
+
+/// Party mode entry — join a friend's realtime sort by code. Premium + account only, so a
+/// free/guest tap bounces to the paywall / sign-in (hosting a party starts from a rebuild's
+/// counting screen). Port of the Flutter `_PartyCard`.
+private struct PartyCard: View {
+    @Environment(AppEnvironment.self) private var env
+
+    var body: some View {
+        AppCard {
+            VStack(alignment: .leading, spacing: AppSpacing.s4) {
+                HStack(spacing: AppSpacing.s8) {
+                    Image(systemName: "person.2").font(.system(size: 18)).foregroundStyle(AppColors.ink)
+                    Text("Party mode").font(AppText.title).foregroundStyle(AppColors.ink)
+                }
+                Text("Sort a big pile together in real time — join by code.")
+                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                AppButton("Join a party", variant: .secondary, icon: "arrow.right.to.line") { joinParty() }
+                    .padding(.top, AppSpacing.s8)
+            }
+        }
+    }
+
+    private func joinParty() {
+        if !env.isPremium {
+            env.profileRouter.push(.paywall)
+        } else if !env.isSignedIn {
+            env.profileRouter.push(.signIn)
+        } else {
+            env.profileRouter.push(.partyJoin)
         }
     }
 }

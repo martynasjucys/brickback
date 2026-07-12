@@ -5,8 +5,32 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S5** (auth & cloud sync — **the sync engine is ON**).
-**Current state:** S0–S5 are **code-complete and verified**. **S5 turns the wired-but-inert sync
+**Last updated:** end of **S6** (party mode — realtime collaborative counting).
+**Current state:** S0–S6 are **code-complete and verified**. **S6 is a pure client port** of the
+already-built, already-verified party backend (`0003_party_mode.sql`, applied): a `PartyRemote`
+seam (RPCs + PostgREST + **Realtime v2** behind a disposer closure) → `PartyRepository` (the two
+BrickBack-only bits: the **client-derived "still-needed" picker** = catalog `expandSetParts` ⟕
+shared `party_have_counts`, and **local reconciliation** = `ensureLocalRebuild` snapshot +
+`applyHaveCounts` overlay) → four SwiftUI screens (hub, join-by-code, invite/**QR**, add-parts
+picker) + `PartyAvatar`/`AvatarStack`, all gated behind **premium + a signed-in session**. Entry
+points: a **Start party** header button on `RebuildView` (flush + `pushNow()` so `create_party`
+finds the synced rebuild) and a **Join a party** card on Profile. Dual-entry (host from Rebuilds,
+join from Profile) is handled by an injected `\.activeRouter` so push/pop lands on the right stack.
+**8 new unit tests** port `phase6_party_test.dart` over in-memory GRDB + a fake party server that
+faithfully simulates the rollup trigger / `party_progress` / `party_have_counts` (create→join by
+code, gated by code/active-status, un-synced rebuild rejected; contribution rolls into the shared
+have-count + progress; picker `remaining` drops satisfied parts; multi-member additive convergence;
+denorm feed names; idempotent `applyHaveCounts` with a `previous` diff; `ensureLocalRebuild`
+reuse). **38 unit tests pass** (the S5 thirty + eight). Build green, no warnings. Driven on the
+iPhone 17 Pro sim: Profile shows the **Party mode** card; a guest tapping **Join a party** bounces
+to the **paywall**; the **join** (code entry) + **invite** (CoreImage QR + code + Share) screens
+render. **The live two-account realtime round-trip waits for S8** (OAuth/session config — same gap
+as S5); the client logic is complete and testable behind the fakes. Ready to start **S7** (design
+polish & i18n).
+
+<details><summary>S5 summary (superseded by the line above)</summary>
+
+**S5 turns the wired-but-inert sync
 skeleton live**: the gate is now `signedIn && isPremium` reading real values (an app-side
 `@Observable EntitlementController` = `debugForcePremium || profiles.is_premium`), so a signed-in
 premium user's rebuilds push/pull across devices **and clients** (cloud payload is
@@ -30,6 +54,8 @@ green, no warnings. **Live OAuth/SMTP round-trip waits for S8** (Supabase dashbo
 + billing); the client logic is complete and testable behind the debug unlock + in-memory fakes.
 Ready to start **S6** (party mode).
 
+</details>
+
 ---
 
 ## Phase checklist
@@ -40,8 +66,8 @@ Ready to start **S6** (party mode).
 - [x] **S3 — Inventory collection (core loop)** ✅ (done, verified)
 - [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
-- [ ] **S6 — Party mode** ← NEXT
-- [ ] S7 — Design polish & i18n
+- [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
+- [ ] **S7 — Design polish & i18n** ← NEXT
 - [ ] S8 — Launch / App Store
 
 ---
@@ -306,6 +332,79 @@ Ready to start **S6** (party mode).
 
 ---
 
+## What's built (S6)
+
+### Party domain + seam (`BrickBackKit/Party`)
+- `PartyModels.swift` — **`Party`** (+ denormalized `setItemId` so members derive the picker
+  without reading the host's owner-scoped `rebuild_sets`), **`PartyMember`**, **`PartyContribution`**
+  (denorm `partName`/`colorName` for the feed), **`PartyProgress`** (`value` clamped), and
+  **`PartyPart`** (built on-device from `ExpandedPart` ⟕ shared `have`, with a `remaining` getter).
+  Verbatim port of `party_models.dart`.
+- `PartyRemote.swift` — **`protocol PartyRemote`** (the network seam, like `SyncRemote`) +
+  **`SupabasePartyRemote`** on the `userClient`: `create_party` / `join_party` (RPC, flexible
+  object-or-array decode via `.execute().data`), `party_progress` / `party_have_counts` (RPC →
+  typed rows), `getParty` / `setStatus` / `members` / `myMember` / `recentContributions` / the
+  contribution insert (PostgREST), and **`subscribe(partyId:onChange:)`** returning a plain disposer
+  closure that hides **Realtime v2** (`client.channel(...)` + `postgresChange(AnyAction.self,
+  table:, filter: .eq("party_id", …))` async streams on `party_contributions` + `party_members`,
+  `subscribeWithError()` in a task, torn down by the disposer). Timestamps decode tolerantly to
+  `Date` via `ISO8601DateFormatter` (with/without fractional seconds).
+- `PartyRepository.swift` — pass-throughs + the two BrickBack-only bits: **`parts(_:setItemId:)`**
+  (catalog `expandSetParts` ⟕ `haveCounts`, sorted colour-then-biggest-need) and reconciliation
+  (**`ensureLocalRebuild`** snapshots the set for a joining member / reuses an existing rebuild;
+  **`applyHaveCounts`** overlays shared counts into local GRDB via `setPartHave`, diffing against a
+  `previous` map so a realtime tick doesn't churn every part). Wired into `AppServices` as
+  `party` (`SupabasePartyRemote(client: userClient)` + the anon catalog + the local rebuild store).
+
+### Party UI (`BrickBack/Features/Party`)
+- `PartyView` + `PartyViewModel` — the realtime hub: `load()` fetches party/members/progress/feed/
+  have-counts + `ensureLocalRebuild` (best-effort), then `subscribe(onChange: refresh)`; the ring +
+  roster (`AvatarStack`) + "Add found parts" + activity feed re-render on each tick. **Reconcile on
+  leave** (`applyHaveCounts` once per session, guarded, + `onNudge`) via the back button and a
+  safety `.onDisappear`; host **End party** confirm via `.alert`.
+- `PartyJoinView` (code entry, autofocus, `.replaceTop(.party(id))` so back returns past it),
+  `PartyInviteView` (**CoreImage `CIQRCodeGenerator`** → `UIImage`, code, `ActivityView` share — no
+  QR dependency), `PartyAddPartsView` + VM (client-derived picker, pending map, ±steppers, submit →
+  one contribution per line), `PartyAvatar`/`AvatarStack` (stable FNV-1a seed → wireframe palette,
+  host ring, `+N` overflow).
+- **Routing:** four new `Route` cases (`.party` / `.partyJoin` / `.partyInvite` / `.partyAddParts`)
+  in `RouteView`; a new `\.activeRouter` `EnvironmentValue` injected by `TabNavigation` so the
+  dual-entry party screens push/pop on whichever tab's stack they're on (host from Rebuilds, join
+  from Profile) instead of hardcoding a router.
+- **Entry points:** a **Start party** header button on `RebuildView` (`person.2`; premium + account
+  gate → paywall / sign-in; `flush()` + `pushNow()` then `createParty` then push `.party(id)`; a
+  spinner replaces the button while starting) and a **Party mode** card on `ProfileScreen` with
+  **Join a party** (same premium + account gate → paywall / sign-in / `.partyJoin`).
+
+---
+
+## Acceptance (parity vs. Flutter Phase 6) — all met · **party mode**
+
+- **Create → join by code; `ensureLocalRebuild` snapshots on join / reuses an existing rebuild:**
+  unit-tested (`createAndJoin`, `ensureLocalRebuildReuses`). ✅
+- **Joining is gated (wrong code / ended party throw; un-synced rebuild rejected):** unit-tested
+  (`joinGated`, `unsyncedRebuildRejected`) against a fake server that mirrors the RPC membership +
+  active-status gates. ✅
+- **A contribution rolls into the shared have-count + progress; the picker's `remaining` drops
+  satisfied parts:** unit-tested (`contributionRollsUp` — `haveCounts == ["10:1":2]`, progress
+  `2/3`, part 10 `remaining 0` / part 11 `remaining 1`). ✅
+- **Multiple members roll up additively and converge to 100%:** unit-tested
+  (`multipleMembersConverge` — member 2×#10 + host 1×#11 → `have 3`, `value 1.0`). ✅
+- **The feed carries denormalized part + colour names:** unit-tested (`feedDenormalized` —
+  `Brick 2x4` / `Red` / `qty 2` / `memberId`). ✅
+- **`applyHaveCounts` overlays into local GRDB and is idempotent with a `previous` diff; both host
+  and member reconcile:** unit-tested (`applyHaveCountsOverlays`). ✅
+- **Sim renders:** Profile shows the **Party mode** card; a **guest** tapping **Join a party**
+  bounces to the **paywall**; the **join** (code entry) + **invite** (**QR** + code + Share) screens
+  render (reached via a temporary gate-bypass since a live signed-in session is an S8 gap, then
+  reverted; the gate is verified restored). ✅
+- **Live two-account realtime round-trip** is the one deferred item → **S8** (OAuth/session config;
+  the `party_*` RLS/RPC/rollup guarantees are already proven live on the real DB in Flutter Phase 6).
+  ⏳ (S8)
+- `swift test` green (**38 tests**); `xcodebuild build` green, no warnings. ✅
+
+---
+
 ## How to build / test / run
 
 ```sh
@@ -398,8 +497,32 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
   (points, not pixels — iPhone 17 Pro is 402×874 @3x). `idb ui text` types into the *focused*
   field only, which is why `SearchField` autofocus had to be implemented for the flow to work.
 - **`Package.resolved` is committed** so a clean checkout resolves the same GRDB/supabase/Nuke pins.
-- **Party (S6) header button is not present yet:** the counting header ships flag→review, search,
-  settings only. The party action lands in S6.
+  **Gotcha (hit in S6):** running `swift build --package-path BrickBackKit` **strips the Nuke pin**
+  from the committed resolved file (Nuke is an app-target dep, not in the package). Refold it after
+  with `xcodebuild -resolvePackageDependencies -scheme BrickBack` before committing.
+- **Party header button (S6) is present:** the counting header now ships flag→review, **party**
+  (`person.2`, premium+account gated), search, settings. A spinner replaces the party button while
+  `createParty` runs.
+- **Dual-entry navigation → `\.activeRouter` (S6):** party mode is reachable from **both** tabs
+  (host from Rebuilds, join from Profile), but the shared `RouteView` can't know which stack it's on.
+  Existing single-tab screens hardcode a router (`env.homeRouter` / `env.profileRouter`); the party
+  screens instead read an injected `\.activeRouter` (`TabNavigation` sets it on each `NavigationStack`)
+  so push/pop lands on the right tab. Reuse this for any future dual-entry screen — don't hardcode.
+- **`return` on its own line before an `if` is a footgun (S6):** Swift 5.9+ `if` is an *expression*,
+  so `return` ⏎ `if … { push(.paywall) }` parses as `return (if-expression)` and **executes** the
+  branch. Bit me in a throwaway verify hack (the join gate ran `push(.paywall)` after a bypass push).
+  The compiler warns ("expression following 'return' is treated as an argument"); heed it. Real code
+  is fine — this was only a temporary edit.
+- **Realtime v2 seam (S6):** `PartyRemote.subscribe` returns a plain `@Sendable () -> Void` disposer
+  (keeps the interface fake-able, mirrors the Flutter callback+disposer). Inside `SupabasePartyRemote`
+  it spins a `Task` that **registers the `postgresChange(AnyAction.self, …)` streams BEFORE**
+  `subscribeWithError()` (the v2 contract), iterates both in a `withTaskGroup`, and the disposer
+  cancels the task + `removeChannel`. Not live-exercised until S8 (needs a JWT session); the fake's
+  `subscribe` is a no-op, so the tests don't depend on it.
+- **RPC single-row decode (S6):** `create_party` / `join_party` are `returns <composite>` (a JSON
+  object), while `party_progress` / `party_have_counts` are `returns table` (an array). The party
+  screens decode the former via `.execute().data` + a flexible object-or-array `JSONDecoder` (mirrors
+  the Dart `_asRow`); the latter decode straight to `[Row]` via `.execute().value`.
 - **Two `VerificationRecord`s, on purpose:** the GRDB **storage** record is `VerificationRecord`
   (in `Records.swift`, `flags` as a raw JSON string, used by sync); the **domain** model the repo
   returns is `Verification` (in `Verification.swift`, `flags` decoded to `VerificationFlags`). Both
@@ -437,7 +560,14 @@ Install/launch on the booted sim: `xcrun simctl install booted <BrickBack.app>` 
   dashboard provider config (+ Apple provider on the user project). The client paths are complete;
   the debug force-premium unlock + in-memory `FakeSyncRemote` cover the gate/sync/entitlement logic
   without it. Don't "improve" LWW (last-*syncer*-wins is the sanctioned v1).
-- **S6 kick-off:** party mode. The counting header still ships flag→review / search / settings only
-  — the **party action lands in S6**. Party tables + RLS + the `join_party(code)` RPC already exist
-  on the user project (verified live in Flutter Phase 6); the sync engine + auth from S5 are the
-  substrate it builds on.
+- **S7 kick-off:** design polish & i18n. The whole UI is still **wireframe fidelity** — the S7 pass
+  swaps `DesignSystem/Tokens.swift` (the one file) for the branded palette/typography with the token
+  **names kept stable**, so screens don't move. i18n: the few English string literals scattered
+  through the app + the documented `BrickBackKit` fallbacks in `Counting.swift` / `PartyModels`'
+  "part" default move to a String Catalog. Flutter reference: [`07-design-polish-and-i18n.md`](07-design-polish-and-i18n.md).
+- **Party mode is done (S6) but live realtime waits on S8:** the `party_*` tables + RLS + RPCs +
+  rollup trigger were verified live in Flutter Phase 6; the Swift client calls the identical RPCs and
+  is unit-covered (8 tests) + sim-rendered. The two-account realtime round-trip needs a signed-in
+  session (OAuth config), the **same S8 gap** as sync. Don't "fix" the rollup authority nuance
+  (contributions are authoritative for contributed parts — `have_qty = Σ contributions` replaces a
+  host's pre-party manual count); that's the sanctioned v1, matching whatabrick + Flutter.

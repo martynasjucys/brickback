@@ -32,6 +32,9 @@ private struct TabNavigation<Root: View>: View {
                         .navigationBarHidden(true)
                 }
         }
+        // Tell every screen on this stack which router it's on, so dual-entry screens (party mode)
+        // push/pop on the correct tab.
+        .environment(\.activeRouter, router)
     }
 }
 
@@ -60,6 +63,14 @@ struct RouteView: View {
             SignInView()
         case .paywall:
             PaywallView()
+        case .party(let id):
+            PartyView(partyId: id)
+        case .partyJoin:
+            PartyJoinView()
+        case .partyInvite(let id):
+            PartyInviteView(partyId: id)
+        case .partyAddParts(let id):
+            PartyAddPartsView(partyId: id)
         }
     }
 }
