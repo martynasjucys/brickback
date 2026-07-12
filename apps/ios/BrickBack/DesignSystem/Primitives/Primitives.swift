@@ -90,12 +90,13 @@ struct BrickButtonStyle: ButtonStyle {
 
 // MARK: - BrickBackWordmark
 
-/// The app wordmark — chunky rounded white caps, sized to sit on the brand-blue header.
+/// The app wordmark — chunky rounded white lettering (only the two B's capitalised), sized to
+/// sit on the brand-blue header.
 struct BrickBackWordmark: View {
     var size: CGFloat = 30
 
     var body: some View {
-        Text("BRICKBACK")
+        Text("BrickBack")
             .font(.system(size: size, weight: .black, design: .rounded))
             .tracking(0.5)
             .foregroundStyle(.white)

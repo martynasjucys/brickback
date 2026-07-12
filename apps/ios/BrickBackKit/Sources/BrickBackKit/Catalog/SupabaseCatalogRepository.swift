@@ -46,15 +46,33 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
         return out
     }
 
-    private func toSet(_ r: SetRow, _ imgs: [Int: String]) -> CatalogSet {
+    private func toSet(_ r: SetRow, _ imgs: [Int: String], themeName: String? = nil) -> CatalogSet {
         CatalogSet(
             itemId: r.itemId,
             setNum: r.setNum ?? "",
             name: r.name,
             year: r.year ?? 0,
             numParts: r.numParts ?? 0,
-            imageUrl: imgs[r.itemId] ?? r.rebrickableImgUrl
+            imageUrl: imgs[r.itemId] ?? r.rebrickableImgUrl,
+            themeName: themeName
         )
+    }
+
+    /// Resolve set item ids → theme name (`items.theme_id → themes.name`, same join as
+    /// `setDetail`). Sets with no theme are omitted. Batched; empty in → empty out.
+    private func themeNames(_ ids: [Int]) async throws -> [Int: String] {
+        guard !ids.isEmpty else { return [:] }
+        let rows: [ItemThemeBatchRow] = try await client
+            .from("items")
+            .select("id, themes(name)")
+            .in("id", values: ids)
+            .execute()
+            .value
+        var out: [Int: String] = [:]
+        for r in rows {
+            if let name = r.themes?.name, !name.isEmpty { out[r.id] = name }
+        }
+        return out
     }
 
     // MARK: - Search & set detail (S2)
@@ -131,7 +149,8 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
             .execute()
             .value
         let imgs = try await imageUrls(rows.map(\.itemId))
-        return rows.map { toSet($0, imgs) }
+        let themes = try await themeNames(rows.map(\.itemId))
+        return rows.map { toSet($0, imgs, themeName: themes[$0.itemId]) }
     }
 
     public func expandSetParts(_ setItemId: Int) async throws -> [ExpandedPart] {
@@ -265,6 +284,12 @@ private struct InventoryRow: Decodable {
 }
 
 private struct ItemThemeRow: Decodable {
+    let themes: ThemeEmbed?
+    struct ThemeEmbed: Decodable { let name: String? }
+}
+
+private struct ItemThemeBatchRow: Decodable {
+    let id: Int
     let themes: ThemeEmbed?
     struct ThemeEmbed: Decodable { let name: String? }
 }

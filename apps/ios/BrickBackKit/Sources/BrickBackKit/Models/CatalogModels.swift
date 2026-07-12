@@ -16,16 +16,18 @@ public struct CatalogSet: Sendable, Identifiable, Hashable {
     public let year: Int
     public let numParts: Int
     public let imageUrl: String?
+    public let themeName: String? // resolved theme (items.theme_id → themes.name); nil if the set has none
 
     public var id: Int { itemId }
 
-    public init(itemId: Int, setNum: String, name: String, year: Int, numParts: Int, imageUrl: String?) {
+    public init(itemId: Int, setNum: String, name: String, year: Int, numParts: Int, imageUrl: String?, themeName: String? = nil) {
         self.itemId = itemId
         self.setNum = setNum
         self.name = name
         self.year = year
         self.numParts = numParts
         self.imageUrl = imageUrl
+        self.themeName = themeName
     }
 }
 
