@@ -169,6 +169,6 @@ private struct StepButton: View {
     let onTap: () -> Void
 
     var body: some View {
-        BrickIconButton(icon: icon, size: 36, iconSize: 20, enabled: enabled, onTap: onTap)
+        BrickIconButton(icon: icon, enabled: enabled, onTap: onTap)
     }
 }

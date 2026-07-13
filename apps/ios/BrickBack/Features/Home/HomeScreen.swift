@@ -91,16 +91,11 @@ private struct HomeHeader: View {
             BrickBackWordmark(size: 30)
             Spacer(minLength: AppSpacing.s8)
 
-            Button(action: onFilter) {
-                Image(systemName: "line.3.horizontal.decrease")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(filterCount > 0 ? AppColors.primary : AppColors.ink)
-                    .frame(width: 22, height: 22)
-                    .padding(.horizontal, 11)
-                    .padding(.vertical, 11)
-            }
-            .buttonStyle(BrickButtonStyle(fill: AppColors.card, edge: AppColors.cardEdge,
-                                          radius: AppRadius.lg, stroke: AppColors.line))
+            BrickIconButton(
+                icon: "line.3.horizontal.decrease",
+                tint: filterCount > 0 ? AppColors.primary : AppColors.ink,
+                accessibilityLabel: filterCount > 0 ? "Filter sets, \(filterCount) active" : "Filter sets"
+            ) { onFilter() }
             .overlay(alignment: .topTrailing) {
                 if filterCount > 0 {
                     Text("\(filterCount)")
@@ -110,9 +105,9 @@ private struct HomeHeader: View {
                         .background(Circle().fill(AppColors.primary))
                         .overlay(Circle().stroke(AppColors.card, lineWidth: 1.5))
                         .offset(x: 4, y: -4)
+                        .accessibilityHidden(true)
                 }
             }
-            .accessibilityLabel(filterCount > 0 ? "Filter sets, \(filterCount) active" : "Filter sets")
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.top, AppSpacing.s8)

@@ -96,7 +96,7 @@ struct BrickButtonStyle: ButtonStyle {
 /// counting step controls, the rebuild action cluster — reads as the same physical brick.
 struct BrickIconButton: View {
     let icon: String
-    var size: CGFloat = 40                 // square face; the lip adds `depth` below
+    var size: CGFloat = 44                 // square face (the app-wide icon-button size); lip adds `depth` below
     var iconSize: CGFloat = 18
     var iconWeight: Font.Weight = .semibold
     var tint: Color = AppColors.ink
@@ -116,7 +116,7 @@ struct BrickIconButton: View {
                 .foregroundStyle(enabled ? tint : AppColors.faint)
                 .frame(width: size, height: size)
         }
-        .buttonStyle(BrickButtonStyle(fill: fill, edge: edge, radius: AppRadius.md, stroke: stroke))
+        .buttonStyle(BrickButtonStyle(fill: fill, edge: edge, radius: AppRadius.lg, stroke: stroke))
         .disabled(!enabled)
 
         if let accessibilityLabel {
@@ -253,8 +253,7 @@ struct AppBadge: View {
 struct BackButton: View {
     let onTap: () -> Void
     var body: some View {
-        BrickIconButton(icon: "arrow.left", size: 36, iconSize: 17, iconWeight: .bold,
-                        accessibilityLabel: "Back", onTap: onTap)
+        BrickIconButton(icon: "arrow.left", iconWeight: .bold, accessibilityLabel: "Back", onTap: onTap)
     }
 }
 

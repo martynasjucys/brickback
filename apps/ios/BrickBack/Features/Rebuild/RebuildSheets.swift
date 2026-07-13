@@ -116,7 +116,7 @@ private struct StepButton: View {
     var tint: Color = AppColors.ink
     let onTap: () -> Void
     var body: some View {
-        BrickIconButton(icon: icon, size: 36, tint: tint, enabled: enabled, onTap: onTap)
+        BrickIconButton(icon: icon, tint: tint, enabled: enabled, onTap: onTap)
     }
 }
 

@@ -173,7 +173,7 @@ struct RebuildView: View {
 
                 Group {
                     if startingParty {
-                        ProgressView().tint(AppColors.primary).frame(width: 40, height: 44)
+                        ProgressView().tint(AppColors.primary).frame(width: 44, height: 48)
                     } else {
                         BrickIconButton(icon: "person.2") { onParty(vm: vm) }
                     }

@@ -34,10 +34,12 @@ struct PartTile: View {
         // tap so a held press opens detail without also incrementing.
         Button(action: handleTap) {
             VStack(spacing: AppSpacing.s4) {
+                // Fixed square image area — `Color.clear` holds the square regardless of the
+                // image's own aspect or a loading/error placeholder, so every tile's image
+                // region is identical; the part image just fits within it.
                 ZStack(alignment: .topTrailing) {
+                    Color.clear
                     partImage
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fit)
                     if complete {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 18))
@@ -45,15 +47,19 @@ struct PartTile: View {
                             .padding(2)
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .aspectRatio(1, contentMode: .fit)
+                // Reserve space for two name lines + one number line so a 1-line name or a part
+                // with no number doesn't shrink the tile — every tile ends up the same height.
                 Text(part.partName)
                     .font(.system(size: 11))
                     .foregroundStyle(AppColors.ink)
-                    .lineLimit(2)
+                    .lineLimit(2, reservesSpace: true)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
-                if let num = part.partNum {
-                    Text(num).font(.system(size: 10)).foregroundStyle(AppColors.muted).lineLimit(1)
-                }
+                Text(part.partNum ?? "")
+                    .font(.system(size: 10)).foregroundStyle(AppColors.muted)
+                    .lineLimit(1, reservesSpace: true)
                 Text("\(have)/\(part.neededQty)").font(AppText.label).foregroundStyle(countColor)
             }
             .padding(AppSpacing.s8)
