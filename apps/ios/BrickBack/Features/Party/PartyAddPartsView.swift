@@ -169,14 +169,6 @@ private struct StepButton: View {
     let onTap: () -> Void
 
     var body: some View {
-        Pressable(onTap: enabled ? onTap : nil) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundStyle(enabled ? AppColors.ink : AppColors.muted)
-                .frame(width: 36, height: 36)
-                .background(AppColors.card)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-        }
+        BrickIconButton(icon: icon, size: 36, iconSize: 20, enabled: enabled, onTap: onTap)
     }
 }

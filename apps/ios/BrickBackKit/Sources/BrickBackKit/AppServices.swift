@@ -24,7 +24,14 @@ public final class AppServices: @unchecked Sendable {
     public let syncService: SyncService
     public let party: PartyRepository
 
-    public init(config: AppConfig, db: AppDatabase? = nil) throws {
+    // S9 offline mode. The durable image store is SDK-free (built here); the prefetcher is the
+    // Nuke-backed app implementation injected by `BrickBackApp` (a `NoopImagePrefetcher` in tests).
+    // Not premium-gated — free users cache images for offline viewing too.
+    public let imageStore: BrickImageStore
+    public let offlineImages: OfflineImageService
+    public let network = NetworkMonitor()
+
+    public init(config: AppConfig, db: AppDatabase? = nil, imagePrefetcher: ImagePrefetching = NoopImagePrefetcher()) throws {
         self.config = config
         self.db = try db ?? AppDatabase.live()
 
@@ -40,6 +47,9 @@ public final class AppServices: @unchecked Sendable {
         // Party mode (S6) — realtime collaborative counting on the user project. Reuses the anon
         // catalog reader (for the client-side picker) + the local rebuild store (for reconcile).
         self.party = PartyRepository(remote: SupabasePartyRemote(client: userClient), catalog: catalogRepo, rebuild: rebuild)
+
+        self.imageStore = try BrickImageStore.live()
+        self.offlineImages = OfflineImageService(db: self.db, store: imageStore, prefetcher: imagePrefetcher)
     }
 
     // MARK: - Catalog reads for the S2 UI (search + set detail; `catalog` covers the rest)

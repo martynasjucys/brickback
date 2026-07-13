@@ -11,6 +11,7 @@ import BrickBackKit
 final class ReportViewModel {
     let rebuildSetId: String
     private let repo: RebuildRepository
+    private let imageStore: BrickImageStore
 
     enum Phase {
         case loading
@@ -26,9 +27,10 @@ final class ReportViewModel {
 
     @ObservationIgnored private var loaded = false
 
-    init(rebuildSetId: String, repo: RebuildRepository) {
+    init(rebuildSetId: String, repo: RebuildRepository, imageStore: BrickImageStore) {
         self.rebuildSetId = rebuildSetId
         self.repo = repo
+        self.imageStore = imageStore
     }
 
     func load() async {
@@ -44,9 +46,15 @@ final class ReportViewModel {
                 setName = inv.summary.name
                 imageUrl = inv.summary.imageUrl
             }
-            if let s = imageUrl, let url = URL(string: s),
-               let (data, _) = try? await URLSession.shared.data(from: url) {
-                image = UIImage(data: data)
+            // S9: prefer the offline cache so an offline report still bakes in the set image;
+            // fall back to the network (and populate the cache) when it isn't cached yet.
+            if let s = imageUrl {
+                if let bytes = imageStore.data(forURL: s) {
+                    image = UIImage(data: bytes)
+                } else if let url = URL(string: s), let (data, _) = try? await URLSession.shared.data(from: url) {
+                    image = UIImage(data: data)
+                    imageStore.store(data, forURL: s)
+                }
             }
             loaded = true
             phase = .ready

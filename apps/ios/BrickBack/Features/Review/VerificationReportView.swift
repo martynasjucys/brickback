@@ -48,7 +48,7 @@ struct ReportView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.canvas)
         .task {
-            if vm == nil { vm = ReportViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild) }
+            if vm == nil { vm = ReportViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild, imageStore: env.services.imageStore) }
             await vm?.load()
         }
         .sheet(item: $shareItems) { ActivityView(items: $0.urls) }

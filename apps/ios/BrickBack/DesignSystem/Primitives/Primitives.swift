@@ -88,6 +88,45 @@ struct BrickButtonStyle: ButtonStyle {
     }
 }
 
+// MARK: - BrickIconButton
+
+/// Square brick-plate icon button — the app's signature raised plate (the same treatment as the
+/// Home filter button: a `card` face on a darker `cardEdge` lip with a hairline `line` stroke that
+/// clicks down when pressed). This is the round-plate replacement so every icon tap — back, the
+/// counting step controls, the rebuild action cluster — reads as the same physical brick.
+struct BrickIconButton: View {
+    let icon: String
+    var size: CGFloat = 40                 // square face; the lip adds `depth` below
+    var iconSize: CGFloat = 18
+    var iconWeight: Font.Weight = .semibold
+    var tint: Color = AppColors.ink
+    var fill: Color = AppColors.card
+    var edge: Color = AppColors.cardEdge
+    var stroke: Color? = AppColors.line
+    var enabled: Bool = true
+    var symbolReplace: Bool = false        // animate icon swaps (e.g. ellipsis ↔ xmark)
+    var accessibilityLabel: String? = nil
+    let onTap: () -> Void
+
+    var body: some View {
+        let button = Button(action: { if enabled { onTap() } }) {
+            Image(systemName: icon)
+                .font(.system(size: iconSize, weight: iconWeight))
+                .contentTransition(symbolReplace ? .symbolEffect(.replace) : .identity)
+                .foregroundStyle(enabled ? tint : AppColors.faint)
+                .frame(width: size, height: size)
+        }
+        .buttonStyle(BrickButtonStyle(fill: fill, edge: edge, radius: AppRadius.md, stroke: stroke))
+        .disabled(!enabled)
+
+        if let accessibilityLabel {
+            button.accessibilityLabel(accessibilityLabel)
+        } else {
+            button
+        }
+    }
+}
+
 // MARK: - BrickBackWordmark
 
 /// The app wordmark — chunky rounded white lettering (only the two B's capitalised), sized to
@@ -209,21 +248,13 @@ struct AppBadge: View {
 
 // MARK: - BackButton
 
-/// The standard circular back control — a white brick-plate circle with a bold left arrow.
-/// Shared by `ScreenHeader` and the counting screen's branded header so every back button reads
-/// the same.
+/// The standard back control — a white brick-plate square with a bold left arrow. Shared by
+/// `ScreenHeader` and the counting screen's branded header so every back button reads the same.
 struct BackButton: View {
     let onTap: () -> Void
     var body: some View {
-        Pressable(onTap: onTap) {
-            Image(systemName: "arrow.left")
-                .font(.system(size: 17, weight: .bold))
-                .foregroundStyle(AppColors.ink)
-                .frame(width: 36, height: 36)
-                .background(Circle().fill(AppColors.card))
-                .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-        }
-        .accessibilityLabel("Back")
+        BrickIconButton(icon: "arrow.left", size: 36, iconSize: 17, iconWeight: .bold,
+                        accessibilityLabel: "Back", onTap: onTap)
     }
 }
 

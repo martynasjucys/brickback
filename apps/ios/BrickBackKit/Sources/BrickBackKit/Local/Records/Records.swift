@@ -23,6 +23,9 @@ public struct RebuildSetRecord: Codable, FetchableRecord, MutablePersistableReco
     public var updatedAt: Date
     public var dirty: Bool
     public var deleted: Bool
+    /// S9 offline mode — stamped once every image URL for this set is cached on disk. Device-local
+    /// (not synced); NULL means the prefetch hasn't completed yet, so a resume will retry it.
+    public var imagesCachedAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id
@@ -37,12 +40,14 @@ public struct RebuildSetRecord: Codable, FetchableRecord, MutablePersistableReco
         case updatedAt = "updated_at"
         case dirty
         case deleted
+        case imagesCachedAt = "images_cached_at"
     }
 
     public init(
         id: String, setItemId: Int, name: String = "", theme: String? = nil, year: Int? = nil,
         imageUrl: String? = nil, totalParts: Int = 0, verifiedAt: Date? = nil,
-        createdAt: Date, updatedAt: Date, dirty: Bool = true, deleted: Bool = false
+        createdAt: Date, updatedAt: Date, dirty: Bool = true, deleted: Bool = false,
+        imagesCachedAt: Date? = nil
     ) {
         self.id = id
         self.setItemId = setItemId
@@ -56,6 +61,7 @@ public struct RebuildSetRecord: Codable, FetchableRecord, MutablePersistableReco
         self.updatedAt = updatedAt
         self.dirty = dirty
         self.deleted = deleted
+        self.imagesCachedAt = imagesCachedAt
     }
 }
 

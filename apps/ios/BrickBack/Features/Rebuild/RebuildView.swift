@@ -50,6 +50,9 @@ struct RebuildView: View {
                 vm = RebuildViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild, onNudge: { env.sync.nudge() })
             }
             await vm?.load()
+            // S9: make sure this set's images are cached for offline (no-op once complete). Covers
+            // cloud-imported sets and any add whose prefetch didn't finish.
+            Task { await env.services.offlineImages.ensureCached(rebuildSetId) }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background, let vm { Task { await vm.flush() } }
@@ -162,7 +165,7 @@ struct RebuildView: View {
     private func actionCluster(vm: RebuildViewModel) -> some View {
         HStack(spacing: AppSpacing.s8) {
             if actionsExpanded {
-                CircleIconButton(icon: "flag") {
+                BrickIconButton(icon: "flag") {
                     collapseActions()
                     Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) }
                 }
@@ -170,32 +173,26 @@ struct RebuildView: View {
 
                 Group {
                     if startingParty {
-                        ProgressView().tint(AppColors.primary).frame(width: 40, height: 40)
+                        ProgressView().tint(AppColors.primary).frame(width: 40, height: 44)
                     } else {
-                        CircleIconButton(icon: "person.2") { onParty(vm: vm) }
+                        BrickIconButton(icon: "person.2") { onParty(vm: vm) }
                     }
                 }
                 .transition(actionReveal)
 
-                CircleIconButton(icon: "magnifyingglass") { collapseActions(); showSearch = true }
+                BrickIconButton(icon: "magnifyingglass") { collapseActions(); showSearch = true }
                     .transition(actionReveal)
-                CircleIconButton(icon: "slider.horizontal.3") { collapseActions(); showSettings = true }
+                BrickIconButton(icon: "slider.horizontal.3") { collapseActions(); showSettings = true }
                     .transition(actionReveal)
             }
 
-            Pressable(onTap: {
+            BrickIconButton(
+                icon: actionsExpanded ? "xmark" : "ellipsis",
+                symbolReplace: true,
+                accessibilityLabel: actionsExpanded ? "Close actions" : "More actions"
+            ) {
                 withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { actionsExpanded.toggle() }
-            }) {
-                Image(systemName: actionsExpanded ? "xmark" : "ellipsis")
-                    .font(.system(size: 18, weight: .semibold))
-                    .contentTransition(.symbolEffect(.replace))
-                    .foregroundStyle(AppColors.ink)
-                    .frame(width: 40, height: 40)
-                    .background(AppColors.card)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
             }
-            .accessibilityLabel(actionsExpanded ? "Close actions" : "More actions")
         }
     }
 
@@ -288,23 +285,6 @@ struct RebuildView: View {
             }
         }
         .padding(.horizontal, AppSpacing.screen)
-    }
-}
-
-/// A 40pt circular header action button (matches the Flutter `_CircleButton`).
-struct CircleIconButton: View {
-    let icon: String
-    let onTap: () -> Void
-    var body: some View {
-        Pressable(onTap: onTap) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(AppColors.ink)
-                .frame(width: 40, height: 40)
-                .background(AppColors.card)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-        }
     }
 }
 

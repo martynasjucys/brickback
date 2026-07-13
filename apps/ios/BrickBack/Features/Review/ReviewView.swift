@@ -104,7 +104,7 @@ struct ReviewView: View {
             }
             Spacer()
             if hasMissing, let inv {
-                CircleIconButton(icon: "square.and.arrow.up") { shareMissing(inv) }
+                BrickIconButton(icon: "square.and.arrow.up") { shareMissing(inv) }
             }
         }
         .padding(.horizontal, AppSpacing.screen)

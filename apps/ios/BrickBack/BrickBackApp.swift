@@ -14,7 +14,10 @@ struct BrickBackApp: App {
         // (the S0 "missing secret fails launch clearly" acceptance).
         let config = AppConfig.fromBundle()
         do {
-            let services = try AppServices(config: config)
+            // S9 offline mode: inject the Nuke-backed prefetcher, then point the shared image
+            // pipeline at the durable store so every LazyImage reads/writes it (offline-capable).
+            let services = try AppServices(config: config, imagePrefetcher: NukeImagePrefetcher())
+            ImageOfflineCache.configure(store: services.imageStore)
             _env = State(initialValue: AppEnvironment(services: services))
         } catch {
             fatalError("Failed to open local store: \(error)")

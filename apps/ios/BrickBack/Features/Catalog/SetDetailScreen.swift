@@ -138,6 +138,8 @@ private struct StartSortingButton: View {
                 let id = try await env.services.rebuild.addSet(itemId)
                 // Get the new rebuild to the cloud promptly once premium sync is live (no-op now).
                 env.sync.nudge()
+                // S9: eagerly cache this set's images for offline while we're still online.
+                Task { await env.services.offlineImages.ensureCached(id) }
                 loading = false
                 // Starting the build ends the "add set" flow: collapse Search + Set-detail out
                 // of the stack so Back from counting returns straight to Home.

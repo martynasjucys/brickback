@@ -60,8 +60,10 @@ struct PartDetailSheet: View {
                     Text("\(have) / \(part.neededQty)")
                         .font(AppText.h1)
                         .foregroundStyle(complete ? AppColors.success : AppColors.ink)
-                    Text(complete ? "All accounted for" : "in your pile")
-                        .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                    if complete {
+                        Text("All accounted for")
+                            .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                    }
                 }
                 Spacer(minLength: 0)
                 StepButton(icon: "minus", enabled: have > 0) { setHave(have - step) }
@@ -114,15 +116,7 @@ private struct StepButton: View {
     var tint: Color = AppColors.ink
     let onTap: () -> Void
     var body: some View {
-        Pressable(onTap: enabled ? onTap : nil) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(enabled ? tint : AppColors.faint)
-                .frame(width: 36, height: 36)
-                .background(AppColors.card)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-        }
+        BrickIconButton(icon: icon, size: 36, tint: tint, enabled: enabled, onTap: onTap)
     }
 }
 
