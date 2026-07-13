@@ -17,6 +17,10 @@ final class AppEnvironment {
     /// The root keys its view tree on `locale.language` so a switch rebuilds every screen.
     let locale = LocaleController()
 
+    /// UI appearance (S7 dark mode): follows the system by default + a persisted Profile override.
+    /// The root pins `.preferredColorScheme(theme.colorScheme)`; dynamic tokens do the rest.
+    let theme = ThemeController()
+
     /// Selected tab (0 = Rebuilds, 1 = Profile). Held here (not view `@State`) so it — like the
     /// routers — survives the language-switch view-tree rebuild keyed on `locale.language`.
     var selectedTab = 0

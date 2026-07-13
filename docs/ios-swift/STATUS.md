@@ -5,10 +5,40 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** **S7 — internationalization** (English + Lithuanian) landed on top of the S7
-branded-design pass.
-**Current state:** S0–S6 are **code-complete and verified**; S7 **design system + i18n** are done
-(dark mode / Dynamic Type / VoiceOver polish are the remaining S7 items).
+**Last updated:** **S7 — dark mode** (system + in-app override) landed on top of the S7
+branded-design + i18n passes.
+**Current state:** S0–S6 are **code-complete and verified**; S7 **design system + i18n + dark mode**
+are done (Dynamic Type / VoiceOver polish are the remaining S7 items).
+
+<details><summary>S7 dark mode summary (system-driven + a persisted Profile override)</summary>
+
+**Approach — "swap the values, keep the names" again:** every `AppColors` token became a **dynamic**
+`Color(lightHex:darkHex:)` (a `UIColor(dynamicProvider:)` under the hood), so it resolves to the
+active appearance with **zero call-site change** — the same S1→S7 token seam. `Tokens.swift` is the
+only file that holds colour values. A **`ThemeController`** (`@Observable`, persists `app_theme` =
+system/light/dark in `UserDefaults`, mirrors `LocaleController`) drives the root's
+`.preferredColorScheme(theme.colorScheme)` — the old `.preferredColorScheme(.light)` lock is gone.
+Because the tokens are dynamic, pinning the scheme re-skins the whole app; **no `.id` rebuild needed**
+(unlike the language switch). Profile gained an **Appearance** row (System/Light/Dark
+`.confirmationDialog`, named "Appearance" to avoid colliding with the LEGO-theme filter's "Theme").
+
+**Palette:** branded hues (blue Home header, green Rebuild header, red CTA) stay **vivid** in dark;
+neutrals invert (cream canvas → warm near-black `#161619`, white plate → lifted charcoal `#232228`
+over an even-darker lip `#100F13`); semantic + lego-accent tones are **lifted** for contrast on dark.
+A new `shadow` token (dark in both modes) replaced the three `AppColors.ink`-based header shadows
+(ink inverts to near-white in dark → would glow). The **verification certificate stays light** in
+both modes via `.environment(\.colorScheme, .light)` on the card (on-screen **and** the
+`ImageRenderer` export) — it's a "paper" document shared as PNG/PDF, sitting on the themed report bg.
+
+**Verified on the iPhone 17 Pro sim (dark):** Home (vivid blue header + **white status-bar glyphs** —
+fixes the old marginal case — dark card plates), Profile (Appearance row; **Light override flips live**
+even under a dark system), counting (green header, dark tiles, colour-swatch sections), review (dark
+summary card, red re-verify CTA), report (**light certificate on dark chrome**), search (dark field,
+red cursor, dark result plates). Build green, no warnings; 42 kit tests unaffected (dark mode is
+app-target-only). Known cosmetic note: LEGO catalog thumbnails are white-background renders, so they
+read as white tiles on dark — inherent to the product imagery, not a bug.
+
+</details>
 
 <details><summary>S7 i18n summary (English + Lithuanian, live in-app override + device auto-detect)</summary>
 
@@ -101,7 +131,7 @@ Ready to start **S6** (party mode).
 - [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
 - [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
-- [~] **S7 — Design polish & i18n** ← branded design + **i18n done**; dark mode / Dynamic Type / VoiceOver remain
+- [~] **S7 — Design polish & i18n** ← branded design + **i18n + dark mode done**; Dynamic Type / VoiceOver remain
 - [ ] S8 — Launch / App Store
 
 ---

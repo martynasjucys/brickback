@@ -109,6 +109,10 @@ enum L {
     static var languageSystem: String { s("languageSystem") }
     static var languageEnglish: String { s("languageEnglish") }
     static var languageLithuanian: String { s("languageLithuanian") }
+    static var appearance: String { s("appearance") }
+    static var themeSystem: String { s("themeSystem") }
+    static var themeLight: String { s("themeLight") }
+    static var themeDark: String { s("themeDark") }
     static var signedIn: String { s("signedIn") }
     static var yourAccount: String { s("yourAccount") }
     static var signOut: String { s("signOut") }

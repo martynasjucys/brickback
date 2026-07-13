@@ -64,7 +64,7 @@ private struct FloatingGlassCircle: ViewModifier {
             content
                 .background(.regularMaterial, in: Circle())
                 .overlay(Circle().stroke(AppColors.ink.opacity(0.06), lineWidth: 0.5))
-                .shadow(color: AppColors.ink.opacity(0.16), radius: 8, y: 3)
+                .shadow(color: AppColors.shadow.opacity(0.16), radius: 8, y: 3)
         }
     }
 }

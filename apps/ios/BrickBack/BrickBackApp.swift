@@ -29,6 +29,7 @@ struct BrickBackApp: App {
             RootTabView()
                 .environment(env)
                 .environment(env.locale)
+                .environment(env.theme)
                 // S7 i18n: drive SwiftUI date/number formatting off the chosen language, and key
                 // the whole tree on it so an in-app Language switch re-renders every screen with
                 // the new strings (routers live in `env`, so navigation survives the rebuild).
@@ -36,9 +37,11 @@ struct BrickBackApp: App {
                 .id(env.locale.language)
                 .tint(AppColors.ink)
                 .background(AppColors.canvas)
-                // The branded palette is light-only for now; the full dark-mode pass (incl. a
-                // proper per-screen status-bar style over the blue header) is the rest of S7.
-                .preferredColorScheme(.light)
+                // S7 dark mode: follow the system (or the persisted Profile override). Every
+                // `AppColors` token is dynamic, so pinning the scheme re-skins the whole app; in
+                // dark the status bar goes light — correct over both the canvas and the blue/green
+                // brand headers.
+                .preferredColorScheme(env.theme.colorScheme)
                 .task { env.startSyncWiring() }
                 // OAuth/OTP deep-link return (com.brickback://login-callback): supabase-swift
                 // runs the PKCE exchange and emits on the auth-change stream.

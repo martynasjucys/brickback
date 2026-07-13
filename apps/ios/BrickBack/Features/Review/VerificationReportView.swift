@@ -57,7 +57,10 @@ struct ReportView: View {
     private func ready(vm: ReportViewModel, record: Verification) -> some View {
         ScrollView {
             VStack(spacing: AppSpacing.s20) {
+                // The certificate is a "paper" document (shared as PNG/PDF), so it always renders
+                // light — even in dark mode — sitting on the themed report background.
                 VerificationReportCard(record: record, setName: vm.setName, image: vm.image)
+                    .environment(\.colorScheme, .light)
                 VStack(spacing: AppSpacing.s12) {
                     AppButton(L.shareImage, variant: .secondary, icon: "photo", loading: busy, expand: true) {
                         share(vm: vm, record: record, asPDF: false)
@@ -81,6 +84,7 @@ struct ReportView: View {
             .frame(width: 360)
             .padding(AppSpacing.s20)
             .background(AppColors.canvas)
+            .environment(\.colorScheme, .light) // export the certificate as light "paper", always
         let renderer = ImageRenderer(content: card)
 
         var url: URL?

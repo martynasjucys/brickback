@@ -128,7 +128,7 @@ private struct HomeHeader: View {
                 .padding(.bottom, AppDepth.brick + 1)
         }
         .ignoresSafeArea(edges: .top)
-        .shadow(color: AppColors.ink.opacity(0.14), radius: 10, y: 4)
+        .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
     }
 }
 

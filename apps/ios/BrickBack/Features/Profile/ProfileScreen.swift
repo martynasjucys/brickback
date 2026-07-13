@@ -9,6 +9,7 @@ struct ProfileScreen: View {
     @Environment(AppEnvironment.self) private var env
     @State private var showGallery = false
     @State private var showLanguage = false
+    @State private var showAppearance = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -28,6 +29,9 @@ struct ProfileScreen: View {
                                     value: env.isPremium ? nil : L.premium) {
                             if env.isPremium { env.syncNow() } else { env.profileRouter.push(.paywall) }
                         }
+                    }
+                    SettingsRow(icon: "circle.lefthalf.filled", title: L.appearance, value: env.theme.currentLabel) {
+                        showAppearance = true
                     }
                     SettingsRow(icon: "globe", title: L.language, value: env.locale.currentLabel) {
                         showLanguage = true
@@ -55,6 +59,12 @@ struct ProfileScreen: View {
             }
             Button(L.cancel, role: .cancel) {}
         }
+        .confirmationDialog(L.appearance, isPresented: $showAppearance, titleVisibility: .visible) {
+            ForEach(AppTheme.allCases) { theme in
+                Button(themeLabel(theme)) { env.theme.set(theme) }
+            }
+            Button(L.cancel, role: .cancel) {}
+        }
     }
 
     private func languageLabel(_ lang: AppLanguage) -> String {
@@ -62,6 +72,14 @@ struct ProfileScreen: View {
         case .system: return L.languageSystem
         case .en: return L.languageEnglish
         case .lt: return L.languageLithuanian
+        }
+    }
+
+    private func themeLabel(_ theme: AppTheme) -> String {
+        switch theme {
+        case .system: return L.themeSystem
+        case .light: return L.themeLight
+        case .dark: return L.themeDark
         }
     }
 }
