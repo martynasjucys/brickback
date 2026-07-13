@@ -26,6 +26,11 @@ enum AppColors {
     static let brandDeep = Color(hex: 0x0349B0) // header gradient bottom / deeper brand blue
     static let brandEdge = Color(hex: 0x012E73) // blue plate's raised bottom lip (the 3D edge)
 
+    // Counting / "Rebuild" header field — a green brick plate, distinct from the blue home header.
+    static let build = Color(hex: 0x2E9E4F)
+    static let buildDeep = Color(hex: 0x238B43) // header gradient bottom / deeper green
+    static let buildEdge = Color(hex: 0x155F2D) // green plate's raised bottom lip (the 3D edge)
+
     // Primary action — a LEGO-red brick. onPrimary is white; primaryEdge is the pressed lip.
     static let primary = Color(hex: 0xE4000F)
     static let onPrimary = Color(hex: 0xFFFFFF)

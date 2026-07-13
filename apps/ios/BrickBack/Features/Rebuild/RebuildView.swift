@@ -20,6 +20,9 @@ struct RebuildView: View {
     @State private var showSettings = false
     @State private var startingParty = false
     @State private var partyError: String?
+    /// The trailing action cluster: collapsed to a single "more" button by default; tapping it
+    /// fans the four screen actions out with a spring.
+    @State private var actionsExpanded = false
 
     private var grouping: PartGrouping { PartGrouping(rawValue: groupingRaw) ?? .color }
 
@@ -66,7 +69,12 @@ struct RebuildView: View {
             }
         }
         .sheet(isPresented: $showSettings) {
-            ViewSettingsSheet(hasExtras: vm?.inv?.hasExtras ?? false)
+            if let vm {
+                ViewSettingsSheet(
+                    hasExtras: vm.inv?.hasExtras ?? false,
+                    remainingOnly: Binding(get: { vm.remainingOnly }, set: { vm.remainingOnly = $0 })
+                )
+            }
         }
         .alert("Couldn't start party", isPresented: Binding(
             get: { partyError != nil },
@@ -89,8 +97,6 @@ struct RebuildView: View {
 
         return VStack(spacing: 0) {
             header(vm: vm, inv: inv)
-            progressBlock(vm: vm, inv: inv)
-            Divider().overlay(AppColors.line)
             if inv.parts.isEmpty {
                 EmptyState(title: "No inventory data", message: "The catalog has no part list for this set yet.", icon: "info.circle")
             } else if visible.isEmpty && !extrasVisible {
@@ -111,25 +117,111 @@ struct RebuildView: View {
         }
     }
 
-    // MARK: - Header (back + circle actions)
+    // MARK: - Header (branded green field: nav row + progress summary)
 
+    /// The branded green header: the back + expanding-actions nav row, and — once the inventory is
+    /// loaded — the set's progress ring, title and part count riding on the same field (so it's
+    /// taller than Home's, but keeps the same brick-plate background and border).
     private func header(vm: RebuildViewModel, inv: RebuildInventory?) -> some View {
-        HStack(spacing: AppSpacing.s8) {
-            Pressable(onTap: { Task { await vm.flush(); env.homeRouter.pop() } }) {
-                Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
+        VStack(spacing: 0) {
+            HStack(spacing: AppSpacing.s8) {
+                BackButton { Task { await vm.flush(); env.homeRouter.pop() } }
+                Spacer(minLength: AppSpacing.s8)
+                actionCluster(vm: vm)
             }
-            Spacer()
-            CircleIconButton(icon: "flag") { Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) } }
-            if startingParty {
-                ProgressView().tint(AppColors.primary).frame(width: 40, height: 40)
-            } else {
-                CircleIconButton(icon: "person.2") { onParty(vm: vm) }
-            }
-            CircleIconButton(icon: "magnifyingglass") { showSearch = true }
-            CircleIconButton(icon: "slider.horizontal.3") { showSettings = true }
+            if let inv { progressSummary(vm: vm, inv: inv) }
         }
         .padding(.horizontal, AppSpacing.screen)
-        .padding(.vertical, AppSpacing.s8)
+        .padding(.top, AppSpacing.s8)
+        .padding(.bottom, AppSpacing.s16)
+        .frame(maxWidth: .infinity)
+        .background(headerField)
+    }
+
+    /// Set title, part count and a slim progress bar — the same bar used elsewhere, styled white so
+    /// it (and a completed fill) reads on the green field. Far shorter than the old progress ring.
+    private func progressSummary(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
+        let total = inv.summary.totalParts
+        let value = total == 0 ? 0 : Double(vm.haveTotal) / Double(total)
+        return VStack(alignment: .leading, spacing: AppSpacing.s8) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(inv.summary.name).font(AppText.h1).foregroundStyle(.white).lineLimit(2)
+                Text("\(vm.haveTotal) of \(total) parts · \(inv.parts.count) types")
+                    .font(AppText.caption).foregroundStyle(.white.opacity(0.85))
+            }
+            AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, AppSpacing.s12)
+    }
+
+    /// The trailing actions. Collapsed, it's a single "more" button; expanded, the four screen
+    /// actions spring out to its left. Tapping most actions collapses the cluster again; the party
+    /// action stays open so its in-progress spinner is visible.
+    @ViewBuilder
+    private func actionCluster(vm: RebuildViewModel) -> some View {
+        HStack(spacing: AppSpacing.s8) {
+            if actionsExpanded {
+                CircleIconButton(icon: "flag") {
+                    collapseActions()
+                    Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) }
+                }
+                .transition(actionReveal)
+
+                Group {
+                    if startingParty {
+                        ProgressView().tint(AppColors.primary).frame(width: 40, height: 40)
+                    } else {
+                        CircleIconButton(icon: "person.2") { onParty(vm: vm) }
+                    }
+                }
+                .transition(actionReveal)
+
+                CircleIconButton(icon: "magnifyingglass") { collapseActions(); showSearch = true }
+                    .transition(actionReveal)
+                CircleIconButton(icon: "slider.horizontal.3") { collapseActions(); showSettings = true }
+                    .transition(actionReveal)
+            }
+
+            Pressable(onTap: {
+                withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { actionsExpanded.toggle() }
+            }) {
+                Image(systemName: actionsExpanded ? "xmark" : "ellipsis")
+                    .font(.system(size: 18, weight: .semibold))
+                    .contentTransition(.symbolEffect(.replace))
+                    .foregroundStyle(AppColors.ink)
+                    .frame(width: 40, height: 40)
+                    .background(AppColors.card)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
+            }
+            .accessibilityLabel(actionsExpanded ? "Close actions" : "More actions")
+        }
+    }
+
+    /// Each revealed action scales up out of the "more" button (anchored trailing) as it fades in.
+    private var actionReveal: AnyTransition {
+        .scale(scale: 0.4, anchor: .trailing).combined(with: .opacity)
+    }
+
+    private func collapseActions() {
+        withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { actionsExpanded = false }
+    }
+
+    /// The branded green "brick plate" that backs the header — the counting-screen counterpart to
+    /// Home's blue field: a gradient face raised on a darker bottom lip, bleeding into the status
+    /// bar and curving off at the bottom.
+    private var headerField: some View {
+        let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
+                                           bottomTrailingRadius: AppRadius.xl, style: .continuous)
+        return ZStack(alignment: .top) {
+            shape.fill(AppColors.buildEdge)
+            LinearGradient(colors: [AppColors.build, AppColors.buildDeep], startPoint: .top, endPoint: .bottom)
+                .clipShape(shape)
+                .padding(.bottom, AppDepth.brick + 1)
+        }
+        .ignoresSafeArea(edges: .top)
+        .shadow(color: AppColors.ink.opacity(0.14), radius: 10, y: 4)
     }
 
     /// Host a realtime party on this rebuild. Premium + account only (the paywall / sign-in bounce
@@ -153,31 +245,6 @@ struct RebuildView: View {
                 partyError = "\(error)"
             }
         }
-    }
-
-    private func progressBlock(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
-        let total = inv.summary.totalParts
-        let value = total == 0 ? 0 : Double(vm.haveTotal) / Double(total)
-        return HStack(spacing: AppSpacing.s16) {
-            ProgressRing(value: value, size: 72, stroke: 8)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(inv.summary.name).font(AppText.h1).foregroundStyle(AppColors.ink).lineLimit(2)
-                Text("\(vm.haveTotal) of \(total) parts · \(inv.parts.count) types")
-                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                Spacer().frame(height: AppSpacing.s4)
-                Pressable(onTap: { vm.remainingOnly.toggle() }) {
-                    HStack(spacing: AppSpacing.s4) {
-                        Image(systemName: vm.remainingOnly ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 18))
-                            .foregroundStyle(vm.remainingOnly ? AppColors.primary : AppColors.muted)
-                        Text("Remaining only").font(AppText.label).foregroundStyle(AppColors.muted)
-                    }
-                }
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.bottom, AppSpacing.s12)
     }
 
     // MARK: - Section (header + tile grid)

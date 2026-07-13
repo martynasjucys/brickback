@@ -207,6 +207,26 @@ struct AppBadge: View {
     }
 }
 
+// MARK: - BackButton
+
+/// The standard circular back control — a white brick-plate circle with a bold left arrow.
+/// Shared by `ScreenHeader` and the counting screen's branded header so every back button reads
+/// the same.
+struct BackButton: View {
+    let onTap: () -> Void
+    var body: some View {
+        Pressable(onTap: onTap) {
+            Image(systemName: "arrow.left")
+                .font(.system(size: 17, weight: .bold))
+                .foregroundStyle(AppColors.ink)
+                .frame(width: 36, height: 36)
+                .background(Circle().fill(AppColors.card))
+                .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
+        }
+        .accessibilityLabel("Back")
+    }
+}
+
 // MARK: - ScreenHeader
 
 struct ScreenHeader<Trailing: View>: View {
@@ -224,16 +244,7 @@ struct ScreenHeader<Trailing: View>: View {
 
     var body: some View {
         HStack(alignment: .center, spacing: AppSpacing.s8) {
-            if let onBack {
-                Pressable(onTap: onBack) {
-                    Image(systemName: "arrow.left")
-                        .font(.system(size: 17, weight: .bold))
-                        .foregroundStyle(AppColors.ink)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(AppColors.card))
-                        .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-                }
-            }
+            if let onBack { BackButton(onTap: onBack) }
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(AppText.h1).foregroundStyle(AppColors.ink)
                 if let subtitle {
@@ -294,14 +305,20 @@ struct EmptyState<Action: View>: View {
 struct AppProgressBar: View {
     let value: Double // 0..1
     var height: CGFloat = 8
+    /// The unfilled track. Defaults to the warm skeleton fill (for cream surfaces).
+    var track: Color = AppColors.faint
+    /// The filled portion. `nil` auto-picks green when complete, else blue-in-motion. Override with
+    /// a fixed colour (e.g. white) on a coloured field where those would vanish.
+    var tint: Color? = nil
 
     var body: some View {
         let v = min(max(value, 0), 1)
+        let fill = tint ?? (v >= 1 ? AppColors.success : AppColors.info)
         GeometryReader { geo in
             ZStack(alignment: .leading) {
-                Capsule().fill(AppColors.faint)
+                Capsule().fill(track)
                 Capsule()
-                    .fill(v >= 1 ? AppColors.success : AppColors.info)
+                    .fill(fill)
                     .frame(width: max(geo.size.width * v, v == 0 ? 0 : height))
             }
         }
@@ -316,18 +333,26 @@ struct ProgressRing: View {
     let value: Double // 0..1
     var size: CGFloat = 44
     var stroke: CGFloat = 5
+    /// The unfilled track. Defaults to the warm skeleton fill (for cream surfaces).
+    var track: Color = AppColors.faint
+    /// The filled arc. `nil` auto-picks green when complete, else blue-in-motion. Override with a
+    /// fixed colour (e.g. white) when the ring sits on a coloured field where those would vanish.
+    var tint: Color? = nil
+    /// The centre percentage label.
+    var textColor: Color = AppColors.ink
 
     var body: some View {
         let v = min(max(value, 0), 1)
+        let arc = tint ?? (v >= 1 ? AppColors.success : AppColors.info)
         ZStack {
-            Circle().stroke(AppColors.faint, lineWidth: stroke)
+            Circle().stroke(track, lineWidth: stroke)
             Circle()
                 .trim(from: 0, to: v)
-                .stroke(v >= 1 ? AppColors.success : AppColors.info, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
+                .stroke(arc, style: StrokeStyle(lineWidth: stroke, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text("\(Int((v * 100).rounded()))%")
                 .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
-                .foregroundStyle(AppColors.ink)
+                .foregroundStyle(textColor)
         }
         .frame(width: size, height: size)
     }
