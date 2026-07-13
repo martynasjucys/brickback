@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 import BrickBackKit
 
 /// The counting session's view model. Holds the **live `have`/`extraHave` maps** (the session
@@ -66,24 +65,35 @@ final class RebuildViewModel {
         return inv.parts.reduce(0) { $0 + min(have[$1.key] ?? 0, $1.neededQty) }
     }
 
+    /// Every needed part is now counted in full — drives the set-complete celebration haptic.
+    var isSetComplete: Bool {
+        guard let inv else { return false }
+        let total = inv.summary.totalParts
+        return total > 0 && haveTotal >= total
+    }
+
     // MARK: - Build parts
 
     /// Tap a tile: add the part's step (capped at needed). Light bump when already complete; a
-    /// medium impact when a tap finishes it.
+    /// medium impact when a tap finishes a part — unless that tap also finishes the whole set, in
+    /// which case `setHave`'s celebration carries it (no double-buzz).
     func tap(_ part: ExpandedPart) {
         let current = have[part.key] ?? 0
         if current >= part.neededQty { Haptics.light(); return }
         let next = tapIncrement(current: current, step: stepOf(part), needed: part.neededQty)
         setHave(part, next)
-        if next >= part.neededQty { Haptics.impactMedium() }
+        if next >= part.neededQty && !isSetComplete { Haptics.impactMedium() }
     }
 
     /// Absolute-set a part's have (from a tile tap or the detail stepper). Optimistic in-memory,
-    /// debounced to GRDB.
+    /// debounced to GRDB. Fires the set-complete celebration on the count that pushes the whole
+    /// set to 100%.
     func setHave(_ part: ExpandedPart, _ qty: Int) {
+        let wasSetComplete = isSetComplete
         let clamped = max(0, qty)
         have[part.key] = clamped
         Haptics.selection()
+        if !wasSetComplete && isSetComplete { Haptics.celebrate() }
         pending[part.key] = part
         timers[part.key]?.cancel()
         let key = part.key
@@ -144,12 +154,4 @@ final class RebuildViewModel {
         }
         if !parts.isEmpty { onNudge() }
     }
-}
-
-/// The exact Flutter haptic map: a selection tick per count, a medium thud on finishing a part,
-/// a light tap when touching an already-done part.
-enum Haptics {
-    static func selection() { UISelectionFeedbackGenerator().selectionChanged() }
-    static func impactMedium() { UIImpactFeedbackGenerator(style: .medium).impactOccurred() }
-    static func light() { UIImpactFeedbackGenerator(style: .light).impactOccurred() }
 }

@@ -9,6 +9,7 @@ import BrickBackKit
 struct RebuildView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let rebuildSetId: String
 
     @State private var vm: RebuildViewModel?
@@ -175,7 +176,7 @@ struct RebuildView: View {
                     if startingParty {
                         ProgressView().tint(AppColors.primary).frame(width: 44, height: 48)
                     } else {
-                        BrickIconButton(icon: "person.2") { onParty(vm: vm) }
+                        BrickIconButton(icon: "person.2", accessibilityLabel: L.a11yStartParty) { onParty(vm: vm) }
                     }
                 }
                 .transition(actionReveal)
@@ -191,7 +192,7 @@ struct RebuildView: View {
                 symbolReplace: true,
                 accessibilityLabel: actionsExpanded ? L.closeActions : L.moreActions
             ) {
-                withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { actionsExpanded.toggle() }
+                withAnimation(reduceMotion ? nil : Motion.reveal) { actionsExpanded.toggle() }
             }
         }
     }
@@ -202,7 +203,7 @@ struct RebuildView: View {
     }
 
     private func collapseActions() {
-        withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { actionsExpanded = false }
+        withAnimation(reduceMotion ? nil : Motion.reveal) { actionsExpanded = false }
     }
 
     /// The branded green "brick plate" that backs the header — the counting-screen counterpart to

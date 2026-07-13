@@ -258,4 +258,21 @@ enum L {
     static func couldntAddParts(_ error: String) -> String {
         String(localized: "couldntAddParts", defaultValue: "Couldn't add parts: \(error)", bundle: I18n.bundle, locale: I18n.locale)
     }
+    static var a11yProgress: String { s("a11yProgress") }
+    static var a11yStartParty: String { s("a11yStartParty") }
+    static var a11yDetails: String { s("a11yDetails") }
+    static var a11yAdd: String { s("a11yAdd") }
+    static var a11yPresent: String { s("a11yPresent") }
+    static var a11yAbsent: String { s("a11yAbsent") }
+    static var a11yTileAddHint: String { s("a11yTileAddHint") }
+    static var a11yOpensBrickLink: String { s("a11yOpensBrickLink") }
+    static func a11yNameColor(name: String, color: String) -> String {
+        String(localized: "a11yNameColor", defaultValue: "\(name), \(color)", bundle: I18n.bundle, locale: I18n.locale)
+    }
+    static func a11yCount(have: Int, needed: Int) -> String {
+        String(localized: "a11yCount", defaultValue: "\(have) of \(needed)", bundle: I18n.bundle, locale: I18n.locale)
+    }
+    static func a11yCountComplete(have: Int, needed: Int) -> String {
+        String(localized: "a11yCountComplete", defaultValue: "\(have) of \(needed), complete", bundle: I18n.bundle, locale: I18n.locale)
+    }
 }

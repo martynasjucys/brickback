@@ -139,6 +139,8 @@ struct BrickBackWordmark: View {
             .font(.system(size: size, weight: .black, design: .rounded))
             .tracking(0.5)
             .foregroundStyle(.white)
+            .lineLimit(1)
+            .minimumScaleFactor(0.6) // hold one line on the header at large Dynamic Type
             .shadow(color: AppColors.brandEdge.opacity(0.6), radius: 0, y: 1.5) // subtle brick emboss
             .accessibilityLabel("BrickBack")
             .accessibilityAddTraits(.isHeader)
@@ -354,6 +356,8 @@ struct AppProgressBar: View {
         }
         .frame(height: height)
         .clipShape(Capsule())
+        // Sweep the fill as the count changes (instant under Reduce Motion).
+        .brickAnimation(Motion.progress, value: v)
     }
 }
 
@@ -383,8 +387,17 @@ struct ProgressRing: View {
             Text("\(Int((v * 100).rounded()))%")
                 .font(.system(size: size * 0.28, weight: .bold, design: .rounded))
                 .foregroundStyle(textColor)
+                .lineLimit(1)
+                .minimumScaleFactor(0.5) // the ring is a fixed-size graphic — shrink to fit
+                .contentTransition(.numericText()) // roll the percentage as the arc sweeps
         }
         .frame(width: size, height: size)
+        // Sweep the arc + roll the label as progress changes (instant under Reduce Motion).
+        .brickAnimation(Motion.progress, value: v)
+        // VoiceOver reads the ring as "Progress, 50%" rather than a bare "50%".
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(L.a11yProgress)
+        .accessibilityValue("\(Int((v * 100).rounded()))%")
     }
 }
 
@@ -428,6 +441,9 @@ struct SetThumb: View {
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous).stroke(AppColors.line, lineWidth: 1))
+        // A decorative thumbnail — every row/card that uses it carries the name as text alongside,
+        // so hiding it from VoiceOver removes "image" noise without losing information.
+        .accessibilityHidden(true)
     }
 }
 

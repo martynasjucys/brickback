@@ -5,10 +5,61 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** **S7 — dark mode** (system + in-app override) landed on top of the S7
-branded-design + i18n passes.
-**Current state:** S0–S6 are **code-complete and verified**; S7 **design system + i18n + dark mode**
-are done (Dynamic Type / VoiceOver polish are the remaining S7 items).
+**Last updated:** **S7 — motion/haptics, accessibility (Dynamic Type + VoiceOver), and app-icon /
+launch-screen scaffolding** landed on top of the branded-design + i18n + dark-mode passes.
+**Current state:** S0–S6 are **code-complete and verified**; **S7 is functionally complete** — the
+only open item is dropping in the **app-icon vector** (everything around it is wired; see
+[branding-assets.md](branding-assets.md)).
+
+<details><summary>S7 motion + haptics + accessibility summary (Dynamic Type, VoiceOver, Reduce Motion)</summary>
+
+**Motion (new `DesignSystem/Motion.swift`):** one set of animation curves (`Motion.reveal`/`.state`/
+`.progress`) plus a **Reduce-Motion gate** — a `.brickAnimation(_:value:)` view modifier that reads
+`\.accessibilityReduceMotion` (reactive) and collapses to an instant change when the setting is on,
+and `Motion.gated(_:)`/`Motion.reduced` for imperative `withAnimation` sites. Wired into: the count
+**tiles** (state-colour cross-fade, checkmark pop-in via `.transition`, count roll via
+`.contentTransition(.numericText())`), the **progress ring** (arc sweep + % roll) and **progress
+bar** (fill sweep), and the counting **action-cluster** fan-out (`withAnimation(reduceMotion ? nil :
+Motion.reveal)`). Press-scale micro-interactions on the brick button styles are left as-is (within
+HIG for Reduce Motion).
+
+**Haptics (extracted to `DesignSystem/Haptics.swift`):** the S3 map is unchanged — a selection tick
+per count, a medium thud on finishing a part, a light tap on an already-complete part — but the
+generators are now kept **prepared** (lower latency) and a **CoreHaptics set-complete celebration**
+(three rising taps + a swell) fires when the *whole set* reaches 100% (`RebuildViewModel.isSetComplete`
+transition), replacing the per-part thud on that final tap so it never double-buzzes. Degrades to a
+success notification where CoreHaptics is unavailable (incl. the Simulator — verified no crash).
+
+**Accessibility — VoiceOver:** count **tiles** read as one element — "Brick 2×4, Bright Green" ·
+value "1 of 1, complete" · **"Details" rotor action** (the long-press equivalent; a hold gesture is
+impractical under VoiceOver) — via `.accessibilityElement(children:.ignore)` + `.accessibilityAction`.
+The **progress ring** reads "Progress, 18%"; **missing-part rows** "name, colour · num" + "need N" +
+"opens the BrickLink page"; **minifig rows** carry present/absent state (the single-needed toggle is
+one element with the state in its value); the Review **back button** is now the shared `BackButton`
+(44 pt + a "Back" label, replacing a bare arrow); the counting **party button** got a label (was the
+raw `person.2` symbol); **step buttons** got 44 pt targets + Add/Remove labels; decorative `SetThumb`
+thumbnails are `.accessibilityHidden`. New a11y strings are in the String Catalog (via
+`gen_l10n.py` → 205 keys). **Verified live on the iPhone 17 Pro sim** via `idb ui describe-all` (label
++ value + custom action on every tile/ring/row).
+
+**Accessibility — Dynamic Type:** `AppText`/`Font.system(size:)` already scale; this pass adds
+`minimumScaleFactor` on the space-constrained single-line numerics (tile count/number, ring %, need
+count) and `lineLimit(1)` + scale on the header wordmark. **Verified at the largest accessibility
+size** (`accessibility-extra-extra-extra-large`): the tile grid reflows (tiles grow, names wrap /
+truncate gracefully) with **no clipping**.
+
+**App icon + launch screen (artwork deferred):** the launch screen is a solid branded background
+(`LaunchBackground.colorset`, matching `AppColors.canvas` light+dark — no colour flash into the first
+frame), wired via `Info.plist` `UILaunchScreen`. The `AppIcon` slot + a documented one-step drop-in
+for the vector (icon **and** an optional launch logo) live in
+[branding-assets.md](branding-assets.md). Build green, no warnings; **42 kit tests pass**.
+
+> ⚠️ **Sim gotcha (cost me a long debug):** two iPhone 17 Pro simulators were booted at once, so
+> `xcrun simctl … booted` (install/screenshot) and `idb --udid …` targeted **different** devices —
+> making fresh builds look like they never changed. Always pin **both** tools to one explicit UDID
+> (the idb-connected one), or shut down the extra sim.
+
+</details>
 
 <details><summary>S7 dark mode summary (system-driven + a persisted Profile override)</summary>
 
@@ -131,7 +182,7 @@ Ready to start **S6** (party mode).
 - [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
 - [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
-- [~] **S7 — Design polish & i18n** ← branded design + **i18n + dark mode done**; Dynamic Type / VoiceOver remain
+- [~] **S7 — Design polish & i18n** ← branded design + i18n + dark mode + **motion/haptics + Dynamic Type + VoiceOver done**; only the app-icon vector remains ([branding-assets.md](branding-assets.md))
 - [ ] S8 — Launch / App Store
 
 ---

@@ -317,6 +317,24 @@ fmt("partyRemainingLabel", "color: String, count: Int", "\\(color) · \\(count) 
 fmt("couldntAddParts", "_ error: String", "Couldn't add parts: \\(error)",
     "Couldn't add parts: %@", "Nepavyko pridėti detalių: %@")
 
+# ─────────────────────────── ACCESSIBILITY (VoiceOver) ───────────────────────────
+# Spoken labels/values/hints. Composed at the call site from catalog data (part/colour names),
+# so these are the connective phrasing only. Counts stay %lld (VoiceOver reads them as numbers).
+plain("a11yProgress", "Progress", "Eiga")
+plain("a11yStartParty", "Start party", "Pradėti bendrą rūšiavimą")
+plain("a11yDetails", "Details", "Detalės")
+plain("a11yAdd", "Add", "Pridėti")
+plain("a11yPresent", "Present", "Yra")
+plain("a11yAbsent", "Absent", "Nėra")
+plain("a11yTileAddHint", "Adds one", "Prideda vieną")
+plain("a11yOpensBrickLink", "Opens the BrickLink page", "Atidaro „BrickLink“ puslapį")
+# Tile label = "<part name>, <colour>"; value = "<have> of <needed>" (+ ", complete").
+fmt("a11yNameColor", "name: String, color: String", "\\(name), \\(color)", "%1$@, %2$@", "%1$@, %2$@")
+fmt("a11yCount", "have: Int, needed: Int", "\\(have) of \\(needed)",
+    "%1$lld of %2$lld", "%1$lld iš %2$lld")
+fmt("a11yCountComplete", "have: Int, needed: Int", "\\(have) of \\(needed), complete",
+    "%1$lld of %2$lld, complete", "%1$lld iš %2$lld, baigta")
+
 # ═══════════════════════════ EMIT ═══════════════════════════
 def unit(v):
     return {"stringUnit": {"state": "translated", "value": v}}

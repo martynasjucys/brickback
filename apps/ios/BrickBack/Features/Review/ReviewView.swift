@@ -99,9 +99,9 @@ struct ReviewView: View {
     private func header(inv: RebuildInventory?) -> some View {
         let hasMissing = !(inv?.missingParts.isEmpty ?? true)
         return HStack(spacing: AppSpacing.s8) {
-            Pressable(onTap: { env.homeRouter.pop() }) {
-                Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
-            }
+            // The shared brick-plate back control — matches the share button beside it and gives a
+            // 44pt target + a "Back" VoiceOver label (the old bare arrow had neither).
+            BackButton { env.homeRouter.pop() }
             Spacer()
             if hasMissing, let inv {
                 BrickIconButton(icon: "square.and.arrow.up") { shareMissing(inv) }
@@ -237,11 +237,17 @@ private struct MissingRow: View {
                 }
                 Spacer(minLength: AppSpacing.s8)
                 Text(L.needQty(part.needed)).font(AppText.label).foregroundStyle(AppColors.warning)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             .padding(.horizontal, AppSpacing.screen)
             .padding(.vertical, AppSpacing.s8)
             .contentShape(Rectangle())
         }
+        // VoiceOver: the row is a `Button`; label/value/hint override its auto-combined label so it
+        // reads "<part>, <colour> · <num>", value "need N", hint "opens BrickLink".
+        .accessibilityLabel("\(part.partName), \(sub)")
+        .accessibilityValue(L.needQty(part.needed))
+        .accessibilityHint(L.a11yOpensBrickLink)
     }
 }
 
@@ -257,7 +263,7 @@ private struct MinifigRow: View {
     private var complete: Bool { have >= fig.neededQty }
 
     var body: some View {
-        HStack(spacing: AppSpacing.s12) {
+        let row = HStack(spacing: AppSpacing.s12) {
             SetThumb(imageUrl: fig.imageUrl, size: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(fig.name).font(AppText.body).foregroundStyle(AppColors.ink).lineLimit(2)
@@ -268,28 +274,44 @@ private struct MinifigRow: View {
             Spacer(minLength: AppSpacing.s8)
             if fig.neededQty > 1 {
                 HStack(spacing: AppSpacing.s8) {
-                    MiniStepBtn(icon: "minus", enabled: have > 0) { onChanged(have - 1) }
+                    MiniStepBtn(icon: "minus", label: L.remove, enabled: have > 0) { onChanged(have - 1) }
                     Text("\(have)/\(fig.neededQty)")
                         .font(AppText.label)
                         .foregroundStyle(complete ? AppColors.success : AppColors.ink)
                         .frame(minWidth: 34)
-                    MiniStepBtn(icon: "plus", enabled: have < fig.neededQty) { onChanged(have + 1) }
+                        .accessibilityLabel(L.a11yCount(have: have, needed: fig.neededQty))
+                    MiniStepBtn(icon: "plus", label: L.a11yAdd, enabled: have < fig.neededQty) { onChanged(have + 1) }
                 }
             } else {
                 Pressable(onTap: { onChanged(complete ? 0 : fig.neededQty) }) {
                     Image(systemName: complete ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 28))
                         .foregroundStyle(complete ? AppColors.success : AppColors.muted)
+                        .frame(width: 44, height: 44) // 44pt tap target around the 28pt glyph
+                        .contentShape(Circle())
                 }
             }
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.vertical, AppSpacing.s8)
+
+        // The single-needed row is a present/absent toggle: read it as one element carrying the
+        // state (the on-screen "Needed" caption never changes, so VoiceOver needs it in the value).
+        if fig.neededQty == 1 {
+            row.accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(fig.name)
+                .accessibilityValue(complete ? L.a11yPresent : L.a11yAbsent)
+                .accessibilityAction { onChanged(complete ? 0 : fig.neededQty) }
+        } else {
+            row
+        }
     }
 }
 
 private struct MiniStepBtn: View {
     let icon: String
+    let label: String
     let enabled: Bool
     let onTap: () -> Void
     var body: some View {
@@ -301,7 +323,10 @@ private struct MiniStepBtn: View {
                 .background(AppColors.card)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
+                .frame(width: 44, height: 44) // 44pt tap target around the 32pt visual
+                .contentShape(Circle())
         }
+        .accessibilityLabel(label)
     }
 }
 
@@ -384,5 +409,9 @@ private struct FlagToggle: View {
             .padding(.vertical, AppSpacing.s8)
             .contentShape(Rectangle())
         }
+        // Read as a checkbox: "<label>, selected/—, button". The row is a `Button`, so labelling it
+        // directly (rather than wrapping with `.accessibilityElement`) keeps its tap action.
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(value ? [.isButton, .isSelected] : .isButton)
     }
 }
