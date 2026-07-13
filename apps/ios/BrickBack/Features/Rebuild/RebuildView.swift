@@ -36,7 +36,7 @@ struct RebuildView: View {
                 case .failed(let message):
                     VStack(spacing: 0) {
                         header(vm: vm, inv: nil)
-                        EmptyState(title: "Couldn't load", message: message, icon: "exclamationmark.triangle")
+                        EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
                     }
                 case .ready:
                     if let inv = vm.inv { content(vm: vm, inv: inv) }
@@ -79,11 +79,11 @@ struct RebuildView: View {
                 )
             }
         }
-        .alert("Couldn't start party", isPresented: Binding(
+        .alert(L.couldntStartParty, isPresented: Binding(
             get: { partyError != nil },
             set: { if !$0 { partyError = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L.ok, role: .cancel) {}
         } message: {
             Text(partyError ?? "")
         }
@@ -101,9 +101,9 @@ struct RebuildView: View {
         return VStack(spacing: 0) {
             header(vm: vm, inv: inv)
             if inv.parts.isEmpty {
-                EmptyState(title: "No inventory data", message: "The catalog has no part list for this set yet.", icon: "info.circle")
+                EmptyState(title: L.countNoInventoryTitle, message: L.countNoInventoryMessage, icon: "info.circle")
             } else if visible.isEmpty && !extrasVisible {
-                EmptyState(title: "All sorted!", message: "Every part for this set is accounted for.", icon: "party.popper")
+                EmptyState(title: L.countAllSortedTitle, message: L.everyPartAccountedFor, icon: "party.popper")
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -149,7 +149,7 @@ struct RebuildView: View {
         return VStack(alignment: .leading, spacing: AppSpacing.s8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(inv.summary.name).font(AppText.h1).foregroundStyle(.white).lineLimit(2)
-                Text("\(vm.haveTotal) of \(total) parts · \(inv.parts.count) types")
+                Text(L.countHaveOfPartsTypes(have: vm.haveTotal, total: total, types: inv.parts.count))
                     .font(AppText.caption).foregroundStyle(.white.opacity(0.85))
             }
             AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
@@ -189,7 +189,7 @@ struct RebuildView: View {
             BrickIconButton(
                 icon: actionsExpanded ? "xmark" : "ellipsis",
                 symbolReplace: true,
-                accessibilityLabel: actionsExpanded ? "Close actions" : "More actions"
+                accessibilityLabel: actionsExpanded ? L.closeActions : L.moreActions
             ) {
                 withAnimation(.spring(response: 0.34, dampingFraction: 0.82)) { actionsExpanded.toggle() }
             }
@@ -233,7 +233,7 @@ struct RebuildView: View {
             await vm.flush()
             do {
                 await env.sync.pushNow()
-                let name = vm.inv?.summary.name ?? "Sort party"
+                let name = vm.inv?.summary.name ?? L.sortParty
                 let party = try await env.services.party.createParty(rebuildSetId, name: name)
                 startingParty = false
                 env.homeRouter.push(.party(party.id))
@@ -264,7 +264,7 @@ struct RebuildView: View {
                 } else if let leadingIcon {
                     Image(systemName: leadingIcon).font(.system(size: 15)).foregroundStyle(AppColors.inkSoft)
                 }
-                Text(section.label).font(AppText.label).foregroundStyle(AppColors.inkSoft).lineLimit(1)
+                Text(L.sectionTitle(section)).font(AppText.label).foregroundStyle(AppColors.inkSoft).lineLimit(1)
                 Spacer(minLength: AppSpacing.s8)
                 Text("\(haveN)/\(section.neededTotal)")
                     .font(AppText.caption)

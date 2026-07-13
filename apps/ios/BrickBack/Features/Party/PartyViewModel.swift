@@ -112,8 +112,8 @@ final class PartyViewModel {
     /// The display name for a contribution's member (host/member fallbacks, else "Someone").
     func memberName(_ memberId: String?) -> String {
         if let m = members.first(where: { $0.id == memberId }) {
-            return m.displayName ?? (m.isHost ? "Host" : "Member")
+            return m.displayName ?? (m.isHost ? L.roleHost : L.roleMember)
         }
-        return "Someone"
+        return L.someone
     }
 }

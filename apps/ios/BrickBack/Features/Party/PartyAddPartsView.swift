@@ -61,7 +61,7 @@ final class PartyAddPartsViewModel {
             return true
         } catch {
             submitting = false
-            submitError = "Couldn't add parts: \(error)"
+            submitError = L.couldntAddParts("\(error)")
             return false
         }
     }
@@ -79,13 +79,13 @@ struct PartyAddPartsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader("Add found parts", onBack: { router.pop() })
+            ScreenHeader(L.addFoundParts, onBack: { router.pop() })
             if let vm {
                 switch vm.phase {
                 case .loading:
                     ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
                 case .failed(let message):
-                    EmptyState(title: "Couldn't load party", message: message, icon: "exclamationmark.triangle")
+                    EmptyState(title: L.couldntLoadParty, message: message, icon: "exclamationmark.triangle")
                 case .ready:
                     content(vm: vm)
                 }
@@ -104,8 +104,8 @@ struct PartyAddPartsView: View {
     @ViewBuilder
     private func content(vm: PartyAddPartsViewModel) -> some View {
         if vm.parts.isEmpty {
-            EmptyState(title: "Nothing left to find",
-                       message: "Every part for this set is accounted for.",
+            EmptyState(title: L.partyNothingLeftTitle,
+                       message: L.everyPartAccountedFor,
                        icon: "party.popper")
         } else {
             ScrollView {
@@ -129,7 +129,7 @@ struct PartyAddPartsView: View {
         Task { if await vm.submit() { router.pop() } }
     }
 
-    private func addLabel(_ n: Int) -> String { n == 1 ? "Add 1 part" : "Add \(n) parts" }
+    private func addLabel(_ n: Int) -> String { L.addLabel(n) }
 }
 
 /// One picker row: thumbnail, name, colour swatch + "{color} · {n} left", and a -/qty/+ stepper.
@@ -147,7 +147,7 @@ private struct PartyPartRow: View {
                 HStack(spacing: AppSpacing.s4) {
                     Circle().fill(swatchColor(part.colorRgb)).frame(width: 12, height: 12)
                         .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-                    Text("\(part.colorName ?? "") · \(part.remaining) left")
+                    Text(L.partyRemainingLabel(color: part.colorName ?? "", count: part.remaining))
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft).lineLimit(1)
                 }
             }

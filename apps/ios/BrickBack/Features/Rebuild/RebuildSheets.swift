@@ -47,7 +47,7 @@ struct PartDetailSheet: View {
                     HStack(spacing: AppSpacing.s4) {
                         Circle().fill(swatchColor(part.colorRgb)).frame(width: 12, height: 12)
                             .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-                        Text(part.colorName ?? "Unknown").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                        Text(part.colorName ?? L.unknownColor).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     }
                 }
                 Spacer(minLength: 0)
@@ -61,7 +61,7 @@ struct PartDetailSheet: View {
                         .font(AppText.h1)
                         .foregroundStyle(complete ? AppColors.success : AppColors.ink)
                     if complete {
-                        Text("All accounted for")
+                        Text(L.allAccountedFor)
                             .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     }
                 }
@@ -78,7 +78,7 @@ struct PartDetailSheet: View {
 
             // Tap step
             HStack(spacing: AppSpacing.s8) {
-                Text("Step").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                Text(L.step).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                 ForEach(stepOptions, id: \.self) { s in
                     StepChip(label: "+\(s)", selected: step == s) { setStep(s) }
                 }
@@ -87,7 +87,7 @@ struct PartDetailSheet: View {
 
             if BrickLink.hasLink(blPartId: part.blPartId, partNum: part.partNum) {
                 Spacer().frame(height: AppSpacing.s20)
-                AppButton("View on BrickLink", variant: .secondary, icon: "arrow.up.forward.square", expand: true) {
+                AppButton(L.viewOnBrickLink, variant: .secondary, icon: "arrow.up.forward.square", expand: true) {
                     if let url = BrickLink.url(blPartId: part.blPartId, blColorId: part.blColorId, partNum: part.partNum) {
                         openURL(url)
                     }
@@ -164,16 +164,16 @@ struct PartSearchSheet: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: AppSpacing.s8) {
-                SearchField(hint: "Search by name or code…", text: $query, autofocus: true)
+                SearchField(hint: L.countSearchHint, text: $query, autofocus: true)
                 Pressable(onTap: { dismiss() }) {
-                    Text("Done").font(AppText.label).foregroundStyle(AppColors.info).padding(AppSpacing.s8)
+                    Text(L.done).font(AppText.label).foregroundStyle(AppColors.info).padding(AppSpacing.s8)
                 }
             }
             .padding(.horizontal, AppSpacing.s16)
             .padding(.vertical, AppSpacing.s12)
             Divider().overlay(AppColors.line)
             if results.isEmpty {
-                EmptyState(title: "No matches", message: "Try a different name or part code.", icon: "magnifyingglass")
+                EmptyState(title: L.noMatches, message: L.countNoMatchesMessage, icon: "magnifyingglass")
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -205,7 +205,7 @@ private struct SearchRow: View {
     private var complete: Bool { have >= part.neededQty }
     private var started: Bool { have > 0 && !complete }
     private var countColor: Color { complete ? AppColors.success : (started ? AppColors.warning : AppColors.muted) }
-    private var sub: String { [part.colorName ?? "Unknown", part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ") }
+    private var sub: String { [part.colorName ?? L.unknownColor, part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ") }
 
     var body: some View {
         HStack(spacing: AppSpacing.s12) {
@@ -251,18 +251,18 @@ struct ViewSettingsSheet: View {
 
     private func label(_ g: PartGrouping) -> String {
         switch g {
-        case .color: return "Color"
-        case .category: return "Type"
-        case .status: return "Progress"
-        case .none: return "None"
+        case .color: return L.groupByColor
+        case .category: return L.groupByType
+        case .status: return L.groupByStatus
+        case .none: return L.groupByNone
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("View settings").font(AppText.h2).foregroundStyle(AppColors.ink)
+            Text(L.viewSettings).font(AppText.h2).foregroundStyle(AppColors.ink)
             Spacer().frame(height: AppSpacing.s16)
-            Text("Group by").font(AppText.label).foregroundStyle(AppColors.muted)
+            Text(L.groupBy).font(AppText.label).foregroundStyle(AppColors.muted)
             Spacer().frame(height: AppSpacing.s8)
             FlowChips(items: PartGrouping.allCases, selected: groupingRaw) { g in
                 ChoiceChip(label: label(g), selected: groupingRaw == g.rawValue) { groupingRaw = g.rawValue }
@@ -271,16 +271,16 @@ struct ViewSettingsSheet: View {
             Divider().overlay(AppColors.line)
             Spacer().frame(height: AppSpacing.s16)
             SettingToggleRow(
-                title: "Remaining only",
-                subtitle: "Hide the parts you've already counted in full — show only what's left to find.",
+                title: L.remainingOnly,
+                subtitle: L.remainingOnlyHint,
                 isOn: $remainingOnly
             )
             Spacer().frame(height: AppSpacing.s16)
             SettingToggleRow(
-                title: "Show extra parts",
+                title: L.showExtras,
                 subtitle: hasExtras
-                    ? "Include the spare pieces the set ships with — counted separately, not part of completion."
-                    : "This set has no extra parts.",
+                    ? L.showExtrasBody
+                    : L.noExtras,
                 enabled: hasExtras,
                 isOn: Binding(
                     get: { hasExtras && showExtras },

@@ -11,9 +11,5 @@ func swatchColor(_ rgb: String?) -> Color {
 /// "no parts" / "1 part" / "N parts" — the Dart `partsCount` plural. (English-only in the
 /// wireframe; the S7 i18n pass moves this into the String Catalog.)
 func partsCountLabel(_ count: Int) -> String {
-    switch count {
-    case 0: return "no parts"
-    case 1: return "1 part"
-    default: return "\(count) parts"
-    }
+    return L.partsCount(count)
 }

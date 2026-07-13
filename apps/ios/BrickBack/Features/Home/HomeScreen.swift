@@ -28,22 +28,22 @@ struct HomeScreen: View {
             if let vm {
                 if vm.loadedSummaries && vm.summaries.isEmpty {
                     EmptyState(
-                        title: "No rebuilds yet",
-                        message: "Search a set to start counting its parts back into place.",
+                        title: L.homeEmptyTitle,
+                        message: L.homeEmptyMessage,
                         icon: "cube.box",
                         action: {
-                            AppButton("Add a set", icon: "plus") { env.homeRouter.push(.search) }
+                            AppButton(L.addASet, icon: "plus") { env.homeRouter.push(.search) }
                         }
                     )
                 } else {
                     let filtered = vm.summaries.filter(filter.matches)
                     if filter.isActive && filtered.isEmpty {
                         EmptyState(
-                            title: "No matching sets",
-                            message: "None of your added sets match the current filter.",
+                            title: L.homeNoMatchTitle,
+                            message: L.homeNoMatchMessage,
                             icon: "line.3.horizontal.decrease.circle",
                             action: {
-                                AppButton("Clear filter", variant: .secondary, icon: "xmark") { filter = HomeFilter() }
+                                AppButton(L.clearFilter, variant: .secondary, icon: "xmark") { filter = HomeFilter() }
                             }
                         )
                     } else {
@@ -94,7 +94,7 @@ private struct HomeHeader: View {
             BrickIconButton(
                 icon: "line.3.horizontal.decrease",
                 tint: filterCount > 0 ? AppColors.primary : AppColors.ink,
-                accessibilityLabel: filterCount > 0 ? "Filter sets, \(filterCount) active" : "Filter sets"
+                accessibilityLabel: filterCount > 0 ? L.filterSetsActive(filterCount) : L.filterSets
             ) { onFilter() }
             .overlay(alignment: .topTrailing) {
                 if filterCount > 0 {
@@ -150,7 +150,7 @@ private struct RebuildList: View {
         List {
             if !active.isEmpty {
                 VStack(alignment: .leading, spacing: AppSpacing.s8) {
-                    SectionLabel("Continue building")
+                    SectionLabel(L.continueBuilding)
                         .padding(.horizontal, AppSpacing.screen)
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.s12) {
@@ -166,7 +166,7 @@ private struct RebuildList: View {
                 .listRowBackground(Color.clear)
             }
 
-            SectionLabel("All sets")
+            SectionLabel(L.allSets)
                 .padding(.top, active.isEmpty ? AppSpacing.s12 : AppSpacing.s16)
                 .listRowInsets(EdgeInsets(top: 0, leading: AppSpacing.screen, bottom: AppSpacing.s8, trailing: AppSpacing.screen))
                 .listRowSeparator(.hidden)
@@ -180,7 +180,7 @@ private struct RebuildList: View {
                     .listRowBackground(Color.clear)
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) { onRemove(r) } label: {
-                            Label("Remove", systemImage: "trash")
+                            Label(L.remove, systemImage: "trash")
                         }
                     }
             }
@@ -213,7 +213,7 @@ private struct ContinueCard: View {
                 SetThumb(imageUrl: summary.imageUrl, size: 52, radius: AppRadius.sm)
                 VStack(alignment: .leading, spacing: 6) {
                     Text(summary.name).font(AppText.title).foregroundStyle(AppColors.ink).lineLimit(1)
-                    Text("\(summary.haveTotal) / \(summary.totalParts) parts")
+                    Text(L.partsHaveTotal(have: summary.haveTotal, total: summary.totalParts))
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     AppProgressBar(value: summary.progress, height: 7)
                 }
@@ -237,7 +237,7 @@ private struct RebuildCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: AppSpacing.s8) {
                         Text(summary.name).font(AppText.title).foregroundStyle(AppColors.ink).lineLimit(1)
-                        if summary.verified { AppBadge("Verified", color: AppColors.success) }
+                        if summary.verified { AppBadge(L.verifiedBadge, color: AppColors.success) }
                     }
                     Text(progressLabel)
                         .font(AppText.caption)
@@ -249,9 +249,9 @@ private struct RebuildCard: View {
     }
 
     private var progressLabel: String {
-        if summary.complete { return "Complete · \(summary.totalParts) parts" }
+        if summary.complete { return L.completeParts(summary.totalParts) }
         let pct = Int((summary.progress * 100).rounded())
-        return "\(summary.haveTotal) / \(summary.totalParts) parts · \(pct)%"
+        return L.partsProgress(have: summary.haveTotal, total: summary.totalParts, pct: pct)
     }
 }
 
@@ -267,9 +267,9 @@ struct HomeFilter: Equatable {
         case all, incomplete, complete
         var label: String {
             switch self {
-            case .all: return "All"
-            case .incomplete: return "Incomplete"
-            case .complete: return "Complete"
+            case .all: return L.filterAll
+            case .incomplete: return L.filterIncomplete
+            case .complete: return L.filterComplete
             }
         }
     }
@@ -302,7 +302,7 @@ struct HomeFilterSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Filter").font(AppText.h2).foregroundStyle(AppColors.ink)
+                Text(L.filter).font(AppText.h2).foregroundStyle(AppColors.ink)
                 Spacer()
                 Pressable(onTap: { dismiss() }) {
                     Image(systemName: "xmark")
@@ -311,11 +311,11 @@ struct HomeFilterSheet: View {
                         .frame(width: 30, height: 30)
                         .background(Circle().fill(AppColors.faint))
                 }
-                .accessibilityLabel("Close")
+                .accessibilityLabel(L.close)
             }
             Spacer().frame(height: AppSpacing.s20)
 
-            Text("Status").font(AppText.label).foregroundStyle(AppColors.muted)
+            Text(L.statusLabel).font(AppText.label).foregroundStyle(AppColors.muted)
             Spacer().frame(height: AppSpacing.s8)
             HStack(spacing: AppSpacing.s8) {
                 ForEach(HomeFilter.Status.allCases, id: \.self) { s in
@@ -328,10 +328,10 @@ struct HomeFilterSheet: View {
             Divider().overlay(AppColors.line)
             Spacer().frame(height: AppSpacing.s16)
 
-            Text("Theme").font(AppText.label).foregroundStyle(AppColors.muted)
+            Text(L.themeLabel).font(AppText.label).foregroundStyle(AppColors.muted)
             Spacer().frame(height: AppSpacing.s8)
             if themes.isEmpty {
-                Text("Add sets to filter them by LEGO theme.")
+                Text(L.themeFilterHint)
                     .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
             } else {
                 WrapLayout(spacing: AppSpacing.s8, lineSpacing: AppSpacing.s8) {
@@ -344,8 +344,8 @@ struct HomeFilterSheet: View {
             }
 
             Spacer().frame(height: AppSpacing.s24)
-            AppButton("Done", expand: true) { dismiss() }
-            AppButton("Clear all", variant: .ghost, expand: true) { filter = HomeFilter() }
+            AppButton(L.done, expand: true) { dismiss() }
+            AppButton(L.clearAll, variant: .ghost, expand: true) { filter = HomeFilter() }
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.top, AppSpacing.s20)

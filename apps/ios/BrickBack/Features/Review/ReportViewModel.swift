@@ -21,7 +21,7 @@ final class ReportViewModel {
     }
     private(set) var phase: Phase = .loading
     private(set) var record: Verification?
-    private(set) var setName = "Set"
+    private(set) var setName = L.setHeader
     private(set) var imageUrl: String?
     private(set) var image: UIImage?
 

@@ -16,9 +16,9 @@ struct PartyJoinView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Join a party", onBack: { router.pop() })
+            ScreenHeader(L.partyJoinTitle, onBack: { router.pop() })
             VStack(alignment: .leading, spacing: 0) {
-                Text("Enter the code the host shared with you.")
+                Text(L.partyJoinSubtitle)
                     .font(AppText.body).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s20)
 
@@ -44,7 +44,7 @@ struct PartyJoinView: View {
                 }
 
                 Spacer().frame(height: AppSpacing.s20)
-                AppButton("Join", icon: "arrow.right.to.line", loading: loading, expand: true,
+                AppButton(L.partyJoinCta, icon: "arrow.right.to.line", loading: loading, expand: true,
                           onTap: loading ? nil : { join() })
             }
             .padding(.horizontal, AppSpacing.screen)
@@ -68,7 +68,7 @@ struct PartyJoinView: View {
                 // Replace the code-entry screen so "back" from the hub returns to Profile.
                 router.replaceTop(.party(party.id))
             } catch {
-                self.error = "Couldn't find that party. Check the code."
+                self.error = L.partyJoinError
                 loading = false
             }
         }

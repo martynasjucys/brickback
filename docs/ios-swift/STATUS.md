@@ -5,8 +5,42 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S6** (party mode — realtime collaborative counting).
-**Current state:** S0–S6 are **code-complete and verified**. **S6 is a pure client port** of the
+**Last updated:** **S7 — internationalization** (English + Lithuanian) landed on top of the S7
+branded-design pass.
+**Current state:** S0–S6 are **code-complete and verified**; S7 **design system + i18n** are done
+(dark mode / Dynamic Type / VoiceOver polish are the remaining S7 items).
+
+<details><summary>S7 i18n summary (English + Lithuanian, live in-app override + device auto-detect)</summary>
+
+**Approach:** a hand-authored **String Catalog** (`BrickBack/Resources/Localizable.xcstrings`, 190
+semantic keys, en source + lt, ICU plurals incl. Lithuanian `one/few/other` + exact-`zero`) is the
+translation source; a generated typed façade **`L`** (`BrickBack/Localization/L.swift`, one accessor
+per key, from `apps/ios/scripts/gen_l10n.py` — edit the table + regenerate, don't hand-edit) is the
+call site. Every accessor resolves against **`I18n.bundle`/`I18n.locale`**, which
+**`LocaleController`** (`@Observable`, persists `app_language` = system/en/lt to `UserDefaults`) keeps
+in lock-step with the SwiftUI `\.environment(\.locale)`. The app root also `.id(locale.language)`s
+the tree so a language switch **re-renders every screen live** (no relaunch); routers **and the
+selected tab** live in `AppEnvironment`, so navigation survives the rebuild. Default = **System**
+(device-locale auto-detect on first launch — the improvement the Flutter app deferred); a Profile →
+**Language** picker overrides it and persists.
+
+**Scope:** all ~28 app-target screens delocalized to `L.*` (dynamic catalog data — set/colour/theme/
+part names, emails, notes — stays verbatim; DEBUG-only gallery left English). BrickBackKit stays
+**string-free**: `PartSection` now carries a semantic `SectionTitle?` `titleKey` the UI localizes
+(`L.sectionTitle`), keeping the plain-English `label` only as a test fallback / real catalog name.
+The verification **report date** now uses `Date.FormatStyle(date:.abbreviated).locale(I18n.locale)`
+(replacing the hardcoded English month array), so the shared PNG/PDF follow the language.
+
+**Verified on the iPhone 17 Pro sim:** boots **Lithuanian** under a `lt` device locale with no manual
+switch (Home, Profile, counting, review, report all translated); the Profile picker switches en↔lt
+**live** and the choice persists across relaunch (overriding the system locale); **plurals** render
+correctly — e.g. review shows "dar trūksta 24 tipų" / "24 tipai" (Lithuanian `few`), "reikia 4",
+"Minifigūrėlės"; the report reads "INVENTORIAUS PATVIRTINIMAS … Patvirtinta 2026-07-13"; catalog
+data (colour names "Bright Green", set names) correctly stays English. `xcstringstool` compiles the
+catalog into `en/lt.lproj` (`.strings` + `.stringsdict`). **42 unit tests pass**, `xcodebuild` green,
+no warnings.
+
+</details> **S6 is a pure client port** of the
 already-built, already-verified party backend (`0003_party_mode.sql`, applied): a `PartyRemote`
 seam (RPCs + PostgREST + **Realtime v2** behind a disposer closure) → `PartyRepository` (the two
 BrickBack-only bits: the **client-derived "still-needed" picker** = catalog `expandSetParts` ⟕
@@ -67,7 +101,7 @@ Ready to start **S6** (party mode).
 - [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
 - [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
-- [ ] **S7 — Design polish & i18n** ← NEXT
+- [~] **S7 — Design polish & i18n** ← branded design + **i18n done**; dark mode / Dynamic Type / VoiceOver remain
 - [ ] S8 — Launch / App Store
 
 ---

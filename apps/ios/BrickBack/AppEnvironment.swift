@@ -13,6 +13,14 @@ final class AppEnvironment {
     let profileRouter = Router()
     let sync: SyncController
 
+    /// UI language (S7 i18n): device auto-detect by default + a persisted Profile override.
+    /// The root keys its view tree on `locale.language` so a switch rebuilds every screen.
+    let locale = LocaleController()
+
+    /// Selected tab (0 = Rebuilds, 1 = Profile). Held here (not view `@State`) so it — like the
+    /// routers — survives the language-switch view-tree rebuild keyed on `locale.language`.
+    var selectedTab = 0
+
     /// Premium unlock + free-cap source of truth (S5). Observed by the paywall/profile; read
     /// synchronously by the sync gate and the "Start sorting" cap check.
     let premium: EntitlementController

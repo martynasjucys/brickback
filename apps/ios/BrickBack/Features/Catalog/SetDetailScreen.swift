@@ -14,12 +14,12 @@ struct SetDetailScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Set", onBack: { env.homeRouter.pop() })
+            ScreenHeader(L.setHeader, onBack: { env.homeRouter.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
-                EmptyState(title: "Couldn't load set", message: message, icon: "exclamationmark.triangle")
+                EmptyState(title: L.setCouldntLoad, message: message, icon: "exclamationmark.triangle")
             case .loaded(let detail):
                 Detail(detail: detail, uniqueParts: uniqueParts)
             }
@@ -70,17 +70,17 @@ private struct Detail: View {
                     .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s16)
                 HStack(spacing: AppSpacing.s12) {
-                    StatCard(label: "Unique parts", value: uniqueParts) {
+                    StatCard(label: L.uniqueParts, value: uniqueParts) {
                         env.homeRouter.push(.setParts(detail.set.itemId))
                     }
-                    StatCard(label: "Minifigs", value: "\(detail.minifigCount)") {
+                    StatCard(label: L.minifigs, value: "\(detail.minifigCount)") {
                         env.homeRouter.push(.setMinifigs(detail.set.itemId))
                     }
                 }
                 Spacer().frame(height: AppSpacing.s20)
                 StartSortingButton(itemId: detail.set.itemId)
                 Spacer().frame(height: AppSpacing.s12)
-                Text("Adds a local copy you can sort offline. Add the same set again for a second physical copy.")
+                Text(L.startSortingHint)
                     .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
@@ -117,15 +117,15 @@ private struct StartSortingButton: View {
     @State private var errorMessage: String?
 
     var body: some View {
-        AppButton("Start sorting", icon: "checklist", loading: loading, expand: true) {
+        AppButton(L.startSorting, icon: "checklist", loading: loading, expand: true) {
             guard !loading else { return }
             start()
         }
-        .alert("Couldn't add set", isPresented: Binding(
+        .alert(L.couldntAddSet, isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L.ok, role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
         }

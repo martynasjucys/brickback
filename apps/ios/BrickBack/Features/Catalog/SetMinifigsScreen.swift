@@ -11,17 +11,17 @@ struct SetMinifigsScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Minifigs", onBack: { env.homeRouter.pop() })
+            ScreenHeader(L.minifigs, onBack: { env.homeRouter.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
-                EmptyState(title: "Couldn't load minifigs", message: message, icon: "exclamationmark.triangle")
+                EmptyState(title: L.minifigsCouldntLoad, message: message, icon: "exclamationmark.triangle")
             case .loaded(let minifigs):
                 if minifigs.isEmpty {
                     EmptyState(
-                        title: "No minifigs",
-                        message: "This set has no minifigs.",
+                        title: L.minifigsEmptyTitle,
+                        message: L.minifigsEmptyMessage,
                         icon: "person"
                     )
                 } else {

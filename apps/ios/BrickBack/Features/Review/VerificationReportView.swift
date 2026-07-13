@@ -31,11 +31,11 @@ struct ReportView: View {
                 case .loading:
                     Spacer(); ProgressView().tint(AppColors.primary); Spacer()
                 case .failed(let message):
-                    EmptyState(title: "Couldn't load", message: message, icon: "exclamationmark.triangle")
+                    EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
                 case .notVerified:
                     EmptyState(
-                        title: "Not verified yet",
-                        message: "Finish a review and mark it verified to get a report.",
+                        title: L.notVerifiedYet,
+                        message: L.notVerifiedMessage,
                         icon: "checkmark.seal"
                     )
                 case .ready:
@@ -59,10 +59,10 @@ struct ReportView: View {
             VStack(spacing: AppSpacing.s20) {
                 VerificationReportCard(record: record, setName: vm.setName, image: vm.image)
                 VStack(spacing: AppSpacing.s12) {
-                    AppButton("Share image", variant: .secondary, icon: "photo", loading: busy, expand: true) {
+                    AppButton(L.shareImage, variant: .secondary, icon: "photo", loading: busy, expand: true) {
                         share(vm: vm, record: record, asPDF: false)
                     }
-                    AppButton("Share PDF", icon: "doc.richtext", loading: busy, expand: true) {
+                    AppButton(L.sharePdf, icon: "doc.richtext", loading: busy, expand: true) {
                         share(vm: vm, record: record, asPDF: true)
                     }
                 }
@@ -109,28 +109,27 @@ struct VerificationReportCard: View {
     let setName: String
     var image: UIImage? = nil
 
-    private static let months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-
+    /// Locale-aware verification date (S7): abbreviated month + day + year, formatted in the
+    /// chosen app language (`I18n.locale`) so the shared PNG/PDF follow it — not the device.
+    /// Replaces the Flutter app's hardcoded English month array.
     private var dateLabel: String {
-        let c = Calendar.current.dateComponents([.day, .month, .year], from: record.verifiedAt)
-        guard let d = c.day, let m = c.month, let y = c.year, (1...12).contains(m) else { return "" }
-        return "\(d) \(Self.months[m - 1]) \(y)"
+        record.verifiedAt.formatted(Date.FormatStyle(date: .abbreviated).locale(I18n.locale))
     }
 
     private var badgeColor: Color { record.partsComplete ? AppColors.success : AppColors.warning }
     private var badgeText: String {
         record.partsComplete
-            ? "\(record.pctLabel)% COMPLETE"
-            : "\(record.pctLabel)% · \(record.partsMissing) parts missing"
+            ? L.reportPctComplete(record.pctLabel)
+            : L.reportPctPartsMissing(pct: record.pctLabel, count: record.partsMissing)
     }
     private var figLine: String {
-        record.minifigsNeeded == 0 ? "None in set" : "\(record.minifigsFound) / \(record.minifigsNeeded)"
+        record.minifigsNeeded == 0 ? L.noneInSet : "\(record.minifigsFound) / \(record.minifigsNeeded)"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("INVENTORY VERIFICATION")
+                Text(L.inventoryVerification)
                     .font(AppText.caption.weight(.bold))
                     .tracking(1.2)
                     .foregroundStyle(AppColors.muted)
@@ -157,19 +156,19 @@ struct VerificationReportCard: View {
                 .frame(maxWidth: .infinity)
             Spacer().frame(height: AppSpacing.s20)
 
-            StatRow(label: "Parts found", value: "\(record.partsFound) / \(record.partsNeeded)")
-            StatRow(label: "Minifigures", value: figLine)
+            StatRow(label: L.reportPartsFound, value: "\(record.partsFound) / \(record.partsNeeded)")
+            StatRow(label: L.minifiguresSection, value: figLine)
             Spacer().frame(height: AppSpacing.s12)
             Rectangle().fill(AppColors.line).frame(height: 1)
             Spacer().frame(height: AppSpacing.s12)
 
-            CheckLine(label: "All parts present", value: record.flags.allParts)
+            CheckLine(label: L.allPartsPresent, value: record.flags.allParts)
             if record.minifigsNeeded > 0 {
-                CheckLine(label: "Minifigures included", value: record.flags.minifigsIncluded)
+                CheckLine(label: L.minifiguresIncluded, value: record.flags.minifigsIncluded)
             }
-            CheckLine(label: "Box included", value: record.flags.boxIncluded)
-            CheckLine(label: "Instructions included", value: record.flags.instructionsIncluded)
-            CheckLine(label: "Stickers applied", value: record.flags.stickersApplied)
+            CheckLine(label: L.boxIncluded, value: record.flags.boxIncluded)
+            CheckLine(label: L.instructionsIncluded, value: record.flags.instructionsIncluded)
+            CheckLine(label: L.stickersApplied, value: record.flags.stickersApplied)
 
             if let notes = record.notes, !notes.isEmpty {
                 Spacer().frame(height: AppSpacing.s12)
@@ -183,11 +182,11 @@ struct VerificationReportCard: View {
             Spacer().frame(height: AppSpacing.s16)
 
             HStack {
-                Text("Verified \(dateLabel)").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                Text(L.verifiedDate(dateLabel)).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                 Spacer(minLength: 0)
                 HStack(spacing: AppSpacing.s4) {
                     Image(systemName: "square.grid.2x2").font(.system(size: 13)).foregroundStyle(AppColors.ink)
-                    Text("Verified with BrickBack")
+                    Text(L.verifiedWithBrickback)
                         .font(AppText.caption.weight(.semibold)).foregroundStyle(AppColors.ink)
                 }
             }

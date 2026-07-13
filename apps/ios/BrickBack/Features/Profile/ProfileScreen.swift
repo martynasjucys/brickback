@@ -2,15 +2,17 @@ import SwiftUI
 import BrickBackKit
 
 /// Profile tab — account & premium state (S5). Guest vs signed-in header, a Free/Premium badge,
-/// and the sync actions (Turn on Cloud Sync / Sync now / Sign out). Language settings land in S7;
-/// a debug-only entry opens the design gallery. Port of `profile_screen.dart`.
+/// and the sync actions (Turn on Cloud Sync / Sync now / Sign out). The Language row (S7) opens a
+/// System/English/Lietuvių picker bound to `LocaleController`. A debug-only entry opens the design
+/// gallery. Port of `profile_screen.dart`.
 struct ProfileScreen: View {
     @Environment(AppEnvironment.self) private var env
     @State private var showGallery = false
+    @State private var showLanguage = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Profile", subtitle: "Account & settings")
+            ScreenHeader(L.navProfile, subtitle: L.profileSubtitle)
 
             ScrollView {
                 VStack(spacing: AppSpacing.s12) {
@@ -18,16 +20,18 @@ struct ProfileScreen: View {
 
                     PartyCard()
 
-                    SettingsRow(icon: "star", title: "Premium", value: env.isPremium ? "Active" : "Free") {
+                    SettingsRow(icon: "star", title: L.premium, value: env.isPremium ? L.active : L.free) {
                         env.profileRouter.push(.paywall)
                     }
                     if env.isSignedIn {
-                        SettingsRow(icon: "arrow.triangle.2.circlepath", title: "Sync now",
-                                    value: env.isPremium ? nil : "Premium") {
+                        SettingsRow(icon: "arrow.triangle.2.circlepath", title: L.syncNow,
+                                    value: env.isPremium ? nil : L.premium) {
                             if env.isPremium { env.syncNow() } else { env.profileRouter.push(.paywall) }
                         }
                     }
-                    SettingsRow(icon: "globe", title: "Language", value: "System") {}
+                    SettingsRow(icon: "globe", title: L.language, value: env.locale.currentLabel) {
+                        showLanguage = true
+                    }
 
                     #if DEBUG
                     SettingsRow(icon: "paintpalette", title: "Design gallery", value: "Debug") {
@@ -45,6 +49,20 @@ struct ProfileScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
         .sheet(isPresented: $showGallery) { DesignGalleryScreen() }
+        .confirmationDialog(L.language, isPresented: $showLanguage, titleVisibility: .visible) {
+            ForEach(AppLanguage.allCases) { lang in
+                Button(languageLabel(lang)) { env.locale.set(lang) }
+            }
+            Button(L.cancel, role: .cancel) {}
+        }
+    }
+
+    private func languageLabel(_ lang: AppLanguage) -> String {
+        switch lang {
+        case .system: return L.languageSystem
+        case .en: return L.languageEnglish
+        case .lt: return L.languageLithuanian
+        }
     }
 }
 
@@ -57,28 +75,28 @@ private struct AccountCard: View {
             if env.isSignedIn {
                 VStack(alignment: .leading, spacing: AppSpacing.s8) {
                     HStack(spacing: AppSpacing.s8) {
-                        Text("Signed in").font(AppText.title).foregroundStyle(AppColors.ink)
-                        AppBadge(env.isPremium ? "Premium" : "Free",
+                        Text(L.signedIn).font(AppText.title).foregroundStyle(AppColors.ink)
+                        AppBadge(env.isPremium ? L.premium : L.free,
                                  color: env.isPremium ? AppColors.success : AppColors.inkSoft)
                     }
-                    Text(env.userEmail ?? "Your account")
+                    Text(env.userEmail ?? L.yourAccount)
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     if !env.isPremium {
-                        AppButton("Turn on Cloud Sync", variant: .primary, icon: "cloud") {
+                        AppButton(L.turnOnCloudSync, variant: .primary, icon: "cloud") {
                             env.profileRouter.push(.paywall)
                         }
                         .padding(.top, AppSpacing.s4)
                     }
-                    AppButton("Sign out", variant: .secondary, icon: "rectangle.portrait.and.arrow.right") {
+                    AppButton(L.signOut, variant: .secondary, icon: "rectangle.portrait.and.arrow.right") {
                         env.signOut()
                     }
                 }
             } else {
                 VStack(alignment: .leading, spacing: AppSpacing.s8) {
-                    Text("Not signed in").font(AppText.title).foregroundStyle(AppColors.ink)
-                    Text("Sign in to unlock premium cloud sync and party mode. Everything else works offline.")
+                    Text(L.notSignedIn).font(AppText.title).foregroundStyle(AppColors.ink)
+                    Text(L.profileSignInPrompt)
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                    AppButton("Sign in", variant: .secondary, icon: "person") {
+                    AppButton(L.signInTitle, variant: .secondary, icon: "person") {
                         env.profileRouter.push(.signIn)
                     }
                     .padding(.top, AppSpacing.s4)
@@ -99,11 +117,11 @@ private struct PartyCard: View {
             VStack(alignment: .leading, spacing: AppSpacing.s4) {
                 HStack(spacing: AppSpacing.s8) {
                     Image(systemName: "person.2").font(.system(size: 18)).foregroundStyle(AppColors.ink)
-                    Text("Party mode").font(AppText.title).foregroundStyle(AppColors.ink)
+                    Text(L.partyModeTitle).font(AppText.title).foregroundStyle(AppColors.ink)
                 }
-                Text("Sort a big pile together in real time — join by code.")
+                Text(L.partyModeBody)
                     .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                AppButton("Join a party", variant: .secondary, icon: "arrow.right.to.line") { joinParty() }
+                AppButton(L.partyJoinTitle, variant: .secondary, icon: "arrow.right.to.line") { joinParty() }
                     .padding(.top, AppSpacing.s8)
             }
         }

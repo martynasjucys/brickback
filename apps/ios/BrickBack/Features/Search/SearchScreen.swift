@@ -14,8 +14,8 @@ struct SearchScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Add a set", onBack: { env.homeRouter.pop() })
-            SearchField(hint: "Search by set number or name…", text: $query, autofocus: true)
+            ScreenHeader(L.addASet, onBack: { env.homeRouter.pop() })
+            SearchField(hint: L.searchHint, text: $query, autofocus: true)
                 .padding(.horizontal, AppSpacing.screen)
             Spacer().frame(height: AppSpacing.s8)
             results
@@ -46,19 +46,19 @@ struct SearchScreen: View {
         switch state {
         case .idle:
             EmptyState(
-                title: "Search the catalog",
-                message: "Find a LEGO set by name or number, e.g. “911” or “Millennium Falcon”.",
+                title: L.searchEmptyTitle,
+                message: L.searchEmptyMessage,
                 icon: "magnifyingglass"
             )
         case .loading:
             ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
         case .failed(let message):
-            EmptyState(title: "Search failed", message: message, icon: "exclamationmark.triangle")
+            EmptyState(title: L.searchFailed, message: message, icon: "exclamationmark.triangle")
         case .loaded(let items):
             if items.isEmpty {
                 EmptyState(
-                    title: "No matches",
-                    message: "Try a different name or set number.",
+                    title: L.noMatches,
+                    message: L.searchNoMatchesMessage,
                     icon: "questionmark.magnifyingglass"
                 )
             } else {

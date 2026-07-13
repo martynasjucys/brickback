@@ -5,28 +5,28 @@ import SwiftUI
 /// the same line as the tab bar, in the trailing free space — a distinct action, not a tab.
 struct RootTabView: View {
     @Environment(AppEnvironment.self) private var env
-    @State private var selection = 0
 
     var body: some View {
-        TabView(selection: $selection) {
+        @Bindable var env = env
+        TabView(selection: $env.selectedTab) {
             TabNavigation(router: env.homeRouter) { HomeScreen() }
                 .tag(0)
                 // Stacked-bricks glyph: monochrome template when inactive, red/green/blue-filled
                 // (RebuildsActive, rendered original) when this tab is selected.
-                .tabItem { Label("Rebuilds", image: selection == 0 ? "RebuildsActive" : "RebuildsTab") }
+                .tabItem { Label(L.navRebuilds, image: env.selectedTab == 0 ? "RebuildsActive" : "RebuildsTab") }
 
             TabNavigation(router: env.profileRouter) { ProfileScreen() }
                 .tag(1)
                 // LEGO-minifig head: monochrome template when inactive, yellow-filled
                 // (ProfileActive) when this tab is selected.
-                .tabItem { Label("Profile", image: selection == 1 ? "ProfileActive" : "LegoHead") }
+                .tabItem { Label(L.navProfile, image: env.selectedTab == 1 ? "ProfileActive" : "LegoHead") }
         }
         .tint(AppColors.ink)
         // A separate floating action sitting on the tab-bar line (trailing). Adding a set is a
         // Rebuilds-tab flow, so it snaps to that tab and pushes search.
         .overlay(alignment: .bottomTrailing) {
             AddSetButton {
-                selection = 0
+                env.selectedTab = 0
                 env.homeRouter.push(.search)
             }
             .padding(.trailing, AppSpacing.screen)
@@ -50,7 +50,7 @@ private struct AddSetButton: View {
                 .modifier(FloatingGlassCircle())
         }
         .buttonStyle(PressableStyle())
-        .accessibilityLabel("Add a set")
+        .accessibilityLabel(L.addASet)
     }
 }
 

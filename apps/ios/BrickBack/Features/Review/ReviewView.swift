@@ -26,7 +26,7 @@ struct ReviewView: View {
                 case .failed(let message):
                     VStack(spacing: 0) {
                         header(inv: nil)
-                        EmptyState(title: "Couldn't load", message: message, icon: "exclamationmark.triangle")
+                        EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
                     }
                 case .ready:
                     if let inv = vm.inv { content(vm: vm, inv: inv) }
@@ -73,11 +73,11 @@ struct ReviewView: View {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     summaryCard(inv)
                     if inv.hasMinifigs { minifigSection(vm: vm, inv: inv) }
-                    sectionLabel("Missing parts", trailing: missing.isEmpty ? nil : typeCount(missing.count))
+                    sectionLabel(L.missingParts, trailing: missing.isEmpty ? nil : typeCount(missing.count))
                     if missing.isEmpty {
                         EmptyState(
-                            title: "Nothing missing",
-                            message: "Every part for this set is accounted for.",
+                            title: L.reviewNothingMissing,
+                            message: L.everyPartAccountedFor,
                             icon: "party.popper"
                         )
                         .frame(minHeight: 180)
@@ -117,9 +117,9 @@ struct ReviewView: View {
                 ProgressRing(value: inv.progress, size: 72, stroke: 8)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(inv.summary.name).font(AppText.h2).foregroundStyle(AppColors.ink).lineLimit(2)
-                    Text("\(inv.partsFound) of \(inv.neededTotal) parts found")
+                    Text(L.reviewPartsFound(found: inv.partsFound, needed: inv.neededTotal))
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                    Text(inv.complete ? "All parts accounted for" : typesStillMissing(inv.remainingPartTypes))
+                    Text(inv.complete ? L.allPartsAccountedFor : typesStillMissing(inv.remainingPartTypes))
                         .font(AppText.caption)
                         .foregroundStyle(inv.complete ? AppColors.success : AppColors.warning)
                 }
@@ -133,7 +133,7 @@ struct ReviewView: View {
     private func minifigSection(vm: ReviewViewModel, inv: RebuildInventory) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: AppSpacing.s8) {
-                Text("Minifigures").font(AppText.label).foregroundStyle(AppColors.inkSoft)
+                Text(L.minifiguresSection).font(AppText.label).foregroundStyle(AppColors.inkSoft)
                 Text("\(vm.minifigsFound)/\(inv.minifigsNeeded)")
                     .font(AppText.caption)
                     .foregroundStyle(vm.minifigsComplete ? AppColors.success : AppColors.muted)
@@ -171,12 +171,12 @@ struct ReviewView: View {
     private func bottomBar(vm: ReviewViewModel, inv: RebuildInventory) -> some View {
         VStack(spacing: AppSpacing.s12) {
             if inv.summary.verified {
-                AppButton("View report", variant: .secondary, icon: "rosette", expand: true) {
+                AppButton(L.viewReport, variant: .secondary, icon: "rosette", expand: true) {
                     env.homeRouter.push(.report(rebuildSetId))
                 }
             }
             AppButton(
-                inv.summary.verified ? "Re-verify" : "Mark as verified",
+                inv.summary.verified ? L.reverify : L.markAsVerified,
                 icon: "checkmark.seal", expand: true
             ) { showMarkSheet = true }
         }
@@ -207,13 +207,9 @@ struct ReviewView: View {
 
     // MARK: - Wireframe copy (moves to the String Catalog in S7)
 
-    private func typesStillMissing(_ n: Int) -> String { "\(n) type\(n == 1 ? "" : "s") still missing" }
-    private func typeCount(_ n: Int) -> String { "\(n) type\(n == 1 ? "" : "s")" }
-    private func notExportableText(_ n: Int) -> String {
-        n == 1
-            ? "1 part has no BrickLink mapping and won't be in the export."
-            : "\(n) parts have no BrickLink mapping and won't be in the export."
-    }
+    private func typesStillMissing(_ n: Int) -> String { L.typesStillMissing(n) }
+    private func typeCount(_ n: Int) -> String { L.typeCount(n) }
+    private func notExportableText(_ n: Int) -> String { L.notExportableText(n) }
 }
 
 // MARK: - Missing part row
@@ -224,7 +220,7 @@ private struct MissingRow: View {
     let onTap: () -> Void
 
     private var sub: String {
-        [part.colorName ?? "Unknown", part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+        [part.colorName ?? L.unknownColor, part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     var body: some View {
@@ -240,7 +236,7 @@ private struct MissingRow: View {
                     }
                 }
                 Spacer(minLength: AppSpacing.s8)
-                Text("need \(part.needed)").font(AppText.label).foregroundStyle(AppColors.warning)
+                Text(L.needQty(part.needed)).font(AppText.label).foregroundStyle(AppColors.warning)
             }
             .padding(.horizontal, AppSpacing.screen)
             .padding(.vertical, AppSpacing.s8)
@@ -265,7 +261,7 @@ private struct MinifigRow: View {
             SetThumb(imageUrl: fig.imageUrl, size: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(fig.name).font(AppText.body).foregroundStyle(AppColors.ink).lineLimit(2)
-                Text(fig.neededQty > 1 ? "\(have) of \(fig.neededQty) present" : "Needed ×1")
+                Text(fig.neededQty > 1 ? L.minifigPresent(have: have, needed: fig.neededQty) : L.neededOne)
                     .font(AppText.caption)
                     .foregroundStyle(complete ? AppColors.success : AppColors.muted)
             }
@@ -326,29 +322,29 @@ private struct MarkVerifiedSheet: View {
     @State private var stickers = false
     @State private var notes = ""
 
-    private var partsLine: String { partsComplete ? "\(pct)% — all parts" : "\(pct)% of parts" }
+    private var partsLine: String { partsComplete ? L.pctAllParts(pct) : L.pctOfParts(pct) }
     private var figLine: String {
-        !hasMinifigs ? "No minifigures" : (minifigsComplete ? "Minifigures included" : "Minifigures incomplete")
+        !hasMinifigs ? L.noMinifigures : (minifigsComplete ? L.minifiguresIncluded : L.minifiguresIncomplete)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Mark as verified").font(AppText.h2).foregroundStyle(AppColors.ink)
+                Text(L.markAsVerified).font(AppText.h2).foregroundStyle(AppColors.ink)
                 Spacer().frame(height: AppSpacing.s4)
                 Text("\(partsLine) · \(figLine)").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s20)
 
-                Text("What else is in the box?").font(AppText.label).foregroundStyle(AppColors.inkSoft)
+                Text(L.whatElseInBox).font(AppText.label).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s8)
-                FlagToggle(label: "Box included", value: $box)
-                FlagToggle(label: "Instructions included", value: $instructions)
-                FlagToggle(label: "Stickers applied", value: $stickers)
+                FlagToggle(label: L.boxIncluded, value: $box)
+                FlagToggle(label: L.instructionsIncluded, value: $instructions)
+                FlagToggle(label: L.stickersApplied, value: $stickers)
 
                 Spacer().frame(height: AppSpacing.s16)
-                Text("Notes (optional)").font(AppText.label).foregroundStyle(AppColors.inkSoft)
+                Text(L.notesOptional).font(AppText.label).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s8)
-                TextField("e.g. one tyre scuffed, otherwise mint", text: $notes, axis: .vertical)
+                TextField(L.notesHint, text: $notes, axis: .vertical)
                     .font(AppText.body)
                     .foregroundStyle(AppColors.ink)
                     .tint(AppColors.primary)
@@ -359,7 +355,7 @@ private struct MarkVerifiedSheet: View {
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.line, lineWidth: 1))
 
                 Spacer().frame(height: AppSpacing.s20)
-                AppButton("Save verification", icon: "checkmark.seal", expand: true) {
+                AppButton(L.saveVerification, icon: "checkmark.seal", expand: true) {
                     onSave(box, instructions, stickers, notes)
                 }
             }

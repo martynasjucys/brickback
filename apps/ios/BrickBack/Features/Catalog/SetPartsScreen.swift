@@ -12,17 +12,17 @@ struct SetPartsScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Unique parts", onBack: { env.homeRouter.pop() })
+            ScreenHeader(L.uniqueParts, onBack: { env.homeRouter.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
-                EmptyState(title: "Couldn't load parts", message: message, icon: "exclamationmark.triangle")
+                EmptyState(title: L.partsCouldntLoad, message: message, icon: "exclamationmark.triangle")
             case .loaded(let parts):
                 if parts.isEmpty {
                     EmptyState(
-                        title: "No parts",
-                        message: "This set has no part list in the catalog.",
+                        title: L.partsEmptyTitle,
+                        message: L.partsEmptyMessage,
                         icon: "square.grid.2x2"
                     )
                 } else {
@@ -71,7 +71,7 @@ struct PartRow: View {
     let part: ExpandedPart
 
     private var sub: String {
-        var parts = [part.colorName ?? "Unknown"]
+        var parts = [part.colorName ?? L.unknownColor]
         if let num = part.partNum, !num.isEmpty { parts.append(num) }
         return parts.joined(separator: " · ")
     }
@@ -99,5 +99,5 @@ struct PartRow: View {
 
 /// "1 unique part" / "N unique parts" — the Dart `uniquePartsCount` plural.
 func uniquePartsCountLabel(_ count: Int) -> String {
-    count == 1 ? "1 unique part" : "\(count) unique parts"
+    return L.uniquePartsCount(count)
 }

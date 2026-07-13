@@ -45,7 +45,7 @@ final class RebuildViewModel {
         phase = .loading
         do {
             guard let inv = try await repo.detail(rebuildSetId) else {
-                phase = .failed("This rebuild no longer exists.")
+                phase = .failed(L.rebuildGone)
                 return
             }
             self.inv = inv

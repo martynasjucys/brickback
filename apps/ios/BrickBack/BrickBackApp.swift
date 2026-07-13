@@ -28,6 +28,12 @@ struct BrickBackApp: App {
         WindowGroup {
             RootTabView()
                 .environment(env)
+                .environment(env.locale)
+                // S7 i18n: drive SwiftUI date/number formatting off the chosen language, and key
+                // the whole tree on it so an in-app Language switch re-renders every screen with
+                // the new strings (routers live in `env`, so navigation survives the rebuild).
+                .environment(\.locale, env.locale.locale)
+                .id(env.locale.language)
                 .tint(AppColors.ink)
                 .background(AppColors.canvas)
                 // The branded palette is light-only for now; the full dark-mode pass (incl. a
