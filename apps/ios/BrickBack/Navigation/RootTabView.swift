@@ -33,21 +33,21 @@ private struct ModernTabView: View {
     var body: some View {
         @Bindable var env = env
         TabView(selection: $env.selectedTab) {
-            // Stacked-bricks glyph: monochrome template when inactive, red/green/blue-filled
-            // (RebuildsActive, rendered original) when this tab is selected.
-            Tab(L.navRebuilds, image: env.selectedTab == 0 ? "RebuildsActive" : "RebuildsTab", value: 0) {
+            // Grid-of-sets glyph. Tab bars force `.fill` on symbols in both states, so these pass the
+            // plain name and let the selection capsule carry the selected state.
+            Tab(L.navRebuilds, systemImage: "square.grid.2x2", value: 0) {
                 TabNavigation(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
             }
 
             // Two-heads glyph. Joining a party is open to everyone (premium gates hosting only),
-            // so it earns a first-class tab. Filled variant when selected.
-            Tab(L.navParty, systemImage: env.selectedTab == 1 ? "person.2.fill" : "person.2", value: 1) {
+            // so it earns a first-class tab.
+            Tab(L.navParty, systemImage: "person.2", value: 1) {
                 TabNavigation(router: env.partyRouter) { PartyLandingScreen() }
             }
 
-            // LEGO-minifig head: monochrome template when inactive, yellow-filled (ProfileActive)
-            // when this tab is selected.
-            Tab(L.navProfile, image: env.selectedTab == 2 ? "ProfileActive" : "LegoHead", value: 2) {
+            // Account glyph. The circle crop keeps it distinct from the Party tab's person.2, which
+            // fills to a near-identical silhouette at tab-bar size.
+            Tab(L.navProfile, systemImage: "person.crop.circle", value: 2) {
                 TabNavigation(router: env.profileRouter) { ProfileScreen() }
             }
 
@@ -115,15 +115,15 @@ private struct LegacyTabView: View {
         TabView(selection: $env.selectedTab) {
             TabNavigation(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
                 .tag(0)
-                .tabItem { Label(L.navRebuilds, image: env.selectedTab == 0 ? "RebuildsActive" : "RebuildsTab") }
+                .tabItem { Label(L.navRebuilds, systemImage: "square.grid.2x2") }
 
             TabNavigation(router: env.partyRouter) { PartyLandingScreen() }
                 .tag(1)
-                .tabItem { Label(L.navParty, systemImage: env.selectedTab == 1 ? "person.2.fill" : "person.2") }
+                .tabItem { Label(L.navParty, systemImage: "person.2") }
 
             TabNavigation(router: env.profileRouter) { ProfileScreen() }
                 .tag(2)
-                .tabItem { Label(L.navProfile, image: env.selectedTab == 2 ? "ProfileActive" : "LegoHead") }
+                .tabItem { Label(L.navProfile, systemImage: "person.crop.circle") }
         }
         // A separate floating action sitting on the tab-bar line (trailing). Adding a set is a
         // Rebuilds-tab flow, so `openSearch()` snaps to that tab and pushes search.
