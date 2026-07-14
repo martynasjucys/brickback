@@ -15,8 +15,6 @@ struct SignInView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.colorScheme) private var colorScheme
 
-    @Environment(\.activeRouter) private var activeRouter
-
     @State private var email = ""
     @State private var busy: String?      // in-flight action: "apple" | "google" | "email"
     @State private var errorMessage: String?
@@ -24,16 +22,10 @@ struct SignInView: View {
     /// Raw nonce for the in-flight Apple request; SHA-256'd into `request.nonce`.
     @State private var appleNonce: String?
 
-    // Reachable from both tabs (Profile and the Rebuilds party/paywall flow), so follow the
-    // stack we're actually on rather than a hardcoded tab. See `activeRouter`.
-    private var router: Router { activeRouter ?? env.profileRouter }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(L.signInTitle, onBack: { router.pop() })
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(L.signInHeadline)
+                Text(L.signInHeadline)
                         .font(AppText.display).foregroundStyle(AppColors.ink)
                     Spacer().frame(height: AppSpacing.s8)
                     Text(L.signInSubtitle)
@@ -87,13 +79,16 @@ struct SignInView: View {
                         .font(AppText.caption).foregroundStyle(AppColors.muted)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, AppSpacing.screen)
-                .padding(.bottom, AppSpacing.s40)
             }
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s8)
+            .padding(.bottom, AppSpacing.s40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        // Native nav bar (back button + title), consistent with the paywall it's pushed from.
+        .navigationTitle(L.signInTitle)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Actions
