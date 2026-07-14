@@ -64,8 +64,12 @@ struct PartyJoinView: View {
         error = nil
         Task {
             do {
+                // Joining needs neither premium nor a real account — just *some* session for the
+                // authenticated `join_party` RPC. Mint a transparent guest session if signed out,
+                // carrying the chosen display name so the roster shows it (not "Builder").
+                try await env.services.auth.ensureGuestSession(displayName: env.displayName.name)
                 let party = try await env.services.party.joinParty(trimmed)
-                // Replace the code-entry screen so "back" from the hub returns to Profile.
+                // Replace the code-entry screen so "back" from the hub returns to the tab root.
                 router.replaceTop(.party(party.id))
             } catch {
                 self.error = L.partyJoinError

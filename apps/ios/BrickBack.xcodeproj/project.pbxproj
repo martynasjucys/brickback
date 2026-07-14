@@ -35,6 +35,7 @@
 		85421FFAF8CDD5A64FD52BD9 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FFB0F6E1F165E04629A500E /* SignInView.swift */; };
 		8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAA3052247DC548DA5D67B23 /* CatalogSupport.swift */; };
 		8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */; };
+		FACE0003FACE0003FACE0003 /* DisplayNameController.swift in Sources */ = {isa = PBXBuildFile; fileRef = FACE0004FACE0004FACE0004 /* DisplayNameController.swift */; };
 		92A30BAE638B08DAEB5FFBC3 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76CF770271B624E993B8E4FB /* PaywallView.swift */; };
 		985E4A255F8481457FEEE914 /* RebuildViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F5ED8D19C4D353161ED70E6 /* RebuildViewModel.swift */; };
 		99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */; };
@@ -49,6 +50,7 @@
 		DDDAD8E40BCE39F47C2AA021 /* PartyInviteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AF357AF4C0FFE6BEBFA310E /* PartyInviteView.swift */; };
 		DF4FBB84A8CCE6F23B9758AB /* PartyAvatar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 278E70934294A7B3834226E6 /* PartyAvatar.swift */; };
 		E1136E8983AFD395D01FC1C7 /* PartyJoinView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D5E4A0B7ABBE76F58295D33 /* PartyJoinView.swift */; };
+		FACE0001FACE0001FACE0001 /* PartyLandingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = FACE0002FACE0002FACE0002 /* PartyLandingScreen.swift */; };
 		EF233C43AAA0C9F702BD045D /* PartyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 387C14F51253159857A2A104 /* PartyViewModel.swift */; };
 		F35F98CCAE517F7B0C0212CF /* BrickBackApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDD689AE1F0C1C11C4BF9F2B /* BrickBackApp.swift */; };
 		F5090E2878FCDC4C8EE33082 /* SearchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19546E50D1239498DD1FD16F /* SearchScreen.swift */; };
@@ -66,6 +68,7 @@
 		278E70934294A7B3834226E6 /* PartyAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyAvatar.swift; sourceTree = "<group>"; };
 		2FE4EB6806C761C92697613C /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
+		FACE0004FACE0004FACE0004 /* DisplayNameController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayNameController.swift; sourceTree = "<group>"; };
 		387C14F51253159857A2A104 /* PartyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyViewModel.swift; sourceTree = "<group>"; };
 		39A6B96195C5010F35EBFA66 /* ThemeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeController.swift; sourceTree = "<group>"; };
 		3D98D4CE1547F6E63C370DAD /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
@@ -85,6 +88,7 @@
 		76CF770271B624E993B8E4FB /* PaywallView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallView.swift; sourceTree = "<group>"; };
 		78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetMinifigsScreen.swift; sourceTree = "<group>"; };
 		7D5E4A0B7ABBE76F58295D33 /* PartyJoinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyJoinView.swift; sourceTree = "<group>"; };
+		FACE0002FACE0002FACE0002 /* PartyLandingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyLandingScreen.swift; sourceTree = "<group>"; };
 		84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		923A877247FE3DC852A2D974 /* VerificationReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationReportView.swift; sourceTree = "<group>"; };
 		A42FD04275F4E3F5A5A0CF19 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
@@ -159,6 +163,7 @@
 				278E70934294A7B3834226E6 /* PartyAvatar.swift */,
 				0AF357AF4C0FFE6BEBFA310E /* PartyInviteView.swift */,
 				7D5E4A0B7ABBE76F58295D33 /* PartyJoinView.swift */,
+				FACE0002FACE0002FACE0002 /* PartyLandingScreen.swift */,
 				BD7B296F2F18F57BBAA2A727 /* PartyView.swift */,
 				387C14F51253159857A2A104 /* PartyViewModel.swift */,
 			);
@@ -256,6 +261,7 @@
 			isa = PBXGroup;
 			children = (
 				34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */,
+				FACE0004FACE0004FACE0004 /* DisplayNameController.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -449,11 +455,13 @@
 				DF4FBB84A8CCE6F23B9758AB /* PartyAvatar.swift in Sources */,
 				DDDAD8E40BCE39F47C2AA021 /* PartyInviteView.swift in Sources */,
 				E1136E8983AFD395D01FC1C7 /* PartyJoinView.swift in Sources */,
+				FACE0001FACE0001FACE0001 /* PartyLandingScreen.swift in Sources */,
 				7186BF0218E0E1807BF68691 /* PartyView.swift in Sources */,
 				EF233C43AAA0C9F702BD045D /* PartyViewModel.swift in Sources */,
 				92A30BAE638B08DAEB5FFBC3 /* PaywallView.swift in Sources */,
 				72FE95F5F8E4A6E620284A5A /* Primitives.swift in Sources */,
 				8F09EC5A21D975C307E1BF4A /* ProfileScreen.swift in Sources */,
+				FACE0003FACE0003FACE0003 /* DisplayNameController.swift in Sources */,
 				99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */,
 				14082D1E143615AD4B225E32 /* RebuildView.swift in Sources */,
 				985E4A255F8481457FEEE914 /* RebuildViewModel.swift in Sources */,

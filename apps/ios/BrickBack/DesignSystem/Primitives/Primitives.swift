@@ -292,6 +292,49 @@ struct ScreenHeader<Trailing: View>: View {
     }
 }
 
+// MARK: - BrandHeader
+
+/// A raised "brick plate" header field — a gradient face over a darker bottom lip that bleeds into
+/// the status bar and curves off at the bottom, matching the Home tab's blue wordmark panel and the
+/// counting screen's green plate. The tab roots pass their own hue (Party = indigo, Profile =
+/// orange) and lay arbitrary content over it. Only the plate bleeds up behind the status bar; the
+/// content stays within the safe area.
+struct BrandHeader<Content: View>: View {
+    let face: Color
+    let deep: Color
+    let edge: Color
+    @ViewBuilder var content: () -> Content
+
+    init(face: Color, deep: Color, edge: Color, @ViewBuilder content: @escaping () -> Content) {
+        self.face = face
+        self.deep = deep
+        self.edge = edge
+        self.content = content
+    }
+
+    var body: some View {
+        content()
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s8)
+            .padding(.bottom, AppSpacing.s20)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(field)
+    }
+
+    private var field: some View {
+        let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
+                                           bottomTrailingRadius: AppRadius.xl, style: .continuous)
+        return ZStack(alignment: .top) {
+            shape.fill(edge)
+            LinearGradient(colors: [face, deep], startPoint: .top, endPoint: .bottom)
+                .clipShape(shape)
+                .padding(.bottom, AppDepth.brick + 1)
+        }
+        .ignoresSafeArea(edges: .top)
+        .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
+    }
+}
+
 // MARK: - EmptyState
 
 struct EmptyState<Action: View>: View {

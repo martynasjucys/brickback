@@ -17,6 +17,22 @@
         }
       }
     },
+    "navParty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Party"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesija"
+          }
+        }
+      }
+    },
     "navProfile": {
       "localizations": {
         "en": {
@@ -1397,6 +1413,134 @@
         }
       }
     },
+    "statSetsBuilt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sets built"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surinkti rinkiniai"
+          }
+        }
+      }
+    },
+    "statPartsCollected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parts collected"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Surinktos detalės"
+          }
+        }
+      }
+    },
+    "nameLabel": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vardas"
+          }
+        }
+      }
+    },
+    "nameEditorTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your name"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jūsų vardas"
+          }
+        }
+      }
+    },
+    "nameEditorSubtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shown to others in party mode."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rodomas kitiems bendrame režime."
+          }
+        }
+      }
+    },
+    "nameEditorHint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a name"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Įveskite vardą"
+          }
+        }
+      }
+    },
+    "shuffleName": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shuffle name"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Generuoti kitą vardą"
+          }
+        }
+      }
+    },
+    "save": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Išsaugoti"
+          }
+        }
+      }
+    },
     "premium": {
       "localizations": {
         "en": {
@@ -1697,6 +1841,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "Prisijungti prie sesijos"
+          }
+        }
+      }
+    },
+    "partyTabSubtitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Join a friend's sort — or host your own."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prisijunkite prie draugo rūšiavimo arba surenkite savo."
+          }
+        }
+      }
+    },
+    "partyHostNote": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hosting a party is Premium — start one from a rebuild's counting screen."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sesijos surengimas yra Premium funkcija — pradėkite ją iš surinkimo skaičiavimo ekrano."
           }
         }
       }

@@ -25,6 +25,7 @@ def plural(key, sig, default, en, lt):
 
 # ─────────────────────────── COMMON ───────────────────────────
 plain("navRebuilds", "Rebuilds", "Surinkimai")
+plain("navParty", "Party", "Sesija")
 plain("navProfile", "Profile", "Profilis")
 plain("couldntLoad", "Couldn't load", "Nepavyko įkelti")
 plain("ok", "OK", "Gerai")
@@ -152,6 +153,14 @@ plain("benefitPartyBody", "Sort a big set together with friends in real time.",
 
 # ─────────────────────────── PROFILE ───────────────────────────
 plain("profileSubtitle", "Account & settings", "Paskyra ir nustatymai")
+plain("statSetsBuilt", "Sets built", "Surinkti rinkiniai")
+plain("statPartsCollected", "Parts collected", "Surinktos detalės")
+plain("nameLabel", "Name", "Vardas")
+plain("nameEditorTitle", "Your name", "Jūsų vardas")
+plain("nameEditorSubtitle", "Shown to others in party mode.", "Rodomas kitiems bendrame režime.")
+plain("nameEditorHint", "Enter a name", "Įveskite vardą")
+plain("shuffleName", "Shuffle name", "Generuoti kitą vardą")
+plain("save", "Save", "Išsaugoti")
 plain("premium", "Premium", "Premium")
 plain("active", "Active", "Aktyvu")
 plain("free", "Free", "Nemokama")
@@ -174,6 +183,11 @@ plain("profileSignInPrompt",
 plain("partyModeBody", "Sort a big pile together in real time — join by code.",
       "Rūšiuokite didelę krūvą kartu realiu laiku — prisijunkite su kodu.")
 plain("partyJoinTitle", "Join a party", "Prisijungti prie sesijos")
+plain("partyTabSubtitle", "Join a friend's sort — or host your own.",
+      "Prisijunkite prie draugo rūšiavimo arba surenkite savo.")
+plain("partyHostNote",
+      "Hosting a party is Premium — start one from a rebuild's counting screen.",
+      "Sesijos surengimas yra Premium funkcija — pradėkite ją iš surinkimo skaičiavimo ekrano.")
 
 # ─────────────────────────── COUNTING ───────────────────────────
 plain("countNoInventoryTitle", "No inventory data", "Nėra dalių duomenų")

@@ -42,6 +42,16 @@ enum AppColors {
     static let buildDeep = Color(lightHex: 0x238B43, darkHex: 0x1E7C3A) // header gradient bottom
     static let buildEdge = Color(lightHex: 0x155F2D, darkHex: 0x0D4620) // green plate's raised lip
 
+    // Party header field — an indigo brick plate (joining a party is open to everyone).
+    static let party = Color(lightHex: 0x4F46E5, darkHex: 0x5A52EA)
+    static let partyDeep = Color(lightHex: 0x4034C4, darkHex: 0x4238C0) // header gradient bottom
+    static let partyEdge = Color(lightHex: 0x272183, darkHex: 0x1B1856) // indigo plate's raised lip
+
+    // Profile header field — a warm orange brick plate.
+    static let profile = Color(lightHex: 0xF0730C, darkHex: 0xF5810A)
+    static let profileDeep = Color(lightHex: 0xD35F08, darkHex: 0xDE760C) // header gradient bottom
+    static let profileEdge = Color(lightHex: 0x854005, darkHex: 0x5A2E08) // orange plate's raised lip
+
     // Primary action — a LEGO-red brick. onPrimary is white; primaryEdge is the pressed lip.
     static let primary = Color(lightHex: 0xE4000F, darkHex: 0xEC2029)
     static let onPrimary = Color(lightHex: 0xFFFFFF, darkHex: 0xFFFFFF)

@@ -11,6 +11,7 @@ enum L {
     }
 
     static var navRebuilds: String { s("navRebuilds") }
+    static var navParty: String { s("navParty") }
     static var navProfile: String { s("navProfile") }
     static var couldntLoad: String { s("couldntLoad") }
     static var ok: String { s("ok") }
@@ -101,6 +102,14 @@ enum L {
     static var partyModeTitle: String { s("partyModeTitle") }
     static var benefitPartyBody: String { s("benefitPartyBody") }
     static var profileSubtitle: String { s("profileSubtitle") }
+    static var statSetsBuilt: String { s("statSetsBuilt") }
+    static var statPartsCollected: String { s("statPartsCollected") }
+    static var nameLabel: String { s("nameLabel") }
+    static var nameEditorTitle: String { s("nameEditorTitle") }
+    static var nameEditorSubtitle: String { s("nameEditorSubtitle") }
+    static var nameEditorHint: String { s("nameEditorHint") }
+    static var shuffleName: String { s("shuffleName") }
+    static var save: String { s("save") }
     static var premium: String { s("premium") }
     static var active: String { s("active") }
     static var free: String { s("free") }
@@ -120,6 +129,8 @@ enum L {
     static var profileSignInPrompt: String { s("profileSignInPrompt") }
     static var partyModeBody: String { s("partyModeBody") }
     static var partyJoinTitle: String { s("partyJoinTitle") }
+    static var partyTabSubtitle: String { s("partyTabSubtitle") }
+    static var partyHostNote: String { s("partyHostNote") }
     static var countNoInventoryTitle: String { s("countNoInventoryTitle") }
     static var countNoInventoryMessage: String { s("countNoInventoryMessage") }
     static var countAllSortedTitle: String { s("countAllSortedTitle") }

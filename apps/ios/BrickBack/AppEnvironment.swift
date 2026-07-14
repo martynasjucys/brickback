@@ -10,6 +10,7 @@ import BrickBackKit
 final class AppEnvironment {
     let services: AppServices
     let homeRouter = Router()
+    let partyRouter = Router()
     let profileRouter = Router()
     let sync: SyncController
 
@@ -21,8 +22,12 @@ final class AppEnvironment {
     /// The root pins `.preferredColorScheme(theme.colorScheme)`; dynamic tokens do the rest.
     let theme = ThemeController()
 
-    /// Selected tab (0 = Rebuilds, 1 = Profile). Held here (not view `@State`) so it — like the
-    /// routers — survives the language-switch view-tree rebuild keyed on `locale.language`.
+    /// Display name shown to others in party mode. Never blank (seeded with a random brick-themed
+    /// name); editable in Profile. Rides into the anonymous guest session's metadata on join.
+    let displayName = DisplayNameController()
+
+    /// Selected tab (0 = Rebuilds, 1 = Party, 2 = Profile). Held here (not view `@State`) so it —
+    /// like the routers — survives the language-switch view-tree rebuild keyed on `locale.language`.
     var selectedTab = 0
 
     /// Premium unlock + free-cap source of truth (S5). Observed by the paywall/profile; read
@@ -104,7 +109,7 @@ final class AppEnvironment {
     /// Once a session exists, collapse any sign-in / paywall screen still on a stack so the user
     /// lands back where they started (mirrors the Flutter "bounce away from sign-in").
     private func dismissAuthScreens() {
-        for router in [homeRouter, profileRouter] {
+        for router in [homeRouter, partyRouter, profileRouter] {
             while let last = router.path.last, last == .signIn || last == .paywall {
                 router.pop()
             }

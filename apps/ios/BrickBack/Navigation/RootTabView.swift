@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The two-tab shell (Rebuilds + Profile), each with its own `NavigationStack`. Replaces
+/// The three-tab shell (Rebuilds + Party + Profile), each with its own `NavigationStack`. Replaces
 /// go_router's `StatefulShellRoute` (00-architecture §4). A floating "add a set" button rides on
 /// the same line as the tab bar, in the trailing free space — a distinct action, not a tab.
 struct RootTabView: View {
@@ -15,11 +15,17 @@ struct RootTabView: View {
                 // (RebuildsActive, rendered original) when this tab is selected.
                 .tabItem { Label(L.navRebuilds, image: env.selectedTab == 0 ? "RebuildsActive" : "RebuildsTab") }
 
-            TabNavigation(router: env.profileRouter) { ProfileScreen() }
+            TabNavigation(router: env.partyRouter) { PartyLandingScreen() }
                 .tag(1)
+                // Two-heads glyph. Joining a party is open to everyone (premium gates hosting only),
+                // so it earns a first-class tab. Filled variant when selected.
+                .tabItem { Label(L.navParty, systemImage: env.selectedTab == 1 ? "person.2.fill" : "person.2") }
+
+            TabNavigation(router: env.profileRouter) { ProfileScreen() }
+                .tag(2)
                 // LEGO-minifig head: monochrome template when inactive, yellow-filled
                 // (ProfileActive) when this tab is selected.
-                .tabItem { Label(L.navProfile, image: env.selectedTab == 1 ? "ProfileActive" : "LegoHead") }
+                .tabItem { Label(L.navProfile, image: env.selectedTab == 2 ? "ProfileActive" : "LegoHead") }
         }
         .tint(AppColors.ink)
         // A separate floating action sitting on the tab-bar line (trailing). Adding a set is a
