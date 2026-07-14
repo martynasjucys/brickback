@@ -12,6 +12,23 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
     private let images: ImageResolver
 
     private static let setCols = "item_id, set_num, name, year, num_parts, rebrickable_img_url"
+    /// The set-detail read also pulls the lifecycle columns (dates + derived stage) that the
+    /// detail screen surfaces; list/search don't need them, so they stay on the leaner `setCols`.
+    private static let setDetailCols = setCols + ", launch_date, exit_date, retiring_soon_date, lifecycle_status"
+
+    /// Catalog `date` columns arrive as ISO "yyyy-MM-dd" strings; parse in a fixed locale/zone.
+    private static let dateParser: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    private static func parseDate(_ s: String?) -> Date? {
+        guard let s, !s.isEmpty else { return nil }
+        return dateParser.date(from: s)
+    }
 
     public init(client: SupabaseClient, images: ImageResolver) {
         self.client = client
@@ -54,7 +71,11 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
             year: r.year ?? 0,
             numParts: r.numParts ?? 0,
             imageUrl: imgs[r.itemId] ?? r.rebrickableImgUrl,
-            themeName: themeName
+            themeName: themeName,
+            lifecycle: r.lifecycleStatus.flatMap(SetLifecycle.init(rawValue:)),
+            launchDate: Self.parseDate(r.launchDate),
+            exitDate: Self.parseDate(r.exitDate),
+            retiringSoonDate: Self.parseDate(r.retiringSoonDate)
         )
     }
 
@@ -110,7 +131,7 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
     public func setDetail(_ setItemId: Int) async throws -> SetDetail {
         let rows: [SetRow] = try await client
             .from("sets")
-            .select(Self.setCols)
+            .select(Self.setDetailCols)
             .eq("item_id", value: setItemId)
             .limit(1)
             .execute()
@@ -135,7 +156,38 @@ public final class SupabaseCatalogRepository: CatalogReader, @unchecked Sendable
         let figs = try await setMinifigs(setItemId)
         let minifigCount = figs.reduce(0) { $0 + $1.quantity }
 
-        return SetDetail(set: set, themeName: themeName, minifigCount: minifigCount)
+        // Market value is supplementary — a missing/erroring price table must not fail the screen.
+        let price = await setPrice(setItemId)
+
+        return SetDetail(set: set, themeName: themeName, minifigCount: minifigCount, price: price)
+    }
+
+    /// Latest cached BrickLink "sold" value (new = `N`, used = `U`). Rows with no recent sales
+    /// (`total_quantity == 0`) carry no signal and are skipped. Returns `nil` when neither side
+    /// has a price. Non-throwing: any failure resolves to `nil` so the detail still loads.
+    private func setPrice(_ setItemId: Int) async -> SetPrice? {
+        do {
+            let rows: [PriceRow] = try await client
+                .from("bricklink_price_guides")
+                .select("new_or_used, qty_avg_price, avg_price, total_quantity, currency_code")
+                .eq("item_id", value: setItemId)
+                .eq("guide_type", value: "sold")
+                .execute()
+                .value
+            var new: Double?
+            var used: Double?
+            var currency = "EUR"
+            for r in rows {
+                guard (r.totalQuantity ?? 0) > 0 else { continue }
+                let value = r.qtyAvgPrice?.value ?? r.avgPrice?.value
+                if let code = r.currencyCode, !code.isEmpty { currency = code }
+                if r.newOrUsed == "N" { new = value } else if r.newOrUsed == "U" { used = value }
+            }
+            let price = SetPrice(new: new, used: used, currency: currency)
+            return price.hasAny ? price : nil
+        } catch {
+            return nil
+        }
     }
 
     // MARK: - CatalogReader
@@ -260,6 +312,11 @@ private struct SetRow: Decodable {
     let year: Int?
     let numParts: Int?
     let rebrickableImgUrl: String?
+    // Lifecycle (only selected by the set-detail read; nil elsewhere). Dates are "yyyy-MM-dd".
+    let launchDate: String?
+    let exitDate: String?
+    let retiringSoonDate: String?
+    let lifecycleStatus: String?
     enum CodingKeys: String, CodingKey {
         case itemId = "item_id"
         case setNum = "set_num"
@@ -267,6 +324,39 @@ private struct SetRow: Decodable {
         case year
         case numParts = "num_parts"
         case rebrickableImgUrl = "rebrickable_img_url"
+        case launchDate = "launch_date"
+        case exitDate = "exit_date"
+        case retiringSoonDate = "retiring_soon_date"
+        case lifecycleStatus = "lifecycle_status"
+    }
+}
+
+/// One `bricklink_price_guides` row (a single item + guide_type + condition).
+private struct PriceRow: Decodable {
+    let newOrUsed: String
+    let qtyAvgPrice: FlexDouble?
+    let avgPrice: FlexDouble?
+    let totalQuantity: Int?
+    let currencyCode: String?
+    enum CodingKeys: String, CodingKey {
+        case newOrUsed = "new_or_used"
+        case qtyAvgPrice = "qty_avg_price"
+        case avgPrice = "avg_price"
+        case totalQuantity = "total_quantity"
+        case currencyCode = "currency_code"
+    }
+}
+
+/// Postgres `numeric` can serialize as a JSON number *or* a quoted string via PostgREST; decode
+/// either into a `Double?`.
+private struct FlexDouble: Decodable {
+    let value: Double?
+    init(from decoder: Decoder) throws {
+        let c = try decoder.singleValueContainer()
+        if c.decodeNil() { value = nil }
+        else if let d = try? c.decode(Double.self) { value = d }
+        else if let s = try? c.decode(String.self) { value = Double(s) }
+        else { value = nil }
     }
 }
 

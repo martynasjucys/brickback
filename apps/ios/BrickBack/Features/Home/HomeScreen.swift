@@ -417,39 +417,3 @@ private struct FilterSheetHeightKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
-/// A minimal flow layout (CSS flex-wrap): lays subviews left→right, wrapping to a new line when
-/// the next one won't fit. Used for the theme pills, which can span several rows.
-private struct WrapLayout: Layout {
-    var spacing: CGFloat = AppSpacing.s8
-    var lineSpacing: CGFloat = AppSpacing.s8
-
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) -> CGSize {
-        let maxWidth = proposal.width ?? .infinity
-        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0, widest: CGFloat = 0
-        for sub in subviews {
-            let size = sub.sizeThatFits(.unspecified)
-            if x > 0 && x + size.width > maxWidth {
-                widest = max(widest, x - spacing)
-                x = 0; y += lineHeight + lineSpacing; lineHeight = 0
-            }
-            x += size.width + spacing
-            lineHeight = max(lineHeight, size.height)
-        }
-        widest = max(widest, x - spacing)
-        let width = maxWidth.isFinite ? maxWidth : max(widest, 0)
-        return CGSize(width: width, height: y + lineHeight)
-    }
-
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout Void) {
-        var x: CGFloat = 0, y: CGFloat = 0, lineHeight: CGFloat = 0
-        for sub in subviews {
-            let size = sub.sizeThatFits(.unspecified)
-            if x > 0 && x + size.width > bounds.width {
-                x = 0; y += lineHeight + lineSpacing; lineHeight = 0
-            }
-            sub.place(at: CGPoint(x: bounds.minX + x, y: bounds.minY + y), anchor: .topLeading, proposal: ProposedViewSize(size))
-            x += size.width + spacing
-            lineHeight = max(lineHeight, size.height)
-        }
-    }
-}

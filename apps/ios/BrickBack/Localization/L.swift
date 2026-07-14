@@ -68,6 +68,18 @@ enum L {
     static var startSorting: String { s("startSorting") }
     static var startSortingHint: String { s("startSortingHint") }
     static var couldntAddSet: String { s("couldntAddSet") }
+    static var lifecycleUpcoming: String { s("lifecycleUpcoming") }
+    static var lifecycleAvailable: String { s("lifecycleAvailable") }
+    static var lifecycleRetiringSoon: String { s("lifecycleRetiringSoon") }
+    static var lifecycleRetired: String { s("lifecycleRetired") }
+    static var availabilityTitle: String { s("availabilityTitle") }
+    static var dateReleased: String { s("dateReleased") }
+    static var dateReleases: String { s("dateReleases") }
+    static var dateRetired: String { s("dateRetired") }
+    static var dateRetiring: String { s("dateRetiring") }
+    static var valueTitle: String { s("valueTitle") }
+    static var valueNew: String { s("valueNew") }
+    static var valueUsed: String { s("valueUsed") }
     static var partsCouldntLoad: String { s("partsCouldntLoad") }
     static var partsEmptyTitle: String { s("partsEmptyTitle") }
     static var partsEmptyMessage: String { s("partsEmptyMessage") }

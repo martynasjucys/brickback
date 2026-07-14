@@ -96,6 +96,21 @@ plain("startSortingHint",
       "Adds a local copy you can sort offline. Add the same set again for a second physical copy.",
       "Prideda vietinę kopiją, kurią galite rūšiuoti neprisijungę. Pridėkite tą patį rinkinį dar kartą antrai fizinei kopijai.")
 plain("couldntAddSet", "Couldn't add set", "Nepavyko pridėti rinkinio")
+# Lifecycle status badge (mirrors sets.lifecycle_status).
+plain("lifecycleUpcoming", "Coming soon", "Netrukus pasirodys")
+plain("lifecycleAvailable", "Available", "Parduodama")
+plain("lifecycleRetiringSoon", "Retiring soon", "Netrukus išparduodama")
+plain("lifecycleRetired", "Retired", "Nebegaminama")
+# Availability card — labelled date rows.
+plain("availabilityTitle", "Availability", "Prieinamumas")
+plain("dateReleased", "Released", "Išleista")
+plain("dateReleases", "Releases", "Pasirodys")
+plain("dateRetired", "Retired", "Nebegaminama")
+plain("dateRetiring", "Retiring", "Išparduodama")
+# Value card — cached BrickLink market price, by condition.
+plain("valueTitle", "Value", "Vertė")
+plain("valueNew", "New", "Naujas")
+plain("valueUsed", "Used", "Naudotas")
 
 # ─────────────────────────── SET PARTS ───────────────────────────
 plain("partsCouldntLoad", "Couldn't load parts", "Nepavyko įkelti dalių")
