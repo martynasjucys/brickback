@@ -19,11 +19,13 @@ enum Route: Hashable {
     case partyAddParts(String)  // add-found-parts picker — S6
 
     /// Whether this destination draws its own custom header and so hides the native nav bar. The
-    /// counting (`.rebuild`) and review (`.review`) screens keep the native bar visible to host
-    /// native toolbar controls — back button + trailing actions — instead of brick buttons.
+    /// counting (`.rebuild`), review (`.review`) and paywall (`.paywall`) screens keep the native
+    /// bar visible to host native toolbar controls — back button + trailing actions — instead of
+    /// brick buttons. Keeping neighbours in a stack consistent also avoids the SwiftUI glitch where
+    /// toggling nav-bar visibility between pushes corrupts the returning screen's header.
     var hidesNavBar: Bool {
         switch self {
-        case .rebuild, .review: return false
+        case .rebuild, .review, .paywall: return false
         default: return true
         }
     }

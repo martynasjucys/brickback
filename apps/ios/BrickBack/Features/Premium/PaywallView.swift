@@ -24,43 +24,45 @@ struct PaywallView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader(L.premium, onBack: { router.pop() })
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: AppSpacing.s8) {
-                        Text(L.cloudSyncTitle).font(AppText.display).foregroundStyle(AppColors.ink)
-                        AppBadge(L.premiumBadge, color: AppColors.primary)
-                    }
-                    Spacer().frame(height: AppSpacing.s8)
-                    Text(L.paywallHeadline)
-                        .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                    Spacer().frame(height: AppSpacing.s20)
-
-                    ForEach(benefits, id: \.0) { benefit in
-                        BenefitRow(title: benefit.0, detail: benefit.1)
-                        Spacer().frame(height: AppSpacing.s12)
-                    }
-
-                    Spacer().frame(height: AppSpacing.s8)
-                    AppButton(L.turnOnCloudSync, icon: "cloud", expand: true) { startSync() }
-                    Spacer().frame(height: AppSpacing.s12)
-                    Text(L.paywallCtaHint)
-                        .font(AppText.caption).foregroundStyle(AppColors.muted)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-
-                    #if DEBUG
-                    Spacer().frame(height: AppSpacing.s20)
-                    Rectangle().fill(AppColors.line).frame(height: 1)
-                    Spacer().frame(height: AppSpacing.s8)
-                    DebugPremiumToggle()
-                    #endif
+                HStack(spacing: AppSpacing.s8) {
+                    Text(L.cloudSyncTitle).font(AppText.display).foregroundStyle(AppColors.ink)
+                    AppBadge(L.premiumBadge, color: AppColors.primary)
                 }
-                .padding(.horizontal, AppSpacing.screen)
-                .padding(.bottom, AppSpacing.s40)
+                Spacer().frame(height: AppSpacing.s8)
+                Text(L.paywallHeadline)
+                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                Spacer().frame(height: AppSpacing.s20)
+
+                ForEach(benefits, id: \.0) { benefit in
+                    BenefitRow(title: benefit.0, detail: benefit.1)
+                    Spacer().frame(height: AppSpacing.s12)
+                }
+
+                Spacer().frame(height: AppSpacing.s8)
+                AppButton(L.turnOnCloudSync, icon: "cloud", expand: true) { startSync() }
+                Spacer().frame(height: AppSpacing.s12)
+                Text(L.paywallCtaHint)
+                    .font(AppText.caption).foregroundStyle(AppColors.muted)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
+
+                #if DEBUG
+                Spacer().frame(height: AppSpacing.s20)
+                Rectangle().fill(AppColors.line).frame(height: 1)
+                Spacer().frame(height: AppSpacing.s8)
+                DebugPremiumToggle()
+                #endif
             }
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s8)
+            .padding(.bottom, AppSpacing.s40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        // Native nav bar (back button + title), consistent with the counting screen it's pushed
+        // from — no custom ScreenHeader, so the stack never toggles nav-bar visibility.
+        .navigationTitle(L.premium)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func startSync() {
