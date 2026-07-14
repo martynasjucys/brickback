@@ -12,7 +12,6 @@ struct PaywallView: View {
 
     private let benefits: [(String, String)] = [
         (L.benefitSyncTitle, L.benefitSyncBody),
-        (L.benefitUnlimitedTitle, L.benefitUnlimitedBody),
         (L.benefitBackupTitle, L.benefitBackupBody),
         (L.partyModeTitle, L.benefitPartyBody),
     ]
