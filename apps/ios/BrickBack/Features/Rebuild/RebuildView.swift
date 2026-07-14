@@ -123,17 +123,26 @@ struct RebuildView: View {
 
     // MARK: - Header (branded green field: nav row + progress summary)
 
-    /// The branded green header: the back + expanding-actions nav row, and — once the inventory is
-    /// loaded — the set's progress ring, title and part count riding on the same field (so it's
-    /// taller than Home's, but keeps the same brick-plate background and border).
+    /// The branded green header: a single nav row carrying the back button, the set's title +
+    /// part count, and the expanding-actions cluster — then, once the inventory is loaded, a slim
+    /// full-width progress bar riding below on the same brick-plate field.
     private func header(vm: RebuildViewModel, inv: RebuildInventory?) -> some View {
-        VStack(spacing: 0) {
-            HStack(spacing: AppSpacing.s8) {
+        VStack(spacing: AppSpacing.s12) {
+            HStack(spacing: AppSpacing.s12) {
                 BackButton { Task { await vm.flush(); env.homeRouter.pop() } }
-                Spacer(minLength: AppSpacing.s8)
+                if let inv {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(inv.summary.name).font(AppText.title).foregroundStyle(.white).lineLimit(1)
+                        Text(L.countHaveOfPartsTypes(have: vm.haveTotal, total: inv.summary.totalParts, types: inv.parts.count))
+                            .font(AppText.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    Spacer(minLength: AppSpacing.s8)
+                }
                 actionCluster(vm: vm)
             }
-            if let inv { progressSummary(vm: vm, inv: inv) }
+            if let inv { progressBar(vm: vm, inv: inv) }
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.top, AppSpacing.s8)
@@ -142,21 +151,12 @@ struct RebuildView: View {
         .background(headerField)
     }
 
-    /// Set title, part count and a slim progress bar — the same bar used elsewhere, styled white so
-    /// it (and a completed fill) reads on the green field. Far shorter than the old progress ring.
-    private func progressSummary(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
+    /// A slim progress bar — the same bar used elsewhere, styled white so it (and a completed fill)
+    /// reads on the green field. Rides full-width below the inline title row.
+    private func progressBar(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
         let total = inv.summary.totalParts
         let value = total == 0 ? 0 : Double(vm.haveTotal) / Double(total)
-        return VStack(alignment: .leading, spacing: AppSpacing.s8) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(inv.summary.name).font(AppText.h1).foregroundStyle(.white).lineLimit(2)
-                Text(L.countHaveOfPartsTypes(have: vm.haveTotal, total: total, types: inv.parts.count))
-                    .font(AppText.caption).foregroundStyle(.white.opacity(0.85))
-            }
-            AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.top, AppSpacing.s12)
+        return AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
     }
 
     /// The trailing actions. Collapsed, it's a single "more" button; expanded, the four screen
