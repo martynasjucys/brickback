@@ -6,15 +6,23 @@ import BrickBackKit
 /// Adding a set is unlimited (no free-tier cap) — premium gates only party mode + cloud sync.
 struct SetDetailScreen: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let itemId: Int
 
     @State private var state: LoadState<SetDetail> = .loading
     /// Unique (part, colour) count, loaded lazily so metadata renders immediately ("…" until ready).
     @State private var uniqueParts = "…"
 
+    private var router: Router { activeRouter ?? env.homeRouter }
+
+    /// In the iOS 18+ search tab this is the first pushed screen, where the system's own search
+    /// "back" chevron returns to the results — so we drop our redundant header back button and let
+    /// it be the sole back. Deeper screens (parts/minifigs) and the iOS 17 pushed flow keep theirs.
+    private var systemProvidesBack: Bool { activeRouter === env.searchRouter }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.setHeader, onBack: { env.homeRouter.pop() })
+            ScreenHeader(L.setHeader, onBack: systemProvidesBack ? nil : { router.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -46,8 +54,11 @@ struct SetDetailScreen: View {
 
 private struct Detail: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let detail: SetDetail
     let uniqueParts: String
+
+    private var router: Router { activeRouter ?? env.homeRouter }
 
     private var meta: String {
         var parts = [detail.set.setNum]
@@ -71,10 +82,10 @@ private struct Detail: View {
                 Spacer().frame(height: AppSpacing.s16)
                 HStack(spacing: AppSpacing.s12) {
                     StatCard(label: L.uniqueParts, value: uniqueParts) {
-                        env.homeRouter.push(.setParts(detail.set.itemId))
+                        router.push(.setParts(detail.set.itemId))
                     }
                     StatCard(label: L.minifigs, value: "\(detail.minifigCount)") {
-                        env.homeRouter.push(.setMinifigs(detail.set.itemId))
+                        router.push(.setMinifigs(detail.set.itemId))
                     }
                 }
                 Spacer().frame(height: AppSpacing.s20)
@@ -112,9 +123,12 @@ private struct StatCard: View {
 
 private struct StartSortingButton: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let itemId: Int
     @State private var loading = false
     @State private var errorMessage: String?
+
+    private var router: Router { activeRouter ?? env.homeRouter }
 
     var body: some View {
         AppButton(L.startSorting, icon: "checklist", loading: loading, expand: true) {
@@ -141,8 +155,11 @@ private struct StartSortingButton: View {
                 // S9: eagerly cache this set's images for offline while we're still online.
                 Task { await env.services.offlineImages.ensureCached(id) }
                 loading = false
-                // Starting the build ends the "add set" flow: collapse Search + Set-detail out
-                // of the stack so Back from counting returns straight to Home.
+                // Starting the build ends the "add set" flow. Clear the stack we came in on
+                // (the search tab on iOS 18+, or Home on iOS 17) so returning to search is clean,
+                // then open counting on the Rebuilds tab — so Back from counting lands on Home.
+                router.popToRoot()
+                env.selectedTab = 0
                 env.homeRouter.popToRoot()
                 env.homeRouter.push(.rebuild(id))
             } catch {

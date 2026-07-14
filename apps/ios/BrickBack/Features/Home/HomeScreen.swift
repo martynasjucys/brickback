@@ -32,7 +32,7 @@ struct HomeScreen: View {
                         message: L.homeEmptyMessage,
                         icon: "cube.box",
                         action: {
-                            AppButton(L.addASet, icon: "plus") { env.homeRouter.push(.search) }
+                            AppButton(L.addASet, icon: "plus") { env.openSearch() }
                         }
                     )
                 } else {

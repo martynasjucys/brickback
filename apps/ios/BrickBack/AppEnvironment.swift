@@ -12,6 +12,11 @@ final class AppEnvironment {
     let homeRouter = Router()
     let partyRouter = Router()
     let profileRouter = Router()
+    /// The catalog-search stack. On iOS 18+ search is its own `role: .search` tab (a native,
+    /// expandable button on the tab bar's trailing edge), so its pushes (set detail → parts …)
+    /// live on their own stack. On iOS 17 search is pushed onto `homeRouter` instead and this is
+    /// unused. See `RootTabView`.
+    let searchRouter = Router()
     let sync: SyncController
 
     /// UI language (S7 i18n): device auto-detect by default + a persisted Profile override.
@@ -26,9 +31,25 @@ final class AppEnvironment {
     /// name); editable in Profile. Rides into the anonymous guest session's metadata on join.
     let displayName = DisplayNameController()
 
-    /// Selected tab (0 = Rebuilds, 1 = Party, 2 = Profile). Held here (not view `@State`) so it —
-    /// like the routers — survives the language-switch view-tree rebuild keyed on `locale.language`.
+    /// Selected tab (0 = Rebuilds, 1 = Party, 2 = Profile, 3 = Search on iOS 18+). Held here (not
+    /// view `@State`) so it — like the routers — survives the language-switch view-tree rebuild
+    /// keyed on `locale.language`.
     var selectedTab = 0
+
+    /// The `role: .search` tab's selection value (iOS 18+ only). Sits after the three main tabs.
+    static let searchTab = 3
+
+    /// Open catalog search. On iOS 18+ this selects the native search tab (which expands its search
+    /// field); on iOS 17 it pushes the search screen onto the Rebuilds stack (there is no search
+    /// tab). The single entry point so callers don't branch on OS version.
+    func openSearch() {
+        if #available(iOS 18.0, *) {
+            selectedTab = Self.searchTab
+        } else {
+            selectedTab = 0
+            homeRouter.push(.search)
+        }
+    }
 
     /// Premium unlock + free-cap source of truth (S5). Observed by the paywall/profile; read
     /// synchronously by the sync gate and the "Start sorting" cap check.
@@ -109,7 +130,7 @@ final class AppEnvironment {
     /// Once a session exists, collapse any sign-in / paywall screen still on a stack so the user
     /// lands back where they started (mirrors the Flutter "bounce away from sign-in").
     private func dismissAuthScreens() {
-        for router in [homeRouter, partyRouter, profileRouter] {
+        for router in [homeRouter, partyRouter, profileRouter, searchRouter] {
             while let last = router.path.last, last == .signIn || last == .paywall {
                 router.pop()
             }

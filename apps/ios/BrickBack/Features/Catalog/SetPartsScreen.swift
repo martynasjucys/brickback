@@ -6,13 +6,16 @@ import BrickBackKit
 /// Port of `set_parts_screen.dart`. Parts are sorted by colour, then name.
 struct SetPartsScreen: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let itemId: Int
 
     @State private var state: LoadState<[ExpandedPart]> = .loading
 
+    private var router: Router { activeRouter ?? env.homeRouter }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.uniqueParts, onBack: { env.homeRouter.pop() })
+            ScreenHeader(L.uniqueParts, onBack: { router.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)

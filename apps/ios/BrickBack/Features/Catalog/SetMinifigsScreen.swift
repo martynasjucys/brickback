@@ -5,13 +5,16 @@ import BrickBackKit
 /// minifig verification happens in the review flow (S4). Port of `set_minifigs_screen.dart`.
 struct SetMinifigsScreen: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let itemId: Int
 
     @State private var state: LoadState<[CatalogMinifig]> = .loading
 
+    private var router: Router { activeRouter ?? env.homeRouter }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.minifigs, onBack: { env.homeRouter.pop() })
+            ScreenHeader(L.minifigs, onBack: { router.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
