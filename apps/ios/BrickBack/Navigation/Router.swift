@@ -17,6 +17,8 @@ enum Route: Hashable {
     case partyJoin              // join a party by code — S6
     case partyInvite(String)    // invite / QR — S6
     case partyAddParts(String)  // add-found-parts picker — S6
+    case appearance             // Profile → Appearance picker — S7
+    case language               // Profile → Language picker — S7
 
     /// Whether this destination draws its own custom header and so hides the native nav bar. The
     /// counting (`.rebuild`), review (`.review`), report (`.report`), paywall (`.paywall`) and
@@ -24,12 +26,15 @@ enum Route: Hashable {
     /// back button + trailing actions — instead of brick buttons. The catalog family
     /// (`.setDetail`/`.setParts`/`.setMinifigs`) also keeps it so those screens look identical
     /// wherever they're opened (the search tab or the counting screen's ••• menu): native back
-    /// chevron + inline title. Keeping neighbours in a stack consistent also avoids the SwiftUI
-    /// glitch where toggling nav-bar visibility between pushes corrupts the returning screen's header.
+    /// chevron + inline title. The Profile settings pickers (`.appearance`/`.language`) do the same —
+    /// a single push off the Profile root, exactly like `.paywall`/`.signIn`. Keeping neighbours in a
+    /// stack consistent also avoids the SwiftUI glitch where toggling nav-bar visibility between
+    /// pushes corrupts the returning screen's header.
     var hidesNavBar: Bool {
         switch self {
         case .rebuild, .review, .report, .paywall, .signIn,
-             .setDetail, .setParts, .setMinifigs: return false
+             .setDetail, .setParts, .setMinifigs,
+             .appearance, .language: return false
         default: return true
         }
     }

@@ -19,6 +19,15 @@ enum AppLanguage: String, CaseIterable, Identifiable, Sendable {
     case lt
 
     var id: String { rawValue }
+
+    /// Localized label for this choice — the Profile row value and the Language picker rows.
+    var label: String {
+        switch self {
+        case .system: return L.languageSystem
+        case .en: return L.languageEnglish
+        case .lt: return L.languageLithuanian
+        }
+    }
 }
 
 /// Owns the chosen `AppLanguage`, persists it to `UserDefaults`, and mirrors it into `I18n`
@@ -66,13 +75,7 @@ final class LocaleController {
     }
 
     /// Human label for the current choice (shown as the Profile row's value).
-    var currentLabel: String {
-        switch language {
-        case .system: return L.languageSystem
-        case .en: return L.languageEnglish
-        case .lt: return L.languageLithuanian
-        }
-    }
+    var currentLabel: String { language.label }
 
     private func apply() {
         I18n.locale = locale

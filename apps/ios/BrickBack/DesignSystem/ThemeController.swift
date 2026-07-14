@@ -17,6 +17,15 @@ enum AppTheme: String, CaseIterable, Identifiable, Sendable {
         case .dark: return .dark
         }
     }
+
+    /// Localized label for this choice — the Profile row value and the Appearance picker rows.
+    var label: String {
+        switch self {
+        case .system: return L.themeSystem
+        case .light: return L.themeLight
+        case .dark: return L.themeDark
+        }
+    }
 }
 
 /// Owns the chosen `AppTheme`, persists it to `UserDefaults`, and exposes the `ColorScheme?` the
@@ -50,11 +59,5 @@ final class ThemeController {
     var colorScheme: ColorScheme? { theme.colorScheme }
 
     /// Human label for the current choice (shown as the Profile row's value).
-    var currentLabel: String {
-        switch theme {
-        case .system: return L.themeSystem
-        case .light: return L.themeLight
-        case .dark: return L.themeDark
-        }
-    }
+    var currentLabel: String { theme.label }
 }

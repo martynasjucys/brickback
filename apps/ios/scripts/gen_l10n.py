@@ -194,8 +194,8 @@ plain("notSignedIn", "Not signed in", "Neprisijungta")
 plain("profileSignInPrompt",
       "Sign in to unlock premium cloud sync and party mode. Everything else works offline.",
       "Prisijunkite, kad atrakintumėte premium sinchronizavimą ir bendrą režimą. Visa kita veikia neprisijungus.")
-plain("partyModeBody", "Sort a big pile together in real time — join by code.",
-      "Rūšiuokite didelę krūvą kartu realiu laiku — prisijunkite su kodu.")
+plain("partyModeBody", "Sort a bricks together in real time — join by code.",
+      "Rūšiuokite kaladėles kartu realiu laiku — prisijunkite su kodu.")
 plain("partyJoinTitle", "Join a party", "Prisijungti prie sesijos")
 plain("partyTabSubtitle", "Join a friend's sort — or host your own.",
       "Prisijunkite prie draugo rūšiavimo arba surenkite savo.")

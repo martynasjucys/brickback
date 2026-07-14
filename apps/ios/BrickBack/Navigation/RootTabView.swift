@@ -215,6 +215,22 @@ struct RouteView: View {
             PartyInviteView(partyId: id)
         case .partyAddParts(let id):
             PartyAddPartsView(partyId: id)
+        case .appearance:
+            SettingsPickerScreen(
+                title: L.appearance,
+                options: AppTheme.allCases,
+                selection: env.theme.theme,
+                label: { $0.label },
+                onSelect: { env.theme.set($0) }
+            )
+        case .language:
+            SettingsPickerScreen(
+                title: L.language,
+                options: AppLanguage.allCases,
+                selection: env.locale.language,
+                label: { $0.label },
+                onSelect: { env.locale.set($0) }
+            )
         }
     }
 }

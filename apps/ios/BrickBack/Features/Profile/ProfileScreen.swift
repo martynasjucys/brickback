@@ -6,8 +6,6 @@ import BrickBackKit
 /// badge, the party display name, and the sync/appearance/language rows. Port of `profile_screen.dart`.
 struct ProfileScreen: View {
     @Environment(AppEnvironment.self) private var env
-    @State private var showLanguage = false
-    @State private var showAppearance = false
     @State private var showNameEditor = false
 
     /// Live rebuild list (via the same GRDB observation Home uses), for the header stats.
@@ -45,10 +43,10 @@ struct ProfileScreen: View {
                     // sign-in, app open) and pull-to-refresh on Home covers a manual pull. Surfacing a
                     // button here only implied the user was responsible for syncing.
                     SettingsRow(icon: "circle.lefthalf.filled", title: L.appearance, value: env.theme.currentLabel) {
-                        showAppearance = true
+                        env.profileRouter.push(.appearance)
                     }
                     SettingsRow(icon: "globe", title: L.language, value: env.locale.currentLabel) {
-                        showLanguage = true
+                        env.profileRouter.push(.language)
                     }
 
                     AboutFooter()
@@ -65,34 +63,6 @@ struct ProfileScreen: View {
             for await list in env.services.rebuild.observeSummaries() { summaries = list }
         }
         .sheet(isPresented: $showNameEditor) { NameEditorSheet() }
-        .confirmationDialog(L.language, isPresented: $showLanguage, titleVisibility: .visible) {
-            ForEach(AppLanguage.allCases) { lang in
-                Button(languageLabel(lang)) { env.locale.set(lang) }
-            }
-            Button(L.cancel, role: .cancel) {}
-        }
-        .confirmationDialog(L.appearance, isPresented: $showAppearance, titleVisibility: .visible) {
-            ForEach(AppTheme.allCases) { theme in
-                Button(themeLabel(theme)) { env.theme.set(theme) }
-            }
-            Button(L.cancel, role: .cancel) {}
-        }
-    }
-
-    private func languageLabel(_ lang: AppLanguage) -> String {
-        switch lang {
-        case .system: return L.languageSystem
-        case .en: return L.languageEnglish
-        case .lt: return L.languageLithuanian
-        }
-    }
-
-    private func themeLabel(_ theme: AppTheme) -> String {
-        switch theme {
-        case .system: return L.themeSystem
-        case .light: return L.themeLight
-        case .dark: return L.themeDark
-        }
     }
 }
 
