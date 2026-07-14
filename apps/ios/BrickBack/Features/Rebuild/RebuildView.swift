@@ -9,7 +9,6 @@ import BrickBackKit
 struct RebuildView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let rebuildSetId: String
 
     @State private var vm: RebuildViewModel?
@@ -21,9 +20,6 @@ struct RebuildView: View {
     @State private var showSettings = false
     @State private var startingParty = false
     @State private var partyError: String?
-    /// The trailing action cluster: collapsed to a single "more" button by default; tapping it
-    /// fans the four screen actions out with a spring.
-    @State private var actionsExpanded = false
 
     private var grouping: PartGrouping { PartGrouping(rawValue: groupingRaw) ?? .color }
 
@@ -46,6 +42,20 @@ struct RebuildView: View {
                 ProgressView().tint(AppColors.primary)
             }
         }
+        .overlay { if startingParty { partyStartingOverlay } }
+        // Native nav bar (transparent) hosting the back button + ••• actions menu, riding on the
+        // brand plate drawn by `header`. White glyphs via the dark toolbar colour scheme.
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                if let vm, let inv = vm.inv { navTitle(vm: vm, inv: inv) }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, vm.inv != nil { actionsMenu(vm: vm) }
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             if vm == nil {
                 vm = RebuildViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild, onNudge: { env.sync.nudge() })
@@ -123,31 +133,26 @@ struct RebuildView: View {
 
     // MARK: - Header (branded green field: nav row + progress summary)
 
-    /// The branded green header: a single nav row carrying the back button, the set's title +
-    /// part count, and the expanding-actions cluster — then, once the inventory is loaded, a slim
-    /// full-width progress bar riding below on the same brick-plate field.
+    /// The set title + part count, shown as the native nav bar's centred title — riding between the
+    /// back button and the ••• menu — instead of in the plate body. White on the green field.
+    private func navTitle(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
+        VStack(spacing: 1) {
+            Text(inv.summary.name).font(AppText.title).foregroundStyle(.white).lineLimit(1)
+            Text(L.countHaveOfPartsTypes(have: vm.haveTotal, total: inv.summary.totalParts, types: inv.parts.count))
+                .font(AppText.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
+        }
+    }
+
+    /// The branded green header *body*: just the slim progress bar now that the title + count ride
+    /// in the native nav bar above. The plate bleeds up behind the transparent bar.
     private func header(vm: RebuildViewModel, inv: RebuildInventory?) -> some View {
-        VStack(spacing: AppSpacing.s12) {
-            HStack(spacing: AppSpacing.s12) {
-                BackButton { Task { await vm.flush(); env.homeRouter.pop() } }
-                if let inv {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(inv.summary.name).font(AppText.title).foregroundStyle(.white).lineLimit(1)
-                        Text(L.countHaveOfPartsTypes(have: vm.haveTotal, total: inv.summary.totalParts, types: inv.parts.count))
-                            .font(AppText.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                } else {
-                    Spacer(minLength: AppSpacing.s8)
-                }
-                actionCluster(vm: vm)
-            }
+        VStack(alignment: .leading, spacing: 0) {
             if let inv { progressBar(vm: vm, inv: inv) }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.screen)
         .padding(.top, AppSpacing.s8)
         .padding(.bottom, AppSpacing.s16)
-        .frame(maxWidth: .infinity)
         .background(headerField)
     }
 
@@ -159,51 +164,35 @@ struct RebuildView: View {
         return AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
     }
 
-    /// The trailing actions. Collapsed, it's a single "more" button; expanded, the four screen
-    /// actions spring out to its left. Tapping most actions collapses the cluster again; the party
-    /// action stays open so its in-progress spinner is visible.
-    @ViewBuilder
-    private func actionCluster(vm: RebuildViewModel) -> some View {
-        HStack(spacing: AppSpacing.s8) {
-            if actionsExpanded {
-                BrickIconButton(icon: "flag") {
-                    collapseActions()
-                    Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) }
-                }
-                .transition(actionReveal)
+    /// The trailing ••• actions, as a native `Menu` — the system's own expand/collapse dropdown:
+    /// review & verify, start party, search parts, view settings. On iOS 26 the toolbar renders it
+    /// as a glass circular button; on older versions it falls back to a plain glyph — same menu.
+    private func actionsMenu(vm: RebuildViewModel) -> some View {
+        Menu {
+            Button {
+                Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) }
+            } label: { Label(L.menuReview, systemImage: "flag") }
 
-                Group {
-                    if startingParty {
-                        ProgressView().tint(AppColors.primary).frame(width: 44, height: 48)
-                    } else {
-                        BrickIconButton(icon: "person.2", accessibilityLabel: L.a11yStartParty) { onParty(vm: vm) }
-                    }
-                }
-                .transition(actionReveal)
+            Button { onParty(vm: vm) } label: { Label(L.menuStartParty, systemImage: "person.2") }
 
-                BrickIconButton(icon: "magnifyingglass") { collapseActions(); showSearch = true }
-                    .transition(actionReveal)
-                BrickIconButton(icon: "slider.horizontal.3") { collapseActions(); showSettings = true }
-                    .transition(actionReveal)
-            }
+            Button { showSearch = true } label: { Label(L.menuSearchParts, systemImage: "magnifyingglass") }
 
-            BrickIconButton(
-                icon: actionsExpanded ? "xmark" : "ellipsis",
-                symbolReplace: true,
-                accessibilityLabel: actionsExpanded ? L.closeActions : L.moreActions
-            ) {
-                withAnimation(reduceMotion ? nil : Motion.reveal) { actionsExpanded.toggle() }
-            }
+            Button { showSettings = true } label: { Label(L.viewSettings, systemImage: "slider.horizontal.3") }
+        } label: {
+            Image(systemName: "ellipsis")
         }
+        .accessibilityLabel(L.moreActions)
     }
 
-    /// Each revealed action scales up out of the "more" button (anchored trailing) as it fades in.
-    private var actionReveal: AnyTransition {
-        .scale(scale: 0.4, anchor: .trailing).combined(with: .opacity)
-    }
-
-    private func collapseActions() {
-        withAnimation(reduceMotion ? nil : Motion.reveal) { actionsExpanded = false }
+    /// A lightweight blocking spinner while a party is being created (the async flush → push →
+    /// create round-trip). The old inline cluster spinner has no home now the actions are a menu.
+    private var partyStartingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.12).ignoresSafeArea()
+            ProgressView().tint(AppColors.primary)
+                .padding(AppSpacing.s24)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        }
     }
 
     /// The branded green "brick plate" that backs the header — the counting-screen counterpart to

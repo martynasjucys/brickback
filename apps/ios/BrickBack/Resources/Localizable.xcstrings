@@ -1973,6 +1973,54 @@
         }
       }
     },
+    "menuReview": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review & verify"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Peržiūra ir tikrinimas"
+          }
+        }
+      }
+    },
+    "menuStartParty": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start party"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pradėti sesiją"
+          }
+        }
+      }
+    },
+    "menuSearchParts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Search parts"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ieškoti dalių"
+          }
+        }
+      }
+    },
     "sortParty": {
       "localizations": {
         "en": {

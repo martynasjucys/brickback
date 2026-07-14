@@ -17,6 +17,16 @@ enum Route: Hashable {
     case partyJoin              // join a party by code — S6
     case partyInvite(String)    // invite / QR — S6
     case partyAddParts(String)  // add-found-parts picker — S6
+
+    /// Whether this destination draws its own custom header and so hides the native nav bar. The
+    /// counting screen (`.rebuild`) keeps the native bar visible (transparent) to host native
+    /// toolbar controls — back button + the ••• actions menu — over its brand plate.
+    var hidesNavBar: Bool {
+        switch self {
+        case .rebuild: return false
+        default: return true
+        }
+    }
 }
 
 /// One `NavigationStack`'s path, as an `@Observable` so views can push/pop and the stack

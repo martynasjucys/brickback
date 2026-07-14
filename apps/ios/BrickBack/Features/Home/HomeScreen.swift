@@ -18,13 +18,15 @@ struct HomeScreen: View {
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 
-    var body: some View {
-        VStack(spacing: 0) {
-            HomeHeader(
-                onFilter: { showFilter = true },
-                filterCount: filter.badgeCount
-            )
+    /// The brand band drawn *below* the nav bar (0 = the plate hugs the nav bar strip only). Bump
+    /// this to give the colourful header more presence beneath the native toolbar.
+    private let headerBand: CGFloat = 12
+    /// Measured top safe-area inset (status bar + nav bar), so the brand plate can be sized to cover
+    /// exactly the nav-bar region and extend `headerBand` below it.
+    @State private var topInset: CGFloat = 60
 
+    var body: some View {
+        Group {
             if let vm {
                 if vm.loadedSummaries && vm.summaries.isEmpty {
                     EmptyState(
@@ -58,8 +60,31 @@ struct HomeScreen: View {
                 Spacer()
             }
         }
+        .padding(.top, headerBand) // clear the brand band that dips below the nav bar
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Layer order (front → back): content · brand plate (top only) · canvas fill · inset probe.
+        // The plate must sit *in front of* the opaque canvas, or the canvas hides it.
+        .background(alignment: .top) {
+            BrandHeaderBackground(height: topInset + headerBand)
+        }
         .background(AppColors.canvas)
+        .background { // probe the true top inset (nav bar + status) once, to size the plate
+            GeometryReader { geo in
+                Color.clear.preference(key: HomeTopInsetKey.self, value: geo.safeAreaInsets.top)
+            }
+        }
+        .onPreferenceChange(HomeTopInsetKey.self) { if $0 > 0 { topInset = $0 } }
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                BrickBackWordmark(size: 22)
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                FilterToolbarButton(count: filter.badgeCount) { showFilter = true }
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar) // transparent — the brand plate shows through
+        .toolbarColorScheme(.dark, for: .navigationBar)  // white title + glyphs on the blue field
         .task {
             if vm == nil { vm = HomeViewModel(services: env.services) }
             vm?.start()
@@ -77,59 +102,57 @@ struct HomeScreen: View {
     }
 }
 
-// MARK: - Header
+// MARK: - Header (native toolbar over a brand plate)
 
-/// The brand panel: the wordmark on the left, the filter button on the right, on a blue field
-/// that bleeds into the status bar and curves off at the bottom. The button filters the sets
-/// already added (theme + completion).
-private struct HomeHeader: View {
-    let onFilter: () -> Void
-    var filterCount: Int = 0 // active-filter count → badge on the filter button (0 hides it)
-
+/// The colourful brand plate drawn behind the transparent native navigation bar, so the native
+/// toolbar — wordmark + filter — rides on the brand field. Same gradient, curved bottom and raised
+/// lip as the old custom header, now purely a decorative background sized to the nav-bar region.
+private struct BrandHeaderBackground: View {
+    let height: CGFloat
     var body: some View {
-        HStack(alignment: .center, spacing: AppSpacing.s12) {
-            BrickBackWordmark(size: 30)
-            Spacer(minLength: AppSpacing.s8)
-
-            BrickIconButton(
-                icon: "line.3.horizontal.decrease",
-                tint: filterCount > 0 ? AppColors.primary : AppColors.ink,
-                accessibilityLabel: filterCount > 0 ? L.filterSetsActive(filterCount) : L.filterSets
-            ) { onFilter() }
-            .overlay(alignment: .topTrailing) {
-                if filterCount > 0 {
-                    Text("\(filterCount)")
-                        .font(.system(size: 11, weight: .heavy, design: .rounded))
-                        .foregroundStyle(AppColors.onPrimary)
-                        .frame(width: 18, height: 18)
-                        .background(Circle().fill(AppColors.primary))
-                        .overlay(Circle().stroke(AppColors.card, lineWidth: 1.5))
-                        .offset(x: 4, y: -4)
-                        .accessibilityHidden(true)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.top, AppSpacing.s8)
-        .padding(.bottom, AppSpacing.s20)
-        .frame(maxWidth: .infinity)
-        .background(headerField)
-    }
-
-    private var headerField: some View {
         let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
                                            bottomTrailingRadius: AppRadius.xl, style: .continuous)
-        // A raised brick plate: the gradient face sits above a darker `brandEdge` bottom lip —
-        // the same 3D treatment as the cards, so the header reads as one big brick.
-        return ZStack(alignment: .top) {
+        ZStack(alignment: .top) {
             shape.fill(AppColors.brandEdge)
             LinearGradient(colors: [AppColors.brand, AppColors.brandDeep], startPoint: .top, endPoint: .bottom)
                 .clipShape(shape)
                 .padding(.bottom, AppDepth.brick + 1)
         }
+        .frame(height: height)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea(edges: .top)
         .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
     }
+}
+
+/// Native trailing toolbar button for the Home list filter. A white glyph on the brand bar; swaps
+/// to the filled variant with a count badge when a filter is active.
+private struct FilterToolbarButton: View {
+    let count: Int
+    let onTap: () -> Void
+    var body: some View {
+        Button(action: onTap) {
+            Image(systemName: count > 0 ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease")
+                .overlay(alignment: .topTrailing) {
+                    if count > 0 {
+                        Text("\(count)")
+                            .font(.system(size: 11, weight: .heavy, design: .rounded))
+                            .foregroundStyle(AppColors.brand)
+                            .frame(width: 16, height: 16)
+                            .background(Circle().fill(.white))
+                            .offset(x: 8, y: -8)
+                            .accessibilityHidden(true)
+                    }
+                }
+        }
+        .accessibilityLabel(count > 0 ? L.filterSetsActive(count) : L.filterSets)
+    }
+}
+
+/// Publishes the top safe-area inset so the brand plate can be sized to the nav-bar region.
+private struct HomeTopInsetKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
 // MARK: - List

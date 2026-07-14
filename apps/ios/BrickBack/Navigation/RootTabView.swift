@@ -36,7 +36,7 @@ private struct ModernTabView: View {
             // Stacked-bricks glyph: monochrome template when inactive, red/green/blue-filled
             // (RebuildsActive, rendered original) when this tab is selected.
             Tab(L.navRebuilds, image: env.selectedTab == 0 ? "RebuildsActive" : "RebuildsTab", value: 0) {
-                TabNavigation(router: env.homeRouter) { HomeScreen() }
+                TabNavigation(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
             }
 
             // Two-heads glyph. Joining a party is open to everyone (premium gates hosting only),
@@ -111,7 +111,7 @@ private struct LegacyTabView: View {
     var body: some View {
         @Bindable var env = env
         TabView(selection: $env.selectedTab) {
-            TabNavigation(router: env.homeRouter) { HomeScreen() }
+            TabNavigation(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
                 .tag(0)
                 .tabItem { Label(L.navRebuilds, image: env.selectedTab == 0 ? "RebuildsActive" : "RebuildsTab") }
 
@@ -159,15 +159,19 @@ private struct AddSetButton: View {
 /// their destination views.
 private struct TabNavigation<Root: View>: View {
     @Bindable var router: Router
+    /// Whether the root screen hides the native nav bar (it draws its own custom header). Set false
+    /// for the Home experiment, which keeps the native bar (transparent) so it can host native
+    /// toolbar buttons over the brand plate. Pushed destinations always hide it.
+    var rootBarHidden: Bool = true
     @ViewBuilder var root: () -> Root
 
     var body: some View {
         NavigationStack(path: $router.path) {
             root()
-                .navigationBarHidden(true)
+                .navigationBarHidden(rootBarHidden)
                 .navigationDestination(for: Route.self) { route in
                     RouteView(route: route)
-                        .navigationBarHidden(true)
+                        .navigationBarHidden(route.hidesNavBar)
                 }
         }
         // Tell every screen on this stack which router it's on, so dual-entry screens (party mode)

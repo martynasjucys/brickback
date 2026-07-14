@@ -139,6 +139,9 @@ enum L {
     }
     static var moreActions: String { s("moreActions") }
     static var closeActions: String { s("closeActions") }
+    static var menuReview: String { s("menuReview") }
+    static var menuStartParty: String { s("menuStartParty") }
+    static var menuSearchParts: String { s("menuSearchParts") }
     static var sortParty: String { s("sortParty") }
     static var couldntStartParty: String { s("couldntStartParty") }
     static var allAccountedFor: String { s("allAccountedFor") }
