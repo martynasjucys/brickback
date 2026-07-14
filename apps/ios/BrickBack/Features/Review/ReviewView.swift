@@ -32,16 +32,9 @@ struct ReviewView: View {
                 ProgressView().tint(AppColors.primary)
             }
         }
-        // The verify action floats as a green checkmark button above the tab bar's add-set "+".
-        .overlay(alignment: .bottomTrailing) {
-            if let vm, let inv = vm.inv {
-                verifyFab(inv: inv)
-                    .padding(.trailing, AppSpacing.screen)
-                    .padding(.bottom, AppSpacing.s8)
-            }
-        }
-        // Native nav bar: back button + share (missing parts) + view-report (when verified). No
-        // brand plate here — the screen keeps its canvas, so the bar uses default ink glyphs.
+        // Native nav bar: back button + view-report (when verified) + share (missing parts) + the
+        // primary verify action as a prominent green checkmark. No brand plate here — the screen
+        // keeps its canvas, so the other bar glyphs use the default ink tint.
         .navigationTitle(L.menuReview)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -55,6 +48,14 @@ struct ReviewView: View {
                 if let vm, let inv = vm.inv, !inv.missingParts.isEmpty {
                     Button { shareMissing(inv) } label: { Image(systemName: "square.and.arrow.up") }
                         .accessibilityLabel(L.shareMissingParts)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, let inv = vm.inv {
+                    Button { showMarkSheet = true } label: { Image(systemName: "checkmark") }
+                        .tint(AppColors.success)
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityLabel(inv.summary.verified ? L.reverify : L.markAsVerified)
                 }
             }
         }
@@ -109,8 +110,7 @@ struct ReviewView: View {
                     }
                     if notExportable > 0 { notExportableFootnote(notExportable) }
                 }
-                // Clear the floating verify button riding at the bottom-trailing.
-                Spacer().frame(height: 96)
+                Spacer().frame(height: AppSpacing.s24)
             }
         }
     }
@@ -170,22 +170,6 @@ struct ReviewView: View {
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.top, AppSpacing.s12)
-    }
-
-    /// The primary verify action as a floating button riding above the tab bar's add-set "+": a
-    /// green checkmark circle. Opens the mark-as-verified sheet (re-verify when already done).
-    private func verifyFab(inv: RebuildInventory) -> some View {
-        Button { showMarkSheet = true } label: {
-            Image(systemName: "checkmark")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(AppColors.success, in: Circle())
-                .overlay(Circle().stroke(.white.opacity(0.15), lineWidth: 0.5))
-                .shadow(color: AppColors.shadow.opacity(0.22), radius: 8, y: 3)
-        }
-        .buttonStyle(PressableStyle())
-        .accessibilityLabel(inv.summary.verified ? L.reverify : L.markAsVerified)
     }
 
     // MARK: - Actions
