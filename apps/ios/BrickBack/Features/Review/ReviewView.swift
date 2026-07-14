@@ -32,11 +32,25 @@ struct ReviewView: View {
                 ProgressView().tint(AppColors.primary)
             }
         }
-        // Native nav bar: back button + a share action (native), replacing the brick header row.
-        // No brand plate here — the screen keeps its canvas, so the bar uses default ink glyphs.
+        // The verify action floats as a green checkmark button above the tab bar's add-set "+".
+        .overlay(alignment: .bottomTrailing) {
+            if let vm, let inv = vm.inv {
+                verifyFab(inv: inv)
+                    .padding(.trailing, AppSpacing.screen)
+                    .padding(.bottom, AppSpacing.s8)
+            }
+        }
+        // Native nav bar: back button + share (missing parts) + view-report (when verified). No
+        // brand plate here — the screen keeps its canvas, so the bar uses default ink glyphs.
         .navigationTitle(L.menuReview)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, let inv = vm.inv, inv.summary.verified {
+                    Button { env.homeRouter.push(.report(rebuildSetId)) } label: { Image(systemName: "rosette") }
+                        .accessibilityLabel(L.viewReport)
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if let vm, let inv = vm.inv, !inv.missingParts.isEmpty {
                     Button { shareMissing(inv) } label: { Image(systemName: "square.and.arrow.up") }
@@ -76,30 +90,28 @@ struct ReviewView: View {
         let missing = inv.missingParts
         let notExportable = missing.filter { !$0.exportable }.count
 
-        return VStack(spacing: 0) {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    Spacer().frame(height: AppSpacing.s8)
-                    summaryCard(inv)
-                    if inv.hasMinifigs { minifigSection(vm: vm, inv: inv) }
-                    sectionLabel(L.missingParts, trailing: missing.isEmpty ? nil : typeCount(missing.count))
-                    if missing.isEmpty {
-                        EmptyState(
-                            title: L.reviewNothingMissing,
-                            message: L.everyPartAccountedFor,
-                            icon: "party.popper"
-                        )
-                        .frame(minHeight: 180)
-                    } else {
-                        ForEach(missing, id: \.key) { part in
-                            MissingRow(part: part) { openBrickLink(part) }
-                        }
-                        if notExportable > 0 { notExportableFootnote(notExportable) }
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: AppSpacing.s8)
+                summaryCard(inv)
+                if inv.hasMinifigs { minifigSection(vm: vm, inv: inv) }
+                sectionLabel(L.missingParts, trailing: missing.isEmpty ? nil : typeCount(missing.count))
+                if missing.isEmpty {
+                    EmptyState(
+                        title: L.reviewNothingMissing,
+                        message: L.everyPartAccountedFor,
+                        icon: "party.popper"
+                    )
+                    .frame(minHeight: 180)
+                } else {
+                    ForEach(missing, id: \.key) { part in
+                        MissingRow(part: part) { openBrickLink(part) }
                     }
-                    Spacer().frame(height: AppSpacing.s24)
+                    if notExportable > 0 { notExportableFootnote(notExportable) }
                 }
+                // Clear the floating verify button riding at the bottom-trailing.
+                Spacer().frame(height: 96)
             }
-            bottomBar(vm: vm, inv: inv)
         }
     }
 
@@ -160,23 +172,20 @@ struct ReviewView: View {
         .padding(.top, AppSpacing.s12)
     }
 
-    private func bottomBar(vm: ReviewViewModel, inv: RebuildInventory) -> some View {
-        VStack(spacing: AppSpacing.s12) {
-            if inv.summary.verified {
-                AppButton(L.viewReport, variant: .secondary, icon: "rosette", expand: true) {
-                    env.homeRouter.push(.report(rebuildSetId))
-                }
-            }
-            AppButton(
-                inv.summary.verified ? L.reverify : L.markAsVerified,
-                icon: "checkmark.seal", expand: true
-            ) { showMarkSheet = true }
+    /// The primary verify action as a floating button riding above the tab bar's add-set "+": a
+    /// green checkmark circle. Opens the mark-as-verified sheet (re-verify when already done).
+    private func verifyFab(inv: RebuildInventory) -> some View {
+        Button { showMarkSheet = true } label: {
+            Image(systemName: "checkmark")
+                .font(.system(size: 22, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(AppColors.success, in: Circle())
+                .overlay(Circle().stroke(.white.opacity(0.15), lineWidth: 0.5))
+                .shadow(color: AppColors.shadow.opacity(0.22), radius: 8, y: 3)
         }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.vertical, AppSpacing.s12)
-        .background(
-            AppColors.card.overlay(Rectangle().fill(AppColors.line).frame(height: 1), alignment: .top)
-        )
+        .buttonStyle(PressableStyle())
+        .accessibilityLabel(inv.summary.verified ? L.reverify : L.markAsVerified)
     }
 
     // MARK: - Actions
