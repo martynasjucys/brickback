@@ -177,6 +177,10 @@ struct RebuildView: View {
 
             Button { showSearch = true } label: { Label(L.menuSearchParts, systemImage: "magnifyingglass") }
 
+            Button {
+                if let itemId = vm.inv?.summary.setItemId { env.homeRouter.push(.setDetail(itemId)) }
+            } label: { Label(L.menuSetDetails, systemImage: "info.circle") }
+
             Button { showSettings = true } label: { Label(L.viewSettings, systemImage: "slider.horizontal.3") }
         } label: {
             Image(systemName: "ellipsis")

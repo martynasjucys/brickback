@@ -41,12 +41,9 @@ struct ProfileScreen: View {
                     SettingsRow(icon: "star", title: L.premium, value: env.isPremium ? L.active : L.free) {
                         env.profileRouter.push(.paywall)
                     }
-                    if env.isSignedIn {
-                        SettingsRow(icon: "arrow.triangle.2.circlepath", title: L.syncNow,
-                                    value: env.isPremium ? nil : L.premium) {
-                            if env.isPremium { env.syncNow() } else { env.profileRouter.push(.paywall) }
-                        }
-                    }
+                    // No manual "Sync now": cloud sync runs automatically for premium users (on edit,
+                    // sign-in, app open) and pull-to-refresh on Home covers a manual pull. Surfacing a
+                    // button here only implied the user was responsible for syncing.
                     SettingsRow(icon: "circle.lefthalf.filled", title: L.appearance, value: env.theme.currentLabel) {
                         showAppearance = true
                     }

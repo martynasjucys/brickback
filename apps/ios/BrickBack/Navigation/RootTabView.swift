@@ -87,11 +87,13 @@ private struct SearchTab: View {
         NavigationStack(path: $router.path) {
             CatalogSearchResults(query: query)
                 // `.searchable` lives in a nav-bar/toolbar context, so — unlike the other tabs —
-                // hiding it needs the toolbar API, not `.navigationBarHidden`, or the pushed
-                // screens get a stray system back chevron above our own custom header.
+                // hiding the root's bar needs the toolbar API, not `.navigationBarHidden`. The pushed
+                // catalog screens (set detail → parts / minifigs) all ride the native bar themselves
+                // (back chevron + inline title), so they must NOT be force-hidden here, or a deeper
+                // push loses its header entirely.
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(for: Route.self) { route in
-                    RouteView(route: route).toolbar(.hidden, for: .navigationBar)
+                    RouteView(route: route)
                 }
                 .background(AppColors.canvas)
                 .searchable(text: $query, prompt: L.searchHint)

@@ -21,12 +21,15 @@ enum Route: Hashable {
     /// Whether this destination draws its own custom header and so hides the native nav bar. The
     /// counting (`.rebuild`), review (`.review`), report (`.report`), paywall (`.paywall`) and
     /// sign-in (`.signIn`) screens keep the native bar visible to host native toolbar controls —
-    /// back button + trailing actions — instead of brick buttons. Keeping neighbours in a stack
-    /// consistent also avoids the SwiftUI glitch where toggling nav-bar visibility between pushes
-    /// corrupts the returning screen's header.
+    /// back button + trailing actions — instead of brick buttons. The catalog family
+    /// (`.setDetail`/`.setParts`/`.setMinifigs`) also keeps it so those screens look identical
+    /// wherever they're opened (the search tab or the counting screen's ••• menu): native back
+    /// chevron + inline title. Keeping neighbours in a stack consistent also avoids the SwiftUI
+    /// glitch where toggling nav-bar visibility between pushes corrupts the returning screen's header.
     var hidesNavBar: Bool {
         switch self {
-        case .rebuild, .review, .report, .paywall, .signIn: return false
+        case .rebuild, .review, .report, .paywall, .signIn,
+             .setDetail, .setParts, .setMinifigs: return false
         default: return true
         }
     }

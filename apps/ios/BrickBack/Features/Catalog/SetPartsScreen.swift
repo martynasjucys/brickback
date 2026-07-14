@@ -13,9 +13,19 @@ struct SetPartsScreen: View {
 
     private var router: Router { activeRouter ?? env.homeRouter }
 
+    /// On iOS 18+ this screen rides the native nav bar (back chevron + inline title), matching the
+    /// set-detail screen it's pushed from and the rest of the catalog family. The iOS 17 legacy
+    /// pushed flow has no reliable native bar, so it keeps its `ScreenHeader`.
+    private var systemProvidesBack: Bool {
+        if #available(iOS 18.0, *) { return true }
+        return activeRouter === env.searchRouter
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.uniqueParts, onBack: { router.pop() })
+            if !systemProvidesBack {
+                ScreenHeader(L.uniqueParts, onBack: { router.pop() })
+            }
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -35,6 +45,9 @@ struct SetPartsScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        // Only shown when the native bar is present (iOS 18+); harmless where it's hidden.
+        .navigationTitle(L.uniqueParts)
+        .navigationBarTitleDisplayMode(.inline)
         .task(id: itemId) {
             state = .loading
             do {

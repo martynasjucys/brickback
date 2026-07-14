@@ -1781,22 +1781,6 @@
         }
       }
     },
-    "syncNow": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sync now"
-          }
-        },
-        "lt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sinchronizuoti dabar"
-          }
-        }
-      }
-    },
     "language": {
       "localizations": {
         "en": {
@@ -2209,6 +2193,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ieškoti dalių"
+          }
+        }
+      }
+    },
+    "menuSetDetails": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Set details"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rinkinio informacija"
           }
         }
       }

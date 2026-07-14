@@ -62,6 +62,11 @@ struct HomeScreen: View {
         }
         .padding(.top, headerBand) // clear the brand band that dips below the nav bar
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Pull-to-refresh forces a full cloud sync (push + pull + apply) so a premium user can grab
+        // changes made on another device mid-session. The `enabled` gate makes it a no-op (returns
+        // immediately) for free/guest users, whose data never leaves the device. The `List` inside
+        // `RebuildList` reads this refresh action from the environment.
+        .refreshable { await env.sync.syncNow() }
         // Layer order (front → back): content · brand plate (top only) · canvas fill · inset probe.
         // The plate must sit *in front of* the opaque canvas, or the canvas hides it.
         .background(alignment: .top) {

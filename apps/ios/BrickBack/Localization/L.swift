@@ -125,7 +125,6 @@ enum L {
     static var premium: String { s("premium") }
     static var active: String { s("active") }
     static var free: String { s("free") }
-    static var syncNow: String { s("syncNow") }
     static var language: String { s("language") }
     static var languageSystem: String { s("languageSystem") }
     static var languageEnglish: String { s("languageEnglish") }
@@ -154,6 +153,7 @@ enum L {
     static var menuReview: String { s("menuReview") }
     static var menuStartParty: String { s("menuStartParty") }
     static var menuSearchParts: String { s("menuSearchParts") }
+    static var menuSetDetails: String { s("menuSetDetails") }
     static var sortParty: String { s("sortParty") }
     static var couldntStartParty: String { s("couldntStartParty") }
     static var allAccountedFor: String { s("allAccountedFor") }

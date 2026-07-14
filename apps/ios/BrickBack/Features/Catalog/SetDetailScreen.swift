@@ -15,12 +15,16 @@ struct SetDetailScreen: View {
 
     private var router: Router { activeRouter ?? env.homeRouter }
 
-    /// In the iOS 18+ search tab this is the first pushed screen, where the system keeps a native
-    /// nav bar with its own "back" chevron returning to the results. There we drop our custom
+    /// On iOS 18+ this screen always rides a native nav bar with its own "back" chevron — the search
+    /// tab returns to the results, the counting screen's ••• menu returns to counting (`.setDetail`
+    /// keeps `hidesNavBar == false`, so `TabNavigation` shows the bar too). There we drop our custom
     /// `ScreenHeader` entirely and hang the title off the native bar as an inline `navigationTitle`,
-    /// so it sits on the same row as the back button (matching the other native screens). Deeper
-    /// screens (parts/minifigs) and the iOS 17 pushed flow keep their `ScreenHeader`.
-    private var systemProvidesBack: Bool { activeRouter === env.searchRouter }
+    /// so it sits on the same row as the back button (matching the other native screens). The iOS 17
+    /// legacy pushed flow has no reliable native bar, so it keeps its `ScreenHeader`.
+    private var systemProvidesBack: Bool {
+        if #available(iOS 18.0, *) { return true }
+        return activeRouter === env.searchRouter
+    }
 
     /// The native bar's inline title: the set's own name once loaded (the big content heading in a
     /// compact form the bar keeps as you scroll), falling back to the generic label while it loads.
@@ -74,10 +78,13 @@ private struct Detail: View {
 
     private var router: Router { activeRouter ?? env.homeRouter }
 
-    /// The native bar hosts the set name in the search tab, so the in-content heading would just
-    /// repeat it — drop it there. The iOS 17 `ScreenHeader` shows the generic "Set" label with the
-    /// bar hidden, so it keeps the heading as the only place the full name appears.
-    private var showsNameHeading: Bool { activeRouter !== env.searchRouter }
+    /// The native bar hosts the set name on iOS 18+, so the in-content heading would just repeat it —
+    /// drop it there. The iOS 17 `ScreenHeader` shows the generic "Set" label with the bar hidden, so
+    /// it keeps the heading as the only place the full name appears.
+    private var showsNameHeading: Bool {
+        if #available(iOS 18.0, *) { return false }
+        return activeRouter !== env.searchRouter
+    }
 
     // MARK: Lifecycle + value
 

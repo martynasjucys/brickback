@@ -116,9 +116,6 @@ final class AppEnvironment {
         if on { Task { await sync.onPremiumEnabled() } }
     }
 
-    /// Manual "Sync now" from Profile.
-    func syncNow() { Task { await sync.syncNow() } }
-
     func signOut() {
         Task {
             try? await services.auth.signOut()
