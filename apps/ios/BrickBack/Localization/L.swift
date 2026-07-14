@@ -220,6 +220,7 @@ enum L {
     }
     static var noneInSet: String { s("noneInSet") }
     static var inventoryVerification: String { s("inventoryVerification") }
+    static var reportTitle: String { s("reportTitle") }
     static var reportPartsFound: String { s("reportPartsFound") }
     static var allPartsPresent: String { s("allPartsPresent") }
     static func verifiedDate(_ date: String) -> String {

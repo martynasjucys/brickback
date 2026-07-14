@@ -285,6 +285,7 @@ fmt("reportPctPartsMissing", "pct: Int, count: Int", "\\(pct)% · \\(count) part
     "%1$lld%% · %2$lld parts missing", "%1$lld%% · trūksta %2$lld dalių")
 plain("noneInSet", "None in set", "Rinkinyje nėra")
 plain("inventoryVerification", "INVENTORY VERIFICATION", "INVENTORIAUS PATVIRTINIMAS")
+plain("reportTitle", "Verification", "Patvirtinimas")
 plain("reportPartsFound", "Parts found", "Rasta dalių")
 plain("allPartsPresent", "All parts present", "Visos dalys yra")
 fmt("verifiedDate", "_ date: String", "Verified \\(date)", "Verified %@", "Patvirtinta %@")

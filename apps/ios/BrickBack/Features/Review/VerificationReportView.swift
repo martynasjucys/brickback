@@ -17,15 +17,6 @@ struct ReportView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Pressable(onTap: { env.homeRouter.pop() }) {
-                    Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(.horizontal, AppSpacing.screen)
-            .padding(.vertical, AppSpacing.s8)
-
             if let vm {
                 switch vm.phase {
                 case .loading:
@@ -47,6 +38,10 @@ struct ReportView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(AppColors.canvas)
+        // Native nav bar (back button + title), consistent with the review screen it's pushed from.
+        // Title-case here (the card's own header keeps the all-caps `inventoryVerification` label).
+        .navigationTitle(L.reportTitle)
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             if vm == nil { vm = ReportViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild, imageStore: env.services.imageStore) }
             await vm?.load()
@@ -71,6 +66,7 @@ struct ReportView: View {
                 }
             }
             .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s8)
             .padding(.bottom, AppSpacing.s24)
         }
     }

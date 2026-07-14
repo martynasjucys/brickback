@@ -3039,6 +3039,22 @@
         }
       }
     },
+    "reportTitle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verification"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patvirtinimas"
+          }
+        }
+      }
+    },
     "reportPartsFound": {
       "localizations": {
         "en": {
