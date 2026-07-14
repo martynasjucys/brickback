@@ -205,7 +205,7 @@ private struct AboutFooter: View {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
         VStack(spacing: AppSpacing.s4) {
             Text("BrickBack").font(AppText.label).foregroundStyle(AppColors.inkSoft)
-            Text("v\(version) · native rebuild").font(AppText.caption).foregroundStyle(AppColors.muted)
+            Text("v\(version)").font(AppText.caption).foregroundStyle(AppColors.muted)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.s24)
