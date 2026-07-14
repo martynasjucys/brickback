@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import BrickBackKit
 
 /// Visible step options for the tap increment (parity with `_stepOptions` in Flutter).
@@ -142,14 +143,23 @@ struct StepChip: View {
 
 // MARK: - In-set search sheet
 
-/// Full-height in-set search opened from the header. Tap a result to add the current step;
-/// long-press to open its details. Port of `_PartSearchSheet`.
+/// Full-height in-set part search, opened from the header ••• menu. Built to read as a native part
+/// of the app by mirroring the catalog set-search screen: a `NavigationStack` sheet with an inline
+/// title + Done button, a system-style search field, and brick-plate result cards on the app canvas
+/// (instead of the old bespoke brick field + flat rows). Tap a card to add the current step, counting
+/// in place; long-press to open its detail sheet. Port of `_PartSearchSheet`.
+///
+/// The search field is a plain `TextField` styled to look like the system search bar, *not*
+/// `.searchable`: a `UISearchController` inside a sheet throws in UIKit's keyboard-transition layout
+/// pass whenever the sheet is dismissed (or hands off to the detail sheet) with the keyboard up
+/// (`_pinInputViewsForKeyboardSceneDelegate` → NSISEngine). A plain field has no such teardown.
 struct PartSearchSheet: View {
     let parts: [ExpandedPart]
     let vm: RebuildViewModel
     let onOpenDetail: (ExpandedPart) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
+    @FocusState private var searchFocused: Bool
 
     private var results: [ExpandedPart] {
         let q = query.trimmingCharacters(in: .whitespaces).lowercased()
@@ -162,73 +172,164 @@ struct PartSearchSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(spacing: AppSpacing.s8) {
-                SearchField(hint: L.countSearchHint, text: $query, autofocus: true)
-                Pressable(onTap: { dismiss() }) {
-                    Text(L.done).font(AppText.label).foregroundStyle(AppColors.info).padding(AppSpacing.s8)
+        NavigationStack {
+            VStack(spacing: 0) {
+                SearchBar(prompt: L.countSearchHint, text: $query, focused: $searchFocused)
+                    .padding(.horizontal, AppSpacing.screen)
+                    .padding(.top, AppSpacing.s8)
+                    .padding(.bottom, AppSpacing.s12)
+                if results.isEmpty {
+                    EmptyState(title: L.noMatches, message: L.countNoMatchesMessage, icon: "magnifyingglass")
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: AppSpacing.s8) {
+                            ForEach(results) { p in
+                                PartSearchRow(
+                                    part: p,
+                                    have: vm.have[p.key] ?? 0,
+                                    onTap: { vm.tap(p) },
+                                    // Drop the keyboard before handing off to the detail sheet so the
+                                    // sheet swap animates cleanly.
+                                    onOpenDetail: { searchFocused = false; onOpenDetail(p) }
+                                )
+                            }
+                        }
+                        .padding(.horizontal, AppSpacing.screen)
+                        .padding(.bottom, AppSpacing.s24)
+                    }
                 }
             }
-            .padding(.horizontal, AppSpacing.s16)
-            .padding(.vertical, AppSpacing.s12)
-            Divider().overlay(AppColors.line)
-            if results.isEmpty {
-                EmptyState(title: L.noMatches, message: L.countNoMatchesMessage, icon: "magnifyingglass")
-            } else {
-                ScrollView {
-                    LazyVStack(spacing: 0) {
-                        ForEach(results) { p in
-                            SearchRow(
-                                part: p,
-                                have: vm.have[p.key] ?? 0,
-                                onTap: { vm.tap(p) },
-                                onLongPress: { onOpenDetail(p) }
-                            )
-                        }
-                    }
-                    .padding(.vertical, AppSpacing.s8)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(AppColors.canvas)
+            .navigationTitle(L.menuSearchParts)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(L.done) { searchFocused = false; dismiss() }
                 }
             }
         }
-        .background(AppColors.card)
         .presentationDetents([.large])
+        // Force an opaque canvas so the translucent iOS 26 sheet glass doesn't show the dimmed
+        // screen through the results (matches the counting screen's other sheets).
+        .presentationBackground(AppColors.canvas)
         .presentationDragIndicator(.visible)
+        .task {
+            // Raise the keyboard on open (parity with the old autofocused field) so you can type the
+            // part straight away.
+            try? await Task.sleep(for: .milliseconds(450))
+            searchFocused = true
+        }
     }
 }
 
-private struct SearchRow: View {
+/// A plain `TextField` dressed as the system search bar — magnifying glass, muted placeholder, a
+/// pill fill that adapts to light/dark, and a clear button — so the in-set search reads as native
+/// without the `UISearchController`-in-a-sheet crash. Used only inside `PartSearchSheet`.
+private struct SearchBar: View {
+    let prompt: String
+    @Binding var text: String
+    var focused: FocusState<Bool>.Binding
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(AppColors.muted)
+            TextField(prompt, text: $text)
+                .font(AppText.body)
+                .foregroundStyle(AppColors.ink)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .submitLabel(.search)
+                .tint(AppColors.primary)
+                .focused(focused)
+            if !text.isEmpty {
+                Button { text = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundStyle(AppColors.muted)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L.clearAll)
+            }
+        }
+        .padding(.leading, 11)
+        .padding(.trailing, 9)
+        .frame(height: 38)
+        .background(Color(uiColor: .tertiarySystemFill), in: Capsule())
+    }
+}
+
+/// A single part result: the brick-plate card the catalog set-search rows use (`AppCard` + 48pt
+/// `SetThumb`), carrying the part's name, colour + code, and live have/needed tally. Tap adds the
+/// step; long-press opens detail — the same gesture split (and rolling count / colour cross-fade) as
+/// the counting-grid `PartTile`, so search counts exactly like the main list.
+private struct PartSearchRow: View {
     let part: ExpandedPart
     let have: Int
     let onTap: () -> Void
-    let onLongPress: () -> Void
+    let onOpenDetail: () -> Void
+
+    /// A `Button` fires its tap on finger-up even after a long-press; this guards that trailing tap
+    /// so a held press opens detail without also incrementing (mirrors `PartTile`).
+    @State private var longPressed = false
 
     private var complete: Bool { have >= part.neededQty }
     private var started: Bool { have > 0 && !complete }
     private var countColor: Color { complete ? AppColors.success : (started ? AppColors.warning : AppColors.muted) }
     private var sub: String { [part.colorName ?? L.unknownColor, part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ") }
 
-    var body: some View {
-        HStack(spacing: AppSpacing.s12) {
-            SetThumb(imageUrl: part.imageUrl, size: 44)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(part.partName).font(AppText.body).foregroundStyle(AppColors.ink).lineLimit(1)
-                HStack(spacing: AppSpacing.s4) {
-                    Circle().fill(swatchColor(part.colorRgb)).frame(width: 10, height: 10)
-                        .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-                    Text(sub).font(AppText.caption).foregroundStyle(AppColors.inkSoft).lineLimit(1)
-                }
-            }
-            Spacer(minLength: AppSpacing.s8)
-            Text("\(have)/\(part.neededQty)").font(AppText.label).foregroundStyle(countColor)
+    private var a11yLabel: String {
+        if let color = part.colorName, !color.isEmpty {
+            return L.a11yNameColor(name: part.partName, color: color)
         }
-        .padding(.horizontal, AppSpacing.s16)
-        .padding(.vertical, AppSpacing.s8)
-        .contentShape(Rectangle())
-        .gesture(
-            LongPressGesture(minimumDuration: 0.4)
-                .onEnded { _ in onLongPress() }
-                .exclusively(before: TapGesture().onEnded { onTap() })
+        return part.partName
+    }
+
+    var body: some View {
+        AppCard(padding: AppSpacing.s12, onTap: handleTap) {
+            HStack(spacing: AppSpacing.s12) {
+                SetThumb(imageUrl: part.imageUrl, size: 48)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(part.partName).font(AppText.body).foregroundStyle(AppColors.ink).lineLimit(1)
+                    HStack(spacing: AppSpacing.s4) {
+                        Circle().fill(swatchColor(part.colorRgb)).frame(width: 10, height: 10)
+                            .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
+                        Text(sub).font(AppText.caption).foregroundStyle(AppColors.inkSoft).lineLimit(1)
+                    }
+                }
+                Spacer(minLength: AppSpacing.s8)
+                Text("\(have)/\(part.neededQty)")
+                    .font(AppText.label)
+                    .foregroundStyle(countColor)
+                    .contentTransition(.numericText()) // count rolls as it changes, like the tiles
+            }
+        }
+        // Long-press is *simultaneous* so it never blocks the ScrollView pan (a drag cancels it);
+        // `longPressed` guards the trailing button tap so a held press opens detail without counting.
+        .simultaneousGesture(
+            LongPressGesture(minimumDuration: 0.4).onEnded { _ in
+                longPressed = true
+                onOpenDetail()
+            }
         )
+        .brickAnimation(Motion.state, value: have)
+        // VoiceOver: one element — "<name>, <colour>" · "<have> of <needed>[, complete]" · adds one;
+        // detail is a named action (a long-press is impractical under VoiceOver). Mirrors `PartTile`.
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(complete ? [.isButton, .isSelected] : .isButton)
+        .accessibilityLabel(a11yLabel)
+        .accessibilityValue(complete ? L.a11yCountComplete(have: have, needed: part.neededQty)
+                                     : L.a11yCount(have: have, needed: part.neededQty))
+        .accessibilityHint(L.a11yTileAddHint)
+        .accessibilityAction { onTap() }
+        .accessibilityAction(named: Text(L.a11yDetails)) { onOpenDetail() }
+    }
+
+    private func handleTap() {
+        if longPressed { longPressed = false; return }
+        onTap()
     }
 }
 
