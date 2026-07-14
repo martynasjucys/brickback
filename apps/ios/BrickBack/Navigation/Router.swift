@@ -19,11 +19,11 @@ enum Route: Hashable {
     case partyAddParts(String)  // add-found-parts picker — S6
 
     /// Whether this destination draws its own custom header and so hides the native nav bar. The
-    /// counting screen (`.rebuild`) keeps the native bar visible (transparent) to host native
-    /// toolbar controls — back button + the ••• actions menu — over its brand plate.
+    /// counting (`.rebuild`) and review (`.review`) screens keep the native bar visible to host
+    /// native toolbar controls — back button + trailing actions — instead of brick buttons.
     var hidesNavBar: Bool {
         switch self {
-        case .rebuild: return false
+        case .rebuild, .review: return false
         default: return true
         }
     }

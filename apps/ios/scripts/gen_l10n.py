@@ -235,6 +235,7 @@ plain("sectionOther", "Other", "Kita")
 
 # ─────────────────────────── REVIEW ───────────────────────────
 plain("missingParts", "Missing parts", "Trūkstamos dalys")
+plain("shareMissingParts", "Share missing parts", "Bendrinti trūkstamas dalis")
 plain("reviewNothingMissing", "Nothing missing", "Nieko netrūksta")
 fmt("reviewPartsFound", "found: Int, needed: Int", "\\(found) of \\(needed) parts found",
     "%1$lld of %2$lld parts found", "Rasta %1$lld iš %2$lld dalių")

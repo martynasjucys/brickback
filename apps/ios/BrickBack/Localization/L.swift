@@ -166,6 +166,7 @@ enum L {
     static var sectionExtras: String { s("sectionExtras") }
     static var sectionOther: String { s("sectionOther") }
     static var missingParts: String { s("missingParts") }
+    static var shareMissingParts: String { s("shareMissingParts") }
     static var reviewNothingMissing: String { s("reviewNothingMissing") }
     static func reviewPartsFound(found: Int, needed: Int) -> String {
         String(localized: "reviewPartsFound", defaultValue: "\(found) of \(needed) parts found", bundle: I18n.bundle, locale: I18n.locale)

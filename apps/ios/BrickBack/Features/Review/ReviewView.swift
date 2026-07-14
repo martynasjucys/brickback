@@ -24,15 +24,24 @@ struct ReviewView: View {
                 case .loading:
                     ProgressView().tint(AppColors.primary)
                 case .failed(let message):
-                    VStack(spacing: 0) {
-                        header(inv: nil)
-                        EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
-                    }
+                    EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
                 case .ready:
                     if let inv = vm.inv { content(vm: vm, inv: inv) }
                 }
             } else {
                 ProgressView().tint(AppColors.primary)
+            }
+        }
+        // Native nav bar: back button + a share action (native), replacing the brick header row.
+        // No brand plate here — the screen keeps its canvas, so the bar uses default ink glyphs.
+        .navigationTitle(L.menuReview)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, let inv = vm.inv, !inv.missingParts.isEmpty {
+                    Button { shareMissing(inv) } label: { Image(systemName: "square.and.arrow.up") }
+                        .accessibilityLabel(L.shareMissingParts)
+                }
             }
         }
         .task {
@@ -68,9 +77,9 @@ struct ReviewView: View {
         let notExportable = missing.filter { !$0.exportable }.count
 
         return VStack(spacing: 0) {
-            header(inv: inv)
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    Spacer().frame(height: AppSpacing.s8)
                     summaryCard(inv)
                     if inv.hasMinifigs { minifigSection(vm: vm, inv: inv) }
                     sectionLabel(L.missingParts, trailing: missing.isEmpty ? nil : typeCount(missing.count))
@@ -92,23 +101,6 @@ struct ReviewView: View {
             }
             bottomBar(vm: vm, inv: inv)
         }
-    }
-
-    // MARK: - Header
-
-    private func header(inv: RebuildInventory?) -> some View {
-        let hasMissing = !(inv?.missingParts.isEmpty ?? true)
-        return HStack(spacing: AppSpacing.s8) {
-            // The shared brick-plate back control — matches the share button beside it and gives a
-            // 44pt target + a "Back" VoiceOver label (the old bare arrow had neither).
-            BackButton { env.homeRouter.pop() }
-            Spacer()
-            if hasMissing, let inv {
-                BrickIconButton(icon: "square.and.arrow.up") { shareMissing(inv) }
-            }
-        }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.vertical, AppSpacing.s8)
     }
 
     private func summaryCard(_ inv: RebuildInventory) -> some View {

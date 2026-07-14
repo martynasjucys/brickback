@@ -2405,6 +2405,22 @@
         }
       }
     },
+    "shareMissingParts": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share missing parts"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bendrinti trūkstamas dalis"
+          }
+        }
+      }
+    },
     "reviewNothingMissing": {
       "localizations": {
         "en": {
