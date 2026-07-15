@@ -4,9 +4,11 @@ import Foundation
 /// unit-tested directly (the SwiftUI `RebuildView` is a thin shell over these). Ports the
 /// `_buildGroups` / `_PartGroup` / tap-cap logic from `rebuild_screen.dart`.
 ///
-/// **Wireframe English labels live here** (the few fallback section titles). That's a
-/// deliberate, documented exception to "BrickBackKit is string-free" — they move into the
-/// String Catalog in S7 alongside the rest of i18n.
+/// **Section identity, not display strings.** The fixed section titles (All parts / Unknown /
+/// Other / Remaining / Complete / Extras) are exposed as a `titleKey` the UI localizes (S7),
+/// keeping BrickBackKit string-free. `label` still carries a plain-English fallback so the
+/// domain stays testable without a bundle; the UI renders `titleKey` when set, else `label`
+/// (which for colour/category sections IS the real catalog name — never translated).
 
 /// How the counting screen groups the parts list. Raw values persist via `@AppStorage`.
 public enum PartGrouping: String, CaseIterable, Sendable {
@@ -14,6 +16,18 @@ public enum PartGrouping: String, CaseIterable, Sendable {
     case category
     case status
     case none
+}
+
+/// Which fixed (non-data-derived) section a `PartSection` is, so the UI can localize its title.
+/// `nil` on a section means `label` holds a real catalog name (a colour or category) that must
+/// render verbatim.
+public enum SectionTitle: Sendable {
+    case allParts
+    case remaining
+    case complete
+    case extras
+    case unknownColor   // a colour section whose colour has no name
+    case otherCategory  // the catch-all category bucket
 }
 
 /// Tile-tap increment: add `step`, never exceeding `needed`. Callers guard `current < needed`
@@ -27,13 +41,17 @@ public func tapIncrement(current: Int, step: Int, needed: Int) -> Int {
 public struct PartSection: Sendable, Identifiable {
     public let id: String
     public let label: String
+    /// Set for the fixed sections so the UI localizes them; `nil` when `label` is a real
+    /// catalog colour/category name (rendered verbatim).
+    public let titleKey: SectionTitle?
     public let colorRgb: String? // non-nil only for colour sections (renders a swatch)
     public let parts: [ExpandedPart]
     public let neededTotal: Int
 
-    public init(id: String, label: String, colorRgb: String?, parts: [ExpandedPart]) {
+    public init(id: String, label: String, colorRgb: String?, parts: [ExpandedPart], titleKey: SectionTitle? = nil) {
         self.id = id
         self.label = label
+        self.titleKey = titleKey
         self.colorRgb = colorRgb
         self.parts = parts
         self.neededTotal = parts.reduce(0) { $0 + $1.neededQty }
@@ -64,18 +82,21 @@ func byColorThenName(_ a: ExpandedPart, _ b: ExpandedPart) -> Bool {
 public func partSections(_ parts: [ExpandedPart], grouping: PartGrouping, have: [String: Int]) -> [PartSection] {
     switch grouping {
     case .none:
-        return [PartSection(id: "all", label: "All parts", colorRgb: nil, parts: parts.sorted(by: byColorThenName))]
+        return [PartSection(id: "all", label: "All parts", colorRgb: nil,
+                            parts: parts.sorted(by: byColorThenName), titleKey: .allParts)]
 
     case .color:
         var byColor: [Int: [ExpandedPart]] = [:]
         for p in parts { byColor[p.colorId, default: []].append(p) }
         var sections = byColor.map { cid, group -> PartSection in
             let sorted = group.sorted { $0.partName < $1.partName }
+            let name = sorted.first?.colorName
             return PartSection(
                 id: "c\(cid)",
-                label: sorted.first?.colorName ?? "Unknown",
+                label: name ?? "Unknown",
                 colorRgb: sorted.first?.colorRgb ?? "808080",
-                parts: sorted
+                parts: sorted,
+                titleKey: name == nil ? .unknownColor : nil
             )
         }
         sections.sort { $0.label < $1.label }
@@ -85,7 +106,9 @@ public func partSections(_ parts: [ExpandedPart], grouping: PartGrouping, have: 
         var byCat: [String: [ExpandedPart]] = [:]
         for p in parts { byCat[p.categoryName ?? "Other", default: []].append(p) }
         var sections = byCat.map { name, group in
-            PartSection(id: "t\(name)", label: name, colorRgb: nil, parts: group.sorted(by: byColorThenName))
+            PartSection(id: "t\(name)", label: name, colorRgb: nil,
+                        parts: group.sorted(by: byColorThenName),
+                        titleKey: name == "Other" ? .otherCategory : nil)
         }
         sections.sort { $0.label < $1.label }
         return sections
@@ -99,13 +122,14 @@ public func partSections(_ parts: [ExpandedPart], grouping: PartGrouping, have: 
         remaining.sort(by: byColorThenName)
         complete.sort(by: byColorThenName)
         var out: [PartSection] = []
-        if !remaining.isEmpty { out.append(PartSection(id: "remaining", label: "Remaining", colorRgb: nil, parts: remaining)) }
-        if !complete.isEmpty { out.append(PartSection(id: "complete", label: "Complete", colorRgb: nil, parts: complete)) }
+        if !remaining.isEmpty { out.append(PartSection(id: "remaining", label: "Remaining", colorRgb: nil, parts: remaining, titleKey: .remaining)) }
+        if !complete.isEmpty { out.append(PartSection(id: "complete", label: "Complete", colorRgb: nil, parts: complete, titleKey: .complete)) }
         return out
     }
 }
 
 /// The single "Extras" section (spare parts), rendered below the build parts.
 public func extrasSection(_ extras: [ExpandedPart]) -> PartSection {
-    PartSection(id: "extras", label: "Extras", colorRgb: nil, parts: extras.sorted(by: byColorThenName))
+    PartSection(id: "extras", label: "Extras", colorRgb: nil,
+                parts: extras.sorted(by: byColorThenName), titleKey: .extras)
 }

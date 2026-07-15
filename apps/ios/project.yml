@@ -5,6 +5,10 @@ options:
     iOS: "17.0"
   createIntermediateGroups: true
   groupSortPosition: top
+  # S7 i18n: English is the source language. Lithuanian ships in Localizable.xcstrings (the
+  # String Catalog compiler emits lt.lproj); CFBundleLocalizations in Info.plist declares both.
+  developmentLanguage: en
+
 
 configs:
   Debug: debug

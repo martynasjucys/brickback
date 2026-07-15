@@ -18,18 +18,19 @@ struct PartyInviteView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Invite", onBack: { router.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
-                EmptyState(title: "Couldn't load party", message: message, icon: "exclamationmark.triangle")
+                EmptyState(title: L.couldntLoadParty, message: message, icon: "exclamationmark.triangle")
             case .loaded(let party):
                 invite(name: party.name, code: party.joinCode)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.invite)
+        .navigationBarTitleDisplayMode(.inline)
         .task(id: partyId) {
             state = .loading
             do {
@@ -45,10 +46,10 @@ struct PartyInviteView: View {
         let link = "brickback://party/\(code)"
         return ScrollView {
             VStack(spacing: 0) {
-                Text("Invite to \(name)").font(AppText.h1).foregroundStyle(AppColors.ink)
+                Text(L.inviteTitle(name)).font(AppText.h1).foregroundStyle(AppColors.ink)
                     .multilineTextAlignment(.center)
                 Spacer().frame(height: AppSpacing.s8)
-                Text("Scan the code or share the link to join the sort.")
+                Text(L.inviteSubtitle)
                     .font(AppText.body).foregroundStyle(AppColors.inkSoft).multilineTextAlignment(.center)
 
                 Spacer().frame(height: AppSpacing.s24)
@@ -68,17 +69,17 @@ struct PartyInviteView: View {
                 }
 
                 Spacer().frame(height: AppSpacing.s20)
-                Text("Join code").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                Text(L.joinCode).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s4)
                 Text(code).font(AppText.display).tracking(4).foregroundStyle(AppColors.ink)
 
                 Spacer().frame(height: AppSpacing.s24)
-                AppButton("Share invite", icon: "square.and.arrow.up", expand: true) { showShare = true }
+                AppButton(L.shareInvite, icon: "square.and.arrow.up", expand: true) { showShare = true }
             }
             .padding(AppSpacing.s24)
         }
         .sheet(isPresented: $showShare) {
-            ActivityView(items: ["Join my BrickBack sort party — code \(code)\n\(link)"])
+            ActivityView(items: [L.partyShareText(code: code, link: link)])
         }
     }
 

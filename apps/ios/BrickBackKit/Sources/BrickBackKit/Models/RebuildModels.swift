@@ -111,8 +111,9 @@ public struct RebuildSummary: Sendable, Identifiable, Hashable {
     public let totalParts: Int
     public let haveTotal: Int // capped sum of have (<= totalParts)
     public let verifiedAt: Date? // set once a verification is recorded (S4)
+    public let theme: String? // resolved LEGO theme (for Home filtering); nil until captured/backfilled
 
-    public init(id: String, setItemId: Int, name: String, imageUrl: String?, totalParts: Int, haveTotal: Int, verifiedAt: Date? = nil) {
+    public init(id: String, setItemId: Int, name: String, imageUrl: String?, totalParts: Int, haveTotal: Int, verifiedAt: Date? = nil, theme: String? = nil) {
         self.id = id
         self.setItemId = setItemId
         self.name = name
@@ -120,6 +121,7 @@ public struct RebuildSummary: Sendable, Identifiable, Hashable {
         self.totalParts = totalParts
         self.haveTotal = haveTotal
         self.verifiedAt = verifiedAt
+        self.theme = theme
     }
 
     public var progress: Double {

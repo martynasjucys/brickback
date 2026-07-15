@@ -14,7 +14,10 @@ struct BrickBackApp: App {
         // (the S0 "missing secret fails launch clearly" acceptance).
         let config = AppConfig.fromBundle()
         do {
-            let services = try AppServices(config: config)
+            // S9 offline mode: inject the Nuke-backed prefetcher, then point the shared image
+            // pipeline at the durable store so every LazyImage reads/writes it (offline-capable).
+            let services = try AppServices(config: config, imagePrefetcher: NukeImagePrefetcher())
+            ImageOfflineCache.configure(store: services.imageStore)
             _env = State(initialValue: AppEnvironment(services: services))
         } catch {
             fatalError("Failed to open local store: \(error)")
@@ -25,8 +28,20 @@ struct BrickBackApp: App {
         WindowGroup {
             RootTabView()
                 .environment(env)
+                .environment(env.locale)
+                .environment(env.theme)
+                // S7 i18n: drive SwiftUI date/number formatting off the chosen language, and key
+                // the whole tree on it so an in-app Language switch re-renders every screen with
+                // the new strings (routers live in `env`, so navigation survives the rebuild).
+                .environment(\.locale, env.locale.locale)
+                .id(env.locale.language)
                 .tint(AppColors.ink)
                 .background(AppColors.canvas)
+                // S7 dark mode: follow the system (or the persisted Profile override). Every
+                // `AppColors` token is dynamic, so pinning the scheme re-skins the whole app; in
+                // dark the status bar goes light — correct over both the canvas and the blue/green
+                // brand headers.
+                .preferredColorScheme(env.theme.colorScheme)
                 .task { env.startSyncWiring() }
                 // OAuth/OTP deep-link return (com.brickback://login-callback): supabase-swift
                 // runs the PKCE exchange and emits on the auth-change stream.

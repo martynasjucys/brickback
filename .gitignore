@@ -32,6 +32,9 @@ dist/
 # Pipeline data (ephemeral)
 dataset/
 
+# Supabase CLI local state
+supabase/.temp/
+
 # OS / editor
 .DS_Store
 .idea/

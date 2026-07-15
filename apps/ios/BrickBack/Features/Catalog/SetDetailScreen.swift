@@ -3,30 +3,55 @@ import BrickBackKit
 
 /// Set detail (`.setDetail`). Renders catalog metadata and the primary "Start sorting" action,
 /// which snapshots the set into local GRDB and opens it. Port of `set_detail_screen.dart`.
-/// Non-premium users are capped at `kFreeRebuildCap` active rebuilds; a further add routes to
-/// the paywall instead (S5).
+/// Adding a set is unlimited (no free-tier cap) — premium gates only party mode + cloud sync.
 struct SetDetailScreen: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let itemId: Int
 
     @State private var state: LoadState<SetDetail> = .loading
     /// Unique (part, colour) count, loaded lazily so metadata renders immediately ("…" until ready).
     @State private var uniqueParts = "…"
 
+    private var router: Router { activeRouter ?? env.homeRouter }
+
+    /// On iOS 18+ this screen always rides a native nav bar with its own "back" chevron — the search
+    /// tab returns to the results, the counting screen's ••• menu returns to counting (`.setDetail`
+    /// keeps `hidesNavBar == false`, so `TabNavigation` shows the bar too). There we drop our custom
+    /// `ScreenHeader` entirely and hang the title off the native bar as an inline `navigationTitle`,
+    /// so it sits on the same row as the back button (matching the other native screens). The iOS 17
+    /// legacy pushed flow has no reliable native bar, so it keeps its `ScreenHeader`.
+    private var systemProvidesBack: Bool {
+        if #available(iOS 18.0, *) { return true }
+        return activeRouter === env.searchRouter
+    }
+
+    /// The native bar's inline title: the set's own name once loaded (the big content heading in a
+    /// compact form the bar keeps as you scroll), falling back to the generic label while it loads.
+    private var navTitle: String {
+        if case .loaded(let detail) = state { return detail.set.name }
+        return L.setHeader
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Set", onBack: { env.homeRouter.pop() })
+            if !systemProvidesBack {
+                ScreenHeader(L.setHeader, onBack: { router.pop() })
+            }
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
             case .failed(let message):
-                EmptyState(title: "Couldn't load set", message: message, icon: "exclamationmark.triangle")
+                EmptyState(title: L.setCouldntLoad, message: message, icon: "exclamationmark.triangle")
             case .loaded(let detail):
                 Detail(detail: detail, uniqueParts: uniqueParts)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        // Only shown when the native bar is present (the search tab); harmless where it's hidden.
+        .navigationTitle(navTitle)
+        .navigationBarTitleDisplayMode(.inline)
         .task(id: itemId) {
             state = .loading
             do {
@@ -47,14 +72,120 @@ struct SetDetailScreen: View {
 
 private struct Detail: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let detail: SetDetail
     let uniqueParts: String
 
-    private var meta: String {
-        var parts = [detail.set.setNum]
-        if let theme = detail.themeName { parts.append(theme) }
-        if detail.set.year != 0 { parts.append("\(detail.set.year)") }
-        return parts.filter { !$0.isEmpty }.joined(separator: " · ")
+    private var router: Router { activeRouter ?? env.homeRouter }
+
+    /// The native bar hosts the set name on iOS 18+, so the in-content heading would just repeat it —
+    /// drop it there. The iOS 17 `ScreenHeader` shows the generic "Set" label with the bar hidden, so
+    /// it keeps the heading as the only place the full name appears.
+    private var showsNameHeading: Bool {
+        if #available(iOS 18.0, *) { return false }
+        return activeRouter !== env.searchRouter
+    }
+
+    // MARK: Lifecycle + value
+
+    /// The coloured status pill (nil when the catalog has no stage for this set).
+    private var lifecycleBadge: (text: String, color: Color)? {
+        guard let lifecycle = detail.set.lifecycle else { return nil }
+        switch lifecycle {
+        case .upcoming:     return (L.lifecycleUpcoming, AppColors.info)
+        case .available:    return (L.lifecycleAvailable, AppColors.success)
+        case .retiringSoon: return (L.lifecycleRetiringSoon, AppColors.warning)
+        case .retired:      return (L.lifecycleRetired, AppColors.inkSoft)
+        }
+    }
+
+    /// Show the badge only when the Availability card doesn't already state the same thing: the
+    /// dated retired/retiring/upcoming rows make the pill redundant, so it survives only for
+    /// currently-available sets (which have no such row) or when there are no dates to show.
+    private var showLifecycleBadge: Bool {
+        guard let lifecycle = detail.set.lifecycle else { return false }
+        switch lifecycle {
+        case .retired, .retiringSoon: return retirementRow == nil
+        case .upcoming:               return releaseRow == nil
+        case .available:              return true
+        }
+    }
+
+    /// Release-date row — labelled by tense (upcoming sets haven't released yet).
+    private var releaseRow: (label: String, value: String)? {
+        guard let date = detail.set.launchDate else { return nil }
+        let label = detail.set.lifecycle == .upcoming ? L.dateReleases : L.dateReleased
+        return (label, monthYear(date))
+    }
+
+    /// Retirement-date row — the exact exit date once retired, the estimate while retiring soon.
+    private var retirementRow: (label: String, value: String)? {
+        guard let lifecycle = detail.set.lifecycle else { return nil }
+        switch lifecycle {
+        case .retired:
+            guard let date = detail.set.exitDate else { return nil }
+            return (L.dateRetired, monthYear(date))
+        case .retiringSoon:
+            guard let date = detail.set.retiringSoonDate ?? detail.set.exitDate else { return nil }
+            return (L.dateRetiring, monthYear(date))
+        default:
+            return nil
+        }
+    }
+
+    @ViewBuilder private var availabilitySection: some View {
+        if releaseRow != nil || retirementRow != nil {
+            Spacer().frame(height: AppSpacing.s20)
+            sectionHeader(L.availabilityTitle)
+            Spacer().frame(height: AppSpacing.s8)
+            AppCard {
+                VStack(alignment: .leading, spacing: AppSpacing.s12) {
+                    if let r = releaseRow { InfoRow(label: r.label, value: r.value) }
+                    if let r = retirementRow { InfoRow(label: r.label, value: r.value) }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var valueSection: some View {
+        if let price = detail.price, price.hasAny {
+            Spacer().frame(height: AppSpacing.s20)
+            sectionHeader(L.valueTitle)
+            Spacer().frame(height: AppSpacing.s8)
+            AppCard {
+                VStack(alignment: .leading, spacing: AppSpacing.s12) {
+                    if let n = price.new {
+                        InfoRow(label: L.valueNew, value: money(n, price.currency), valueColor: AppColors.success)
+                    }
+                    if let u = price.used {
+                        InfoRow(label: L.valueUsed, value: money(u, price.currency), valueColor: AppColors.warning)
+                    }
+                }
+            }
+        }
+    }
+
+    private func sectionHeader(_ text: String) -> some View {
+        Text(text).font(AppText.h2).foregroundStyle(AppColors.ink)
+    }
+
+    /// Localised month + year (e.g. "June 2013"). Community dates are month-precision at best, so
+    /// we deliberately drop the day. Formatted in UTC to match how the "yyyy-MM-dd" value parsed.
+    private func monthYear(_ date: Date) -> String {
+        let f = DateFormatter()
+        f.locale = I18n.locale
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.setLocalizedDateFormatFromTemplate("yMMMM")
+        return f.string(from: date)
+    }
+
+    private func money(_ value: Double, _ currency: String) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .currency
+        f.currencyCode = currency
+        f.locale = I18n.locale
+        f.maximumFractionDigits = 2
+        return f.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
     }
 
     var body: some View {
@@ -63,25 +194,42 @@ private struct Detail: View {
                 SetThumb(imageUrl: detail.set.imageUrl, size: 200, radius: AppRadius.lg)
                     .frame(maxWidth: .infinity)
                 Spacer().frame(height: AppSpacing.s16)
-                Text(detail.set.name).font(AppText.display).foregroundStyle(AppColors.ink)
-                Spacer().frame(height: AppSpacing.s4)
-                Text(meta).font(AppText.caption).foregroundStyle(AppColors.ink)
-                Spacer().frame(height: 2)
-                Text(partsCountLabel(detail.set.numParts))
-                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                Spacer().frame(height: AppSpacing.s16)
-                HStack(spacing: AppSpacing.s12) {
-                    StatCard(label: "Unique parts", value: uniqueParts) {
-                        env.homeRouter.push(.setParts(detail.set.itemId))
+                if showsNameHeading {
+                    Text(detail.set.name).font(AppText.display).foregroundStyle(AppColors.ink)
+                    Spacer().frame(height: AppSpacing.s8)
+                }
+                if let theme = detail.themeName, !theme.isEmpty {
+                    Text(theme).font(AppText.title).foregroundStyle(AppColors.inkSoft)
+                    Spacer().frame(height: AppSpacing.s8)
+                }
+                WrapLayout(spacing: AppSpacing.s8, lineSpacing: AppSpacing.s8) {
+                    if !detail.set.setNum.isEmpty { AppBadge(detail.set.setNum) }
+                    // Year only when the Availability card won't already show a release date (else
+                    // it just repeats it); keeps the year visible for older, undated sets.
+                    if detail.set.launchDate == nil, detail.set.year != 0 {
+                        AppBadge(String(detail.set.year))
                     }
-                    StatCard(label: "Minifigs", value: "\(detail.minifigCount)") {
-                        env.homeRouter.push(.setMinifigs(detail.set.itemId))
+                    AppBadge(partsCountLabel(detail.set.numParts))
+                    // Status rides the same row (it's just one more chip) and wraps only if needed.
+                    if showLifecycleBadge, let badge = lifecycleBadge {
+                        AppBadge(badge.text, color: badge.color)
                     }
                 }
+                Spacer().frame(height: AppSpacing.s16)
+                HStack(spacing: AppSpacing.s12) {
+                    StatCard(label: L.uniqueParts, value: uniqueParts) {
+                        router.push(.setParts(detail.set.itemId))
+                    }
+                    StatCard(label: L.minifigs, value: "\(detail.minifigCount)") {
+                        router.push(.setMinifigs(detail.set.itemId))
+                    }
+                }
+                availabilitySection
+                valueSection
                 Spacer().frame(height: AppSpacing.s20)
                 StartSortingButton(itemId: detail.set.itemId)
                 Spacer().frame(height: AppSpacing.s12)
-                Text("Adds a local copy you can sort offline. Add the same set again for a second physical copy.")
+                Text(L.startSortingHint)
                     .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
@@ -111,22 +259,41 @@ private struct StatCard: View {
     }
 }
 
+/// A label→value line inside an info card (availability dates, market value). The value carries
+/// the emphasis (and, for prices, the new/used colour); the label stays quiet.
+private struct InfoRow: View {
+    let label: String
+    let value: String
+    var valueColor: Color = AppColors.ink
+
+    var body: some View {
+        HStack(spacing: AppSpacing.s12) {
+            Text(label).font(AppText.body).foregroundStyle(AppColors.inkSoft)
+            Spacer(minLength: 0)
+            Text(value).font(AppText.title).foregroundStyle(valueColor)
+        }
+    }
+}
+
 private struct StartSortingButton: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
     let itemId: Int
     @State private var loading = false
     @State private var errorMessage: String?
 
+    private var router: Router { activeRouter ?? env.homeRouter }
+
     var body: some View {
-        AppButton("Start sorting", icon: "checklist", loading: loading, expand: true) {
+        AppButton(L.startSorting, icon: "checklist", loading: loading, expand: true) {
             guard !loading else { return }
             start()
         }
-        .alert("Couldn't add set", isPresented: Binding(
+        .alert(L.couldntAddSet, isPresented: Binding(
             get: { errorMessage != nil },
             set: { if !$0 { errorMessage = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L.ok, role: .cancel) {}
         } message: {
             Text(errorMessage ?? "")
         }
@@ -136,21 +303,17 @@ private struct StartSortingButton: View {
         loading = true
         Task {
             do {
-                // Free tier is capped; beyond it, upsell instead of adding another rebuild.
-                if !env.isPremium {
-                    let count = try await env.services.rebuild.activeCount()
-                    if count >= kFreeRebuildCap {
-                        loading = false
-                        env.homeRouter.push(.paywall)
-                        return
-                    }
-                }
                 let id = try await env.services.rebuild.addSet(itemId)
                 // Get the new rebuild to the cloud promptly once premium sync is live (no-op now).
                 env.sync.nudge()
+                // S9: eagerly cache this set's images for offline while we're still online.
+                Task { await env.services.offlineImages.ensureCached(id) }
                 loading = false
-                // Starting the build ends the "add set" flow: collapse Search + Set-detail out
-                // of the stack so Back from counting returns straight to Home.
+                // Starting the build ends the "add set" flow. Clear the stack we came in on
+                // (the search tab on iOS 18+, or Home on iOS 17) so returning to search is clean,
+                // then open counting on the Rebuilds tab — so Back from counting lands on Home.
+                router.popToRoot()
+                env.selectedTab = 0
                 env.homeRouter.popToRoot()
                 env.homeRouter.push(.rebuild(id))
             } catch {

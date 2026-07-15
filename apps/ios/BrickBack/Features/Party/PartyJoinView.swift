@@ -16,9 +16,8 @@ struct PartyJoinView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Join a party", onBack: { router.pop() })
             VStack(alignment: .leading, spacing: 0) {
-                Text("Enter the code the host shared with you.")
+                Text(L.partyJoinSubtitle)
                     .font(AppText.body).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s20)
 
@@ -44,7 +43,7 @@ struct PartyJoinView: View {
                 }
 
                 Spacer().frame(height: AppSpacing.s20)
-                AppButton("Join", icon: "arrow.right.to.line", loading: loading, expand: true,
+                AppButton(L.partyJoinCta, icon: "arrow.right.to.line", loading: loading, expand: true,
                           onTap: loading ? nil : { join() })
             }
             .padding(.horizontal, AppSpacing.screen)
@@ -52,6 +51,8 @@ struct PartyJoinView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.partyJoinTitle)
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             Task { @MainActor in try? await Task.sleep(for: .milliseconds(350)); focused = true }
         }
@@ -64,13 +65,43 @@ struct PartyJoinView: View {
         error = nil
         Task {
             do {
+                // Joining needs neither premium nor a real account — just *some* session for the
+                // authenticated `join_party` RPC. Mint a transparent guest session if signed out,
+                // carrying the chosen display name so the roster shows it (not "Builder").
+                try await env.services.auth.ensureGuestSession(displayName: env.displayName.name)
                 let party = try await env.services.party.joinParty(trimmed)
-                // Replace the code-entry screen so "back" from the hub returns to Profile.
+                // Replace the code-entry screen so "back" from the hub returns to the tab root.
                 router.replaceTop(.party(party.id))
+            }
+            // Only a genuine "no such code" may blame the code. Guest sign-in, connectivity and
+            // decode failures all reach here too, and telling someone to check a code that was
+            // right sends them in circles — so each failure gets the message that names the thing
+            // they can actually act on.
+            catch PartyError.notFound {
+                fail(L.partyJoinError)
+            } catch let error as URLError where Self.isOffline(error) {
+                fail(L.partyJoinOffline)
             } catch {
-                self.error = "Couldn't find that party. Check the code."
-                loading = false
+                fail(L.partyJoinFailed)
             }
         }
+    }
+
+    /// Only the can't-reach-the-network codes earn the connection copy. Other `URLError`s (a
+    /// malformed response, say) aren't the user's connection and fall through to the generic
+    /// message.
+    private static func isOffline(_ error: URLError) -> Bool {
+        switch error.code {
+        case .notConnectedToInternet, .networkConnectionLost, .cannotFindHost,
+             .cannotConnectToHost, .timedOut, .dataNotAllowed, .internationalRoamingOff:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func fail(_ message: String) {
+        error = message
+        loading = false
     }
 }

@@ -76,12 +76,14 @@ it). Each Swift phase is accepted against the matching Flutter phase.
 | **S5** | [05-auth-and-cloud-sync.md](05-auth-and-cloud-sync.md) | Supabase auth (native Apple/Google/OTP), entitlement, live push/pull sync, free cap, paywall | — |
 | **S6** | [06-party-mode.md](06-party-mode.md) | Realtime collaborative counting (premium): create/join by code, contribution rollup, QR invite | — |
 | **S7** | [07-design-polish-and-i18n.md](07-design-polish-and-i18n.md) | Wireframe → branded design system, motion, haptics, dark mode, full i18n, accessibility | — |
+| **S9** | [09-offline-mode.md](09-offline-mode.md) | Pinned, deduplicated on-device image store (added sets openable offline), prefetch-on-add, reconnect-triggered sync + prefetch resume | — |
 | **S8** | [08-launch-appstore.md](08-launch-appstore.md) | RevenueCat/StoreKit, external OAuth/SMTP config, TestFlight, App Store review, privacy manifest | — |
 
 **Critical path to a shippable MVP:** S0 → S1 → S2 → S3 → S4. **S7 (polish) runs partly in
-parallel** once the design system lands. S5–S6 reuse the already-built backend. S8 gates the
-public launch and closes the same external-config items the Flutter plan left open
-(OAuth/SMTP/billing).
+parallel** once the design system lands. S5–S6 reuse the already-built backend. **S9 (offline
+mode) depends only on S2/S3 and should land before the S8 store submission** (offline
+resilience is a launch-quality bar). S8 gates the public launch and closes the same
+external-config items the Flutter plan left open (OAuth/SMTP/billing).
 
 ---
 

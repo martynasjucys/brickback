@@ -8,56 +8,60 @@ import BrickBackKit
 /// Port of `paywall_screen.dart`.
 struct PaywallView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.activeRouter) private var activeRouter
 
     private let benefits: [(String, String)] = [
-        ("Cloud sync", "Your rebuilds follow you to every device, always up to date."),
-        ("Unlimited rebuilds", "Sort as many sets at once as you like — no cap."),
-        ("Safe backup", "Never lose your progress if you lose your phone."),
-        ("Party mode", "Sort a big set together with friends in real time."),
+        (L.benefitSyncTitle, L.benefitSyncBody),
+        (L.benefitBackupTitle, L.benefitBackupBody),
+        (L.partyModeTitle, L.benefitPartyBody),
     ]
 
-    private var router: Router { env.profileRouter }
+    // The paywall is reachable from both tabs (Profile settings and the Rebuilds party button),
+    // so pop/push on whichever stack we're actually on — not a hardcoded tab. See `activeRouter`.
+    private var router: Router { activeRouter ?? env.profileRouter }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader("Premium", onBack: { router.pop() })
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack(spacing: AppSpacing.s8) {
-                        Text("Cloud Sync").font(AppText.display).foregroundStyle(AppColors.ink)
-                        AppBadge("PREMIUM", color: AppColors.primary)
-                    }
-                    Spacer().frame(height: AppSpacing.s8)
-                    Text("Keep every rebuild in sync and backed up. Everything you've sorted so far comes with you.")
-                        .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                    Spacer().frame(height: AppSpacing.s20)
-
-                    ForEach(benefits, id: \.0) { benefit in
-                        BenefitRow(title: benefit.0, detail: benefit.1)
-                        Spacer().frame(height: AppSpacing.s12)
-                    }
-
-                    Spacer().frame(height: AppSpacing.s8)
-                    AppButton("Turn on Cloud Sync", icon: "cloud", expand: true) { startSync() }
-                    Spacer().frame(height: AppSpacing.s12)
-                    Text("You'll sign in first — your local rebuilds upload automatically.")
-                        .font(AppText.caption).foregroundStyle(AppColors.muted)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-
-                    #if DEBUG
-                    Spacer().frame(height: AppSpacing.s20)
-                    Rectangle().fill(AppColors.line).frame(height: 1)
-                    Spacer().frame(height: AppSpacing.s8)
-                    DebugPremiumToggle()
-                    #endif
+                HStack(spacing: AppSpacing.s8) {
+                    Text(L.cloudSyncTitle).font(AppText.display).foregroundStyle(AppColors.ink)
+                    AppBadge(L.premiumBadge, color: AppColors.primary)
                 }
-                .padding(.horizontal, AppSpacing.screen)
-                .padding(.bottom, AppSpacing.s40)
+                Spacer().frame(height: AppSpacing.s8)
+                Text(L.paywallHeadline)
+                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                Spacer().frame(height: AppSpacing.s20)
+
+                ForEach(benefits, id: \.0) { benefit in
+                    BenefitRow(title: benefit.0, detail: benefit.1)
+                    Spacer().frame(height: AppSpacing.s12)
+                }
+
+                Spacer().frame(height: AppSpacing.s8)
+                AppButton(L.turnOnCloudSync, icon: "cloud", expand: true) { startSync() }
+                Spacer().frame(height: AppSpacing.s12)
+                Text(L.paywallCtaHint)
+                    .font(AppText.caption).foregroundStyle(AppColors.muted)
+                    .frame(maxWidth: .infinity)
+                    .multilineTextAlignment(.center)
+
+                #if DEBUG
+                Spacer().frame(height: AppSpacing.s20)
+                Rectangle().fill(AppColors.line).frame(height: 1)
+                Spacer().frame(height: AppSpacing.s8)
+                DebugPremiumToggle()
+                #endif
             }
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s8)
+            .padding(.bottom, AppSpacing.s40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        // Native nav bar (back button + title), consistent with the counting screen it's pushed
+        // from — no custom ScreenHeader, so the stack never toggles nav-bar visibility.
+        .navigationTitle(L.premium)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func startSync() {

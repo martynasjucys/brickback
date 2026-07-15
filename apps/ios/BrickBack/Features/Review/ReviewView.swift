@@ -24,15 +24,39 @@ struct ReviewView: View {
                 case .loading:
                     ProgressView().tint(AppColors.primary)
                 case .failed(let message):
-                    VStack(spacing: 0) {
-                        header(inv: nil)
-                        EmptyState(title: "Couldn't load", message: message, icon: "exclamationmark.triangle")
-                    }
+                    EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
                 case .ready:
                     if let inv = vm.inv { content(vm: vm, inv: inv) }
                 }
             } else {
                 ProgressView().tint(AppColors.primary)
+            }
+        }
+        // Native nav bar: back button + view-report (when verified) + share (missing parts) + the
+        // primary verify action as a prominent green checkmark. No brand plate here — the screen
+        // keeps its canvas, so the other bar glyphs use the default ink tint.
+        .navigationTitle(L.menuReview)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, let inv = vm.inv, inv.summary.verified {
+                    Button { env.homeRouter.push(.report(rebuildSetId)) } label: { Image(systemName: "rosette") }
+                        .accessibilityLabel(L.viewReport)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, let inv = vm.inv, !inv.missingParts.isEmpty {
+                    Button { shareMissing(inv) } label: { Image(systemName: "square.and.arrow.up") }
+                        .accessibilityLabel(L.shareMissingParts)
+                }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, let inv = vm.inv {
+                    Button { showMarkSheet = true } label: { Image(systemName: "checkmark") }
+                        .tint(AppColors.success)
+                        .buttonStyle(.borderedProminent)
+                        .accessibilityLabel(inv.summary.verified ? L.reverify : L.markAsVerified)
+                }
             }
         }
         .task {
@@ -67,48 +91,28 @@ struct ReviewView: View {
         let missing = inv.missingParts
         let notExportable = missing.filter { !$0.exportable }.count
 
-        return VStack(spacing: 0) {
-            header(inv: inv)
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0) {
-                    summaryCard(inv)
-                    if inv.hasMinifigs { minifigSection(vm: vm, inv: inv) }
-                    sectionLabel("Missing parts", trailing: missing.isEmpty ? nil : typeCount(missing.count))
-                    if missing.isEmpty {
-                        EmptyState(
-                            title: "Nothing missing",
-                            message: "Every part for this set is accounted for.",
-                            icon: "party.popper"
-                        )
-                        .frame(minHeight: 180)
-                    } else {
-                        ForEach(missing, id: \.key) { part in
-                            MissingRow(part: part) { openBrickLink(part) }
-                        }
-                        if notExportable > 0 { notExportableFootnote(notExportable) }
+        return ScrollView {
+            LazyVStack(alignment: .leading, spacing: 0) {
+                Spacer().frame(height: AppSpacing.s8)
+                summaryCard(inv)
+                if inv.hasMinifigs { minifigSection(vm: vm, inv: inv) }
+                sectionLabel(L.missingParts, trailing: missing.isEmpty ? nil : typeCount(missing.count))
+                if missing.isEmpty {
+                    EmptyState(
+                        title: L.reviewNothingMissing,
+                        message: L.everyPartAccountedFor,
+                        icon: "party.popper"
+                    )
+                    .frame(minHeight: 180)
+                } else {
+                    ForEach(missing, id: \.key) { part in
+                        MissingRow(part: part) { openBrickLink(part) }
                     }
-                    Spacer().frame(height: AppSpacing.s24)
+                    if notExportable > 0 { notExportableFootnote(notExportable) }
                 }
-            }
-            bottomBar(vm: vm, inv: inv)
-        }
-    }
-
-    // MARK: - Header
-
-    private func header(inv: RebuildInventory?) -> some View {
-        let hasMissing = !(inv?.missingParts.isEmpty ?? true)
-        return HStack(spacing: AppSpacing.s8) {
-            Pressable(onTap: { env.homeRouter.pop() }) {
-                Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
-            }
-            Spacer()
-            if hasMissing, let inv {
-                CircleIconButton(icon: "square.and.arrow.up") { shareMissing(inv) }
+                Spacer().frame(height: AppSpacing.s24)
             }
         }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.vertical, AppSpacing.s8)
     }
 
     private func summaryCard(_ inv: RebuildInventory) -> some View {
@@ -117,9 +121,9 @@ struct ReviewView: View {
                 ProgressRing(value: inv.progress, size: 72, stroke: 8)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(inv.summary.name).font(AppText.h2).foregroundStyle(AppColors.ink).lineLimit(2)
-                    Text("\(inv.partsFound) of \(inv.neededTotal) parts found")
+                    Text(L.reviewPartsFound(found: inv.partsFound, needed: inv.neededTotal))
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                    Text(inv.complete ? "All parts accounted for" : typesStillMissing(inv.remainingPartTypes))
+                    Text(inv.complete ? L.allPartsAccountedFor : typesStillMissing(inv.remainingPartTypes))
                         .font(AppText.caption)
                         .foregroundStyle(inv.complete ? AppColors.success : AppColors.warning)
                 }
@@ -133,7 +137,7 @@ struct ReviewView: View {
     private func minifigSection(vm: ReviewViewModel, inv: RebuildInventory) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: AppSpacing.s8) {
-                Text("Minifigures").font(AppText.label).foregroundStyle(AppColors.inkSoft)
+                Text(L.minifiguresSection).font(AppText.label).foregroundStyle(AppColors.inkSoft)
                 Text("\(vm.minifigsFound)/\(inv.minifigsNeeded)")
                     .font(AppText.caption)
                     .foregroundStyle(vm.minifigsComplete ? AppColors.success : AppColors.muted)
@@ -168,25 +172,6 @@ struct ReviewView: View {
         .padding(.top, AppSpacing.s12)
     }
 
-    private func bottomBar(vm: ReviewViewModel, inv: RebuildInventory) -> some View {
-        VStack(spacing: AppSpacing.s12) {
-            if inv.summary.verified {
-                AppButton("View report", variant: .secondary, icon: "rosette", expand: true) {
-                    env.homeRouter.push(.report(rebuildSetId))
-                }
-            }
-            AppButton(
-                inv.summary.verified ? "Re-verify" : "Mark as verified",
-                icon: "checkmark.seal", expand: true
-            ) { showMarkSheet = true }
-        }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.vertical, AppSpacing.s12)
-        .background(
-            AppColors.card.overlay(Rectangle().fill(AppColors.line).frame(height: 1), alignment: .top)
-        )
-    }
-
     // MARK: - Actions
 
     private func shareMissing(_ inv: RebuildInventory) {
@@ -207,13 +192,9 @@ struct ReviewView: View {
 
     // MARK: - Wireframe copy (moves to the String Catalog in S7)
 
-    private func typesStillMissing(_ n: Int) -> String { "\(n) type\(n == 1 ? "" : "s") still missing" }
-    private func typeCount(_ n: Int) -> String { "\(n) type\(n == 1 ? "" : "s")" }
-    private func notExportableText(_ n: Int) -> String {
-        n == 1
-            ? "1 part has no BrickLink mapping and won't be in the export."
-            : "\(n) parts have no BrickLink mapping and won't be in the export."
-    }
+    private func typesStillMissing(_ n: Int) -> String { L.typesStillMissing(n) }
+    private func typeCount(_ n: Int) -> String { L.typeCount(n) }
+    private func notExportableText(_ n: Int) -> String { L.notExportableText(n) }
 }
 
 // MARK: - Missing part row
@@ -224,7 +205,7 @@ private struct MissingRow: View {
     let onTap: () -> Void
 
     private var sub: String {
-        [part.colorName ?? "Unknown", part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
+        [part.colorName ?? L.unknownColor, part.partNum].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: " · ")
     }
 
     var body: some View {
@@ -240,12 +221,18 @@ private struct MissingRow: View {
                     }
                 }
                 Spacer(minLength: AppSpacing.s8)
-                Text("need \(part.needed)").font(AppText.label).foregroundStyle(AppColors.warning)
+                Text(L.needQty(part.needed)).font(AppText.label).foregroundStyle(AppColors.warning)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             .padding(.horizontal, AppSpacing.screen)
             .padding(.vertical, AppSpacing.s8)
             .contentShape(Rectangle())
         }
+        // VoiceOver: the row is a `Button`; label/value/hint override its auto-combined label so it
+        // reads "<part>, <colour> · <num>", value "need N", hint "opens BrickLink".
+        .accessibilityLabel("\(part.partName), \(sub)")
+        .accessibilityValue(L.needQty(part.needed))
+        .accessibilityHint(L.a11yOpensBrickLink)
     }
 }
 
@@ -261,39 +248,55 @@ private struct MinifigRow: View {
     private var complete: Bool { have >= fig.neededQty }
 
     var body: some View {
-        HStack(spacing: AppSpacing.s12) {
+        let row = HStack(spacing: AppSpacing.s12) {
             SetThumb(imageUrl: fig.imageUrl, size: 48)
             VStack(alignment: .leading, spacing: 2) {
                 Text(fig.name).font(AppText.body).foregroundStyle(AppColors.ink).lineLimit(2)
-                Text(fig.neededQty > 1 ? "\(have) of \(fig.neededQty) present" : "Needed ×1")
+                Text(fig.neededQty > 1 ? L.minifigPresent(have: have, needed: fig.neededQty) : L.neededOne)
                     .font(AppText.caption)
                     .foregroundStyle(complete ? AppColors.success : AppColors.muted)
             }
             Spacer(minLength: AppSpacing.s8)
             if fig.neededQty > 1 {
                 HStack(spacing: AppSpacing.s8) {
-                    MiniStepBtn(icon: "minus", enabled: have > 0) { onChanged(have - 1) }
+                    MiniStepBtn(icon: "minus", label: L.remove, enabled: have > 0) { onChanged(have - 1) }
                     Text("\(have)/\(fig.neededQty)")
                         .font(AppText.label)
                         .foregroundStyle(complete ? AppColors.success : AppColors.ink)
                         .frame(minWidth: 34)
-                    MiniStepBtn(icon: "plus", enabled: have < fig.neededQty) { onChanged(have + 1) }
+                        .accessibilityLabel(L.a11yCount(have: have, needed: fig.neededQty))
+                    MiniStepBtn(icon: "plus", label: L.a11yAdd, enabled: have < fig.neededQty) { onChanged(have + 1) }
                 }
             } else {
                 Pressable(onTap: { onChanged(complete ? 0 : fig.neededQty) }) {
                     Image(systemName: complete ? "checkmark.circle.fill" : "circle")
                         .font(.system(size: 28))
                         .foregroundStyle(complete ? AppColors.success : AppColors.muted)
+                        .frame(width: 44, height: 44) // 44pt tap target around the 28pt glyph
+                        .contentShape(Circle())
                 }
             }
         }
         .padding(.horizontal, AppSpacing.screen)
         .padding(.vertical, AppSpacing.s8)
+
+        // The single-needed row is a present/absent toggle: read it as one element carrying the
+        // state (the on-screen "Needed" caption never changes, so VoiceOver needs it in the value).
+        if fig.neededQty == 1 {
+            row.accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(fig.name)
+                .accessibilityValue(complete ? L.a11yPresent : L.a11yAbsent)
+                .accessibilityAction { onChanged(complete ? 0 : fig.neededQty) }
+        } else {
+            row
+        }
     }
 }
 
 private struct MiniStepBtn: View {
     let icon: String
+    let label: String
     let enabled: Bool
     let onTap: () -> Void
     var body: some View {
@@ -305,7 +308,10 @@ private struct MiniStepBtn: View {
                 .background(AppColors.card)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
+                .frame(width: 44, height: 44) // 44pt tap target around the 32pt visual
+                .contentShape(Circle())
         }
+        .accessibilityLabel(label)
     }
 }
 
@@ -326,29 +332,29 @@ private struct MarkVerifiedSheet: View {
     @State private var stickers = false
     @State private var notes = ""
 
-    private var partsLine: String { partsComplete ? "\(pct)% — all parts" : "\(pct)% of parts" }
+    private var partsLine: String { partsComplete ? L.pctAllParts(pct) : L.pctOfParts(pct) }
     private var figLine: String {
-        !hasMinifigs ? "No minifigures" : (minifigsComplete ? "Minifigures included" : "Minifigures incomplete")
+        !hasMinifigs ? L.noMinifigures : (minifigsComplete ? L.minifiguresIncluded : L.minifiguresIncomplete)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Mark as verified").font(AppText.h2).foregroundStyle(AppColors.ink)
+                Text(L.markAsVerified).font(AppText.h2).foregroundStyle(AppColors.ink)
                 Spacer().frame(height: AppSpacing.s4)
                 Text("\(partsLine) · \(figLine)").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s20)
 
-                Text("What else is in the box?").font(AppText.label).foregroundStyle(AppColors.inkSoft)
+                Text(L.whatElseInBox).font(AppText.label).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s8)
-                FlagToggle(label: "Box included", value: $box)
-                FlagToggle(label: "Instructions included", value: $instructions)
-                FlagToggle(label: "Stickers applied", value: $stickers)
+                FlagToggle(label: L.boxIncluded, value: $box)
+                FlagToggle(label: L.instructionsIncluded, value: $instructions)
+                FlagToggle(label: L.stickersApplied, value: $stickers)
 
                 Spacer().frame(height: AppSpacing.s16)
-                Text("Notes (optional)").font(AppText.label).foregroundStyle(AppColors.inkSoft)
+                Text(L.notesOptional).font(AppText.label).foregroundStyle(AppColors.inkSoft)
                 Spacer().frame(height: AppSpacing.s8)
-                TextField("e.g. one tyre scuffed, otherwise mint", text: $notes, axis: .vertical)
+                TextField(L.notesHint, text: $notes, axis: .vertical)
                     .font(AppText.body)
                     .foregroundStyle(AppColors.ink)
                     .tint(AppColors.primary)
@@ -359,7 +365,7 @@ private struct MarkVerifiedSheet: View {
                     .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.line, lineWidth: 1))
 
                 Spacer().frame(height: AppSpacing.s20)
-                AppButton("Save verification", icon: "checkmark.seal", expand: true) {
+                AppButton(L.saveVerification, icon: "checkmark.seal", expand: true) {
                     onSave(box, instructions, stickers, notes)
                 }
             }
@@ -388,5 +394,9 @@ private struct FlagToggle: View {
             .padding(.vertical, AppSpacing.s8)
             .contentShape(Rectangle())
         }
+        // Read as a checkbox: "<label>, selected/—, button". The row is a `Button`, so labelling it
+        // directly (rather than wrapping with `.accessibilityElement`) keeps its tap action.
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(value ? [.isButton, .isSelected] : .isButton)
     }
 }

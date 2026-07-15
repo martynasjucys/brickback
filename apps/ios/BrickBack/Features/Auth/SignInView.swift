@@ -22,17 +22,13 @@ struct SignInView: View {
     /// Raw nonce for the in-flight Apple request; SHA-256'd into `request.nonce`.
     @State private var appleNonce: String?
 
-    private var router: Router { env.profileRouter }
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                ScreenHeader("Sign in", onBack: { router.pop() })
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Sync across your devices")
+                Text(L.signInHeadline)
                         .font(AppText.display).foregroundStyle(AppColors.ink)
                     Spacer().frame(height: AppSpacing.s8)
-                    Text("Sign in to unlock premium cloud sync and party mode. Everything else works offline — you can skip this.")
+                    Text(L.signInSubtitle)
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     Spacer().frame(height: AppSpacing.s24)
 
@@ -53,7 +49,7 @@ struct SignInView: View {
                     .disabled(busy != nil)
 
                     Spacer().frame(height: AppSpacing.s12)
-                    AppButton("Continue with Google", icon: "g.circle", loading: busy == "google", expand: true) {
+                    AppButton(L.continueWithGoogle, icon: "g.circle", loading: busy == "google", expand: true) {
                         run("google") { try await env.services.auth.signInWithGoogle() }
                     }
 
@@ -61,16 +57,16 @@ struct SignInView: View {
                     OrDivider()
                     Spacer().frame(height: AppSpacing.s16)
 
-                    SearchField(hint: "you@example.com", text: $email)
+                    SearchField(hint: L.emailHint, text: $email)
                         .keyboardType(.emailAddress)
                     Spacer().frame(height: AppSpacing.s12)
-                    AppButton("Email me a sign-in link", variant: .secondary, icon: "envelope", loading: busy == "email", expand: true) {
+                    AppButton(L.emailSignInLink, variant: .secondary, icon: "envelope", loading: busy == "email", expand: true) {
                         sendEmailLink()
                     }
 
                     if emailSent {
                         Spacer().frame(height: AppSpacing.s12)
-                        Text("Check your email for a sign-in link.")
+                        Text(L.emailSentConfirm)
                             .font(AppText.caption).foregroundStyle(AppColors.success)
                     }
                     if let errorMessage {
@@ -79,17 +75,20 @@ struct SignInView: View {
                     }
 
                     Spacer().frame(height: AppSpacing.s24)
-                    Text("We only use your account to sync your rebuilds. No spam.")
+                    Text(L.signInFooter)
                         .font(AppText.caption).foregroundStyle(AppColors.muted)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, AppSpacing.screen)
-                .padding(.bottom, AppSpacing.s40)
             }
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s8)
+            .padding(.bottom, AppSpacing.s40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        // Native nav bar (back button + title), consistent with the paywall it's pushed from.
+        .navigationTitle(L.signInTitle)
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     // MARK: - Actions
@@ -113,7 +112,7 @@ struct SignInView: View {
     private func sendEmailLink() {
         let trimmed = email.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.contains("@") else {
-            errorMessage = "Enter a valid email address."
+            errorMessage = L.emailInvalid
             return
         }
         busy = "email"
@@ -139,7 +138,7 @@ struct SignInView: View {
                 let token = String(data: tokenData, encoding: .utf8),
                 let nonce = appleNonce
             else {
-                errorMessage = "Apple sign-in returned no identity token."
+                errorMessage = L.appleNoToken
                 return
             }
             run("apple") { try await env.services.auth.signInWithApple(idToken: token, nonce: nonce) }
@@ -177,7 +176,7 @@ private struct OrDivider: View {
     var body: some View {
         HStack(spacing: AppSpacing.s12) {
             line
-            Text("or").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+            Text(L.orDivider).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
             line
         }
     }

@@ -4,6 +4,14 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<!-- Supported UI languages (S7 i18n). English is the source/default; Lithuanian ships in
+	     Localizable.xcstrings. Device-locale auto-detect uses this list; the Profile → Language
+	     override forces one at runtime (see LocaleController). -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>lt</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>BrickBack</string>
 	<key>CFBundleExecutable</key>
@@ -22,8 +30,18 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Launch screen (S7). A solid branded background that matches AppColors.canvas in both
+	     light and dark (see LaunchBackground.colorset), so the launch fades seamlessly into the
+	     app's first frame with no colour flash. When the icon vector lands, add the LaunchLogo
+	     image set and uncomment UIImageName below — see docs/ios-swift/branding-assets.md. -->
 	<key>UILaunchScreen</key>
-	<dict/>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
+		<!-- <key>UIImageName</key><string>LaunchLogo</string> -->
+	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

@@ -1,50 +1,81 @@
 import SwiftUI
 import BrickBackKit
 
-/// Profile tab — account & premium state (S5). Guest vs signed-in header, a Free/Premium badge,
-/// and the sync actions (Turn on Cloud Sync / Sync now / Sign out). Language settings land in S7;
-/// a debug-only entry opens the design gallery. Port of `profile_screen.dart`.
+/// Profile tab — account & premium state (S5). An orange branded header shows the page title plus
+/// two lifetime stats (sets built + parts collected). Below: guest vs signed-in card, a Free/Premium
+/// badge, the party display name, and the sync/appearance/language rows. Port of `profile_screen.dart`.
 struct ProfileScreen: View {
     @Environment(AppEnvironment.self) private var env
-    @State private var showGallery = false
+    @State private var showNameEditor = false
+
+    /// Live rebuild list (via the same GRDB observation Home uses), for the header stats.
+    @State private var summaries: [RebuildSummary] = []
+
+    /// "Sets built" = rebuilds the user has finished (all parts accounted for) or verified.
+    private var setsBuilt: Int { summaries.filter { $0.complete || $0.verified }.count }
+    /// "Parts collected" = every part counted back into place across all rebuilds.
+    private var partsCollected: Int { summaries.reduce(0) { $0 + $1.haveTotal } }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader("Profile", subtitle: "Account & settings")
+            BrandHeader(face: AppColors.profile, deep: AppColors.profileDeep, edge: AppColors.profileEdge) {
+                VStack(alignment: .leading, spacing: AppSpacing.s12) {
+                    Text(L.navProfile).font(AppText.display).foregroundStyle(.white)
+                    HStack(spacing: AppSpacing.s32) {
+                        HeaderStat(value: setsBuilt.formatted(), label: L.statSetsBuilt)
+                        HeaderStat(value: partsCollected.formatted(), label: L.statPartsCollected)
+                    }
+                }
+            }
 
             ScrollView {
                 VStack(spacing: AppSpacing.s12) {
                     AccountCard()
 
-                    PartyCard()
+                    SettingsRow(icon: "person.text.rectangle", title: L.nameLabel, value: env.displayName.name) {
+                        showNameEditor = true
+                    }
 
-                    SettingsRow(icon: "star", title: "Premium", value: env.isPremium ? "Active" : "Free") {
+                    SettingsRow(icon: "star", title: L.premium, value: env.isPremium ? L.active : L.free) {
                         env.profileRouter.push(.paywall)
                     }
-                    if env.isSignedIn {
-                        SettingsRow(icon: "arrow.triangle.2.circlepath", title: "Sync now",
-                                    value: env.isPremium ? nil : "Premium") {
-                            if env.isPremium { env.syncNow() } else { env.profileRouter.push(.paywall) }
-                        }
+                    // No manual "Sync now": cloud sync runs automatically for premium users (on edit,
+                    // sign-in, app open) and pull-to-refresh on Home covers a manual pull. Surfacing a
+                    // button here only implied the user was responsible for syncing.
+                    SettingsRow(icon: "circle.lefthalf.filled", title: L.appearance, value: env.theme.currentLabel) {
+                        env.profileRouter.push(.appearance)
                     }
-                    SettingsRow(icon: "globe", title: "Language", value: "System") {}
-
-                    #if DEBUG
-                    SettingsRow(icon: "paintpalette", title: "Design gallery", value: "Debug") {
-                        showGallery = true
+                    SettingsRow(icon: "globe", title: L.language, value: env.locale.currentLabel) {
+                        env.profileRouter.push(.language)
                     }
-                    #endif
 
                     AboutFooter()
                 }
                 .padding(.horizontal, AppSpacing.screen)
-                .padding(.top, AppSpacing.s8)
+                .padding(.top, AppSpacing.s24)
                 .padding(.bottom, AppSpacing.s40)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
-        .sheet(isPresented: $showGallery) { DesignGalleryScreen() }
+        .task {
+            // Live stats for the header — the stream keeps delivering as rebuilds change.
+            for await list in env.services.rebuild.observeSummaries() { summaries = list }
+        }
+        .sheet(isPresented: $showNameEditor) { NameEditorSheet() }
+    }
+}
+
+/// One number + label pair on the orange header (e.g. "12 / Sets built").
+private struct HeaderStat: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value).font(AppText.h1).foregroundStyle(.white)
+            Text(label).font(AppText.label).foregroundStyle(.white.opacity(0.9))
+        }
     }
 }
 
@@ -57,28 +88,28 @@ private struct AccountCard: View {
             if env.isSignedIn {
                 VStack(alignment: .leading, spacing: AppSpacing.s8) {
                     HStack(spacing: AppSpacing.s8) {
-                        Text("Signed in").font(AppText.title).foregroundStyle(AppColors.ink)
-                        AppBadge(env.isPremium ? "Premium" : "Free",
+                        Text(L.signedIn).font(AppText.title).foregroundStyle(AppColors.ink)
+                        AppBadge(env.isPremium ? L.premium : L.free,
                                  color: env.isPremium ? AppColors.success : AppColors.inkSoft)
                     }
-                    Text(env.userEmail ?? "Your account")
+                    Text(env.userEmail ?? L.yourAccount)
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     if !env.isPremium {
-                        AppButton("Turn on Cloud Sync", variant: .primary, icon: "cloud") {
+                        AppButton(L.turnOnCloudSync, variant: .primary, icon: "cloud") {
                             env.profileRouter.push(.paywall)
                         }
                         .padding(.top, AppSpacing.s4)
                     }
-                    AppButton("Sign out", variant: .secondary, icon: "rectangle.portrait.and.arrow.right") {
+                    AppButton(L.signOut, variant: .secondary, icon: "rectangle.portrait.and.arrow.right") {
                         env.signOut()
                     }
                 }
             } else {
                 VStack(alignment: .leading, spacing: AppSpacing.s8) {
-                    Text("Not signed in").font(AppText.title).foregroundStyle(AppColors.ink)
-                    Text("Sign in to unlock premium cloud sync and party mode. Everything else works offline.")
+                    Text(L.notSignedIn).font(AppText.title).foregroundStyle(AppColors.ink)
+                    Text(L.profileSignInPrompt)
                         .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                    AppButton("Sign in", variant: .secondary, icon: "person") {
+                    AppButton(L.signInTitle, variant: .secondary, icon: "person") {
                         env.profileRouter.push(.signIn)
                     }
                     .padding(.top, AppSpacing.s4)
@@ -88,35 +119,65 @@ private struct AccountCard: View {
     }
 }
 
-/// Party mode entry — join a friend's realtime sort by code. Premium + account only, so a
-/// free/guest tap bounces to the paywall / sign-in (hosting a party starts from a rebuild's
-/// counting screen). Port of the Flutter `_PartyCard`.
-private struct PartyCard: View {
+/// Edit the party display name. Pre-fills the current name; a shuffle button drops in a fresh
+/// random one; Save persists it (blank falls back to a generated name — the field is never empty).
+private struct NameEditorSheet: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
+    @State private var draft = ""
+    @FocusState private var focused: Bool
 
     var body: some View {
-        AppCard {
+        VStack(alignment: .leading, spacing: AppSpacing.s16) {
             VStack(alignment: .leading, spacing: AppSpacing.s4) {
-                HStack(spacing: AppSpacing.s8) {
-                    Image(systemName: "person.2").font(.system(size: 18)).foregroundStyle(AppColors.ink)
-                    Text("Party mode").font(AppText.title).foregroundStyle(AppColors.ink)
-                }
-                Text("Sort a big pile together in real time — join by code.")
-                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                AppButton("Join a party", variant: .secondary, icon: "arrow.right.to.line") { joinParty() }
-                    .padding(.top, AppSpacing.s8)
+                Text(L.nameEditorTitle).font(AppText.title).foregroundStyle(AppColors.ink)
+                Text(L.nameEditorSubtitle).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
             }
+
+            HStack(spacing: AppSpacing.s8) {
+                TextField(L.nameEditorHint, text: $draft)
+                    .font(AppText.body)
+                    .foregroundStyle(AppColors.ink)
+                    .autocorrectionDisabled()
+                    .tint(AppColors.primary)
+                    .focused($focused)
+                    .submitLabel(.done)
+                    .onSubmit { save() }
+                    .padding(.horizontal, AppSpacing.s16)
+                    .padding(.vertical, AppSpacing.s12)
+                    .background(AppColors.card)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                    .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.line, lineWidth: 1))
+
+                Button { draft = NameGenerator.random() } label: {
+                    Image(systemName: "shuffle")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(AppColors.ink)
+                        .frame(width: 50, height: 50)
+                        .background(AppColors.card)
+                        .clipShape(RoundedRectangle(cornerRadius: AppRadius.md))
+                        .overlay(RoundedRectangle(cornerRadius: AppRadius.md).stroke(AppColors.line, lineWidth: 1))
+                }
+                .buttonStyle(PressableStyle())
+                .accessibilityLabel(L.shuffleName)
+            }
+
+            AppButton(L.save, icon: "checkmark", expand: true) { save() }
+            Spacer()
+        }
+        .padding(AppSpacing.screen)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(AppColors.canvas)
+        .presentationDetents([.height(280)])
+        .onAppear {
+            draft = env.displayName.name
+            Task { @MainActor in try? await Task.sleep(for: .milliseconds(350)); focused = true }
         }
     }
 
-    private func joinParty() {
-        if !env.isPremium {
-            env.profileRouter.push(.paywall)
-        } else if !env.isSignedIn {
-            env.profileRouter.push(.signIn)
-        } else {
-            env.profileRouter.push(.partyJoin)
-        }
+    private func save() {
+        env.displayName.set(draft)
+        dismiss()
     }
 }
 
@@ -144,7 +205,7 @@ private struct AboutFooter: View {
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
         VStack(spacing: AppSpacing.s4) {
             Text("BrickBack").font(AppText.label).foregroundStyle(AppColors.inkSoft)
-            Text("v\(version) · native rebuild").font(AppText.caption).foregroundStyle(AppColors.muted)
+            Text("v\(version)").font(AppText.caption).foregroundStyle(AppColors.muted)
         }
         .frame(maxWidth: .infinity)
         .padding(.top, AppSpacing.s24)

@@ -5,8 +5,123 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** end of **S6** (party mode — realtime collaborative counting).
-**Current state:** S0–S6 are **code-complete and verified**. **S6 is a pure client port** of the
+**Last updated:** **S7 — motion/haptics, accessibility (Dynamic Type + VoiceOver), and app-icon /
+launch-screen scaffolding** landed on top of the branded-design + i18n + dark-mode passes.
+**Current state:** S0–S6 are **code-complete and verified**; **S7 is functionally complete** — the
+only open item is dropping in the **app-icon vector** (everything around it is wired; see
+[branding-assets.md](branding-assets.md)).
+
+<details><summary>S7 motion + haptics + accessibility summary (Dynamic Type, VoiceOver, Reduce Motion)</summary>
+
+**Motion (new `DesignSystem/Motion.swift`):** one set of animation curves (`Motion.reveal`/`.state`/
+`.progress`) plus a **Reduce-Motion gate** — a `.brickAnimation(_:value:)` view modifier that reads
+`\.accessibilityReduceMotion` (reactive) and collapses to an instant change when the setting is on,
+and `Motion.gated(_:)`/`Motion.reduced` for imperative `withAnimation` sites. Wired into: the count
+**tiles** (state-colour cross-fade, checkmark pop-in via `.transition`, count roll via
+`.contentTransition(.numericText())`), the **progress ring** (arc sweep + % roll) and **progress
+bar** (fill sweep), and the counting **action-cluster** fan-out (`withAnimation(reduceMotion ? nil :
+Motion.reveal)`). Press-scale micro-interactions on the brick button styles are left as-is (within
+HIG for Reduce Motion).
+
+**Haptics (extracted to `DesignSystem/Haptics.swift`):** the S3 map is unchanged — a selection tick
+per count, a medium thud on finishing a part, a light tap on an already-complete part — but the
+generators are now kept **prepared** (lower latency) and a **CoreHaptics set-complete celebration**
+(three rising taps + a swell) fires when the *whole set* reaches 100% (`RebuildViewModel.isSetComplete`
+transition), replacing the per-part thud on that final tap so it never double-buzzes. Degrades to a
+success notification where CoreHaptics is unavailable (incl. the Simulator — verified no crash).
+
+**Accessibility — VoiceOver:** count **tiles** read as one element — "Brick 2×4, Bright Green" ·
+value "1 of 1, complete" · **"Details" rotor action** (the long-press equivalent; a hold gesture is
+impractical under VoiceOver) — via `.accessibilityElement(children:.ignore)` + `.accessibilityAction`.
+The **progress ring** reads "Progress, 18%"; **missing-part rows** "name, colour · num" + "need N" +
+"opens the BrickLink page"; **minifig rows** carry present/absent state (the single-needed toggle is
+one element with the state in its value); the Review **back button** is now the shared `BackButton`
+(44 pt + a "Back" label, replacing a bare arrow); the counting **party button** got a label (was the
+raw `person.2` symbol); **step buttons** got 44 pt targets + Add/Remove labels; decorative `SetThumb`
+thumbnails are `.accessibilityHidden`. New a11y strings are in the String Catalog (via
+`gen_l10n.py` → 205 keys). **Verified live on the iPhone 17 Pro sim** via `idb ui describe-all` (label
++ value + custom action on every tile/ring/row).
+
+**Accessibility — Dynamic Type:** `AppText`/`Font.system(size:)` already scale; this pass adds
+`minimumScaleFactor` on the space-constrained single-line numerics (tile count/number, ring %, need
+count) and `lineLimit(1)` + scale on the header wordmark. **Verified at the largest accessibility
+size** (`accessibility-extra-extra-extra-large`): the tile grid reflows (tiles grow, names wrap /
+truncate gracefully) with **no clipping**.
+
+**App icon + launch screen (artwork deferred):** the launch screen is a solid branded background
+(`LaunchBackground.colorset`, matching `AppColors.canvas` light+dark — no colour flash into the first
+frame), wired via `Info.plist` `UILaunchScreen`. The `AppIcon` slot + a documented one-step drop-in
+for the vector (icon **and** an optional launch logo) live in
+[branding-assets.md](branding-assets.md). Build green, no warnings; **42 kit tests pass**.
+
+> ⚠️ **Sim gotcha (cost me a long debug):** two iPhone 17 Pro simulators were booted at once, so
+> `xcrun simctl … booted` (install/screenshot) and `idb --udid …` targeted **different** devices —
+> making fresh builds look like they never changed. Always pin **both** tools to one explicit UDID
+> (the idb-connected one), or shut down the extra sim.
+
+</details>
+
+<details><summary>S7 dark mode summary (system-driven + a persisted Profile override)</summary>
+
+**Approach — "swap the values, keep the names" again:** every `AppColors` token became a **dynamic**
+`Color(lightHex:darkHex:)` (a `UIColor(dynamicProvider:)` under the hood), so it resolves to the
+active appearance with **zero call-site change** — the same S1→S7 token seam. `Tokens.swift` is the
+only file that holds colour values. A **`ThemeController`** (`@Observable`, persists `app_theme` =
+system/light/dark in `UserDefaults`, mirrors `LocaleController`) drives the root's
+`.preferredColorScheme(theme.colorScheme)` — the old `.preferredColorScheme(.light)` lock is gone.
+Because the tokens are dynamic, pinning the scheme re-skins the whole app; **no `.id` rebuild needed**
+(unlike the language switch). Profile gained an **Appearance** row (System/Light/Dark
+`.confirmationDialog`, named "Appearance" to avoid colliding with the LEGO-theme filter's "Theme").
+
+**Palette:** branded hues (blue Home header, green Rebuild header, red CTA) stay **vivid** in dark;
+neutrals invert (cream canvas → warm near-black `#161619`, white plate → lifted charcoal `#232228`
+over an even-darker lip `#100F13`); semantic + lego-accent tones are **lifted** for contrast on dark.
+A new `shadow` token (dark in both modes) replaced the three `AppColors.ink`-based header shadows
+(ink inverts to near-white in dark → would glow). The **verification certificate stays light** in
+both modes via `.environment(\.colorScheme, .light)` on the card (on-screen **and** the
+`ImageRenderer` export) — it's a "paper" document shared as PNG/PDF, sitting on the themed report bg.
+
+**Verified on the iPhone 17 Pro sim (dark):** Home (vivid blue header + **white status-bar glyphs** —
+fixes the old marginal case — dark card plates), Profile (Appearance row; **Light override flips live**
+even under a dark system), counting (green header, dark tiles, colour-swatch sections), review (dark
+summary card, red re-verify CTA), report (**light certificate on dark chrome**), search (dark field,
+red cursor, dark result plates). Build green, no warnings; 42 kit tests unaffected (dark mode is
+app-target-only). Known cosmetic note: LEGO catalog thumbnails are white-background renders, so they
+read as white tiles on dark — inherent to the product imagery, not a bug.
+
+</details>
+
+<details><summary>S7 i18n summary (English + Lithuanian, live in-app override + device auto-detect)</summary>
+
+**Approach:** a hand-authored **String Catalog** (`BrickBack/Resources/Localizable.xcstrings`, 190
+semantic keys, en source + lt, ICU plurals incl. Lithuanian `one/few/other` + exact-`zero`) is the
+translation source; a generated typed façade **`L`** (`BrickBack/Localization/L.swift`, one accessor
+per key, from `apps/ios/scripts/gen_l10n.py` — edit the table + regenerate, don't hand-edit) is the
+call site. Every accessor resolves against **`I18n.bundle`/`I18n.locale`**, which
+**`LocaleController`** (`@Observable`, persists `app_language` = system/en/lt to `UserDefaults`) keeps
+in lock-step with the SwiftUI `\.environment(\.locale)`. The app root also `.id(locale.language)`s
+the tree so a language switch **re-renders every screen live** (no relaunch); routers **and the
+selected tab** live in `AppEnvironment`, so navigation survives the rebuild. Default = **System**
+(device-locale auto-detect on first launch — the improvement the Flutter app deferred); a Profile →
+**Language** picker overrides it and persists.
+
+**Scope:** all ~28 app-target screens delocalized to `L.*` (dynamic catalog data — set/colour/theme/
+part names, emails, notes — stays verbatim; DEBUG-only gallery left English). BrickBackKit stays
+**string-free**: `PartSection` now carries a semantic `SectionTitle?` `titleKey` the UI localizes
+(`L.sectionTitle`), keeping the plain-English `label` only as a test fallback / real catalog name.
+The verification **report date** now uses `Date.FormatStyle(date:.abbreviated).locale(I18n.locale)`
+(replacing the hardcoded English month array), so the shared PNG/PDF follow the language.
+
+**Verified on the iPhone 17 Pro sim:** boots **Lithuanian** under a `lt` device locale with no manual
+switch (Home, Profile, counting, review, report all translated); the Profile picker switches en↔lt
+**live** and the choice persists across relaunch (overriding the system locale); **plurals** render
+correctly — e.g. review shows "dar trūksta 24 tipų" / "24 tipai" (Lithuanian `few`), "reikia 4",
+"Minifigūrėlės"; the report reads "INVENTORIAUS PATVIRTINIMAS … Patvirtinta 2026-07-13"; catalog
+data (colour names "Bright Green", set names) correctly stays English. `xcstringstool` compiles the
+catalog into `en/lt.lproj` (`.strings` + `.stringsdict`). **42 unit tests pass**, `xcodebuild` green,
+no warnings.
+
+</details> **S6 is a pure client port** of the
 already-built, already-verified party backend (`0003_party_mode.sql`, applied): a `PartyRemote`
 seam (RPCs + PostgREST + **Realtime v2** behind a disposer closure) → `PartyRepository` (the two
 BrickBack-only bits: the **client-derived "still-needed" picker** = catalog `expandSetParts` ⟕
@@ -67,7 +182,7 @@ Ready to start **S6** (party mode).
 - [x] **S4 — Review & verification — MVP complete gate** ✅ (done, verified)
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
 - [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
-- [ ] **S7 — Design polish & i18n** ← NEXT
+- [~] **S7 — Design polish & i18n** ← branded design + i18n + dark mode + **motion/haptics + Dynamic Type + VoiceOver done**; only the app-icon vector remains ([branding-assets.md](branding-assets.md))
 - [ ] S8 — Launch / App Store
 
 ---

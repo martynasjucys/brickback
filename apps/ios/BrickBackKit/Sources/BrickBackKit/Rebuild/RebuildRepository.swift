@@ -37,7 +37,7 @@ public final class RebuildRepository: @unchecked Sendable {
 
         try await writer.write { db in
             var set = RebuildSetRecord(
-                id: id, setItemId: setItemId, name: s?.name ?? "Set", theme: nil, year: s?.year,
+                id: id, setItemId: setItemId, name: s?.name ?? "Set", theme: s?.themeName, year: s?.year,
                 imageUrl: s?.imageUrl, totalParts: total, createdAt: now, updatedAt: now
             )
             try set.insert(db)
@@ -63,7 +63,7 @@ public final class RebuildRepository: @unchecked Sendable {
 
         try await writer.write { db in
             var set = RebuildSetRecord(
-                id: id, setItemId: setItemId, name: s?.name ?? "Set", theme: nil, year: s?.year,
+                id: id, setItemId: setItemId, name: s?.name ?? "Set", theme: s?.themeName, year: s?.year,
                 imageUrl: s?.imageUrl, totalParts: totalParts, createdAt: now, updatedAt: now, dirty: false
             )
             try set.insert(db, onConflict: .ignore)
@@ -192,6 +192,30 @@ public final class RebuildRepository: @unchecked Sendable {
         }
     }
 
+    /// Best-effort: fill in `rebuild_sets.theme` for sets stored before theme was captured, or
+    /// pulled from the cloud (whose payload doesn't carry it). Resolves theme names from the
+    /// catalog for the distinct sets still missing one and writes them back. `theme` is a local,
+    /// catalog-derived column — not synced — so rows are NOT marked dirty. No-op when nothing is
+    /// missing; needs network (callers swallow errors so offline just defers it). Powers the Home
+    /// theme filter for existing rebuilds.
+    public func backfillThemes() async throws {
+        let missing: [Int] = try await writer.read { db in
+            try Int.fetchAll(db, sql: "SELECT DISTINCT set_item_id FROM rebuild_sets WHERE theme IS NULL AND deleted = 0")
+        }
+        guard !missing.isEmpty else { return }
+        let sets = try await catalog.setsByIds(missing)
+        let themes = Dictionary(uniqueKeysWithValues: sets.compactMap { s in s.themeName.map { (s.itemId, $0) } })
+        guard !themes.isEmpty else { return }
+        try await writer.write { db in
+            for (setItemId, theme) in themes {
+                try db.execute(
+                    sql: "UPDATE rebuild_sets SET theme = ? WHERE set_item_id = ? AND theme IS NULL",
+                    arguments: [theme, setItemId]
+                )
+            }
+        }
+    }
+
     /// Full local checklist for one rebuild (parts + minifigs + extras + have counts).
     public func detail(_ rebuildSetId: String) async throws -> RebuildInventory? {
         try await writer.read { db in
@@ -223,7 +247,7 @@ public final class RebuildRepository: @unchecked Sendable {
             )
             let summary = RebuildSummary(
                 id: set.id, setItemId: set.setItemId, name: set.name, imageUrl: set.imageUrl,
-                totalParts: set.totalParts, haveTotal: haveTotal, verifiedAt: set.verifiedAt
+                totalParts: set.totalParts, haveTotal: haveTotal, verifiedAt: set.verifiedAt, theme: set.theme
             )
             return RebuildInventory(
                 summary: summary, parts: parts, have: have, minifigs: minifigs,
@@ -351,7 +375,8 @@ public final class RebuildRepository: @unchecked Sendable {
                 imageUrl: r.imageUrl,
                 totalParts: r.totalParts,
                 haveTotal: min(haveByRebuild[r.id] ?? 0, r.totalParts),
-                verifiedAt: r.verifiedAt
+                verifiedAt: r.verifiedAt,
+                theme: r.theme
             )
         }
     }

@@ -33,7 +33,7 @@ struct RebuildView: View {
                 case .failed(let message):
                     VStack(spacing: 0) {
                         header(vm: vm, inv: nil)
-                        EmptyState(title: "Couldn't load", message: message, icon: "exclamationmark.triangle")
+                        EmptyState(title: L.couldntLoad, message: message, icon: "exclamationmark.triangle")
                     }
                 case .ready:
                     if let inv = vm.inv { content(vm: vm, inv: inv) }
@@ -42,11 +42,28 @@ struct RebuildView: View {
                 ProgressView().tint(AppColors.primary)
             }
         }
+        .overlay { if startingParty { partyStartingOverlay } }
+        // Native nav bar (transparent) hosting the back button + ••• actions menu, riding on the
+        // brand plate drawn by `header`. White glyphs via the dark toolbar colour scheme.
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                if let vm, let inv = vm.inv { navTitle(vm: vm, inv: inv) }
+            }
+            ToolbarItem(placement: .topBarTrailing) {
+                if let vm, vm.inv != nil { actionsMenu(vm: vm) }
+            }
+        }
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .task {
             if vm == nil {
                 vm = RebuildViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild, onNudge: { env.sync.nudge() })
             }
             await vm?.load()
+            // S9: make sure this set's images are cached for offline (no-op once complete). Covers
+            // cloud-imported sets and any add whose prefetch didn't finish.
+            Task { await env.services.offlineImages.ensureCached(rebuildSetId) }
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background, let vm { Task { await vm.flush() } }
@@ -66,13 +83,18 @@ struct RebuildView: View {
             }
         }
         .sheet(isPresented: $showSettings) {
-            ViewSettingsSheet(hasExtras: vm?.inv?.hasExtras ?? false)
+            if let vm {
+                ViewSettingsSheet(
+                    hasExtras: vm.inv?.hasExtras ?? false,
+                    remainingOnly: Binding(get: { vm.remainingOnly }, set: { vm.remainingOnly = $0 })
+                )
+            }
         }
-        .alert("Couldn't start party", isPresented: Binding(
+        .alert(L.couldntStartParty, isPresented: Binding(
             get: { partyError != nil },
             set: { if !$0 { partyError = nil } }
         )) {
-            Button("OK", role: .cancel) {}
+            Button(L.ok, role: .cancel) {}
         } message: {
             Text(partyError ?? "")
         }
@@ -89,12 +111,10 @@ struct RebuildView: View {
 
         return VStack(spacing: 0) {
             header(vm: vm, inv: inv)
-            progressBlock(vm: vm, inv: inv)
-            Divider().overlay(AppColors.line)
             if inv.parts.isEmpty {
-                EmptyState(title: "No inventory data", message: "The catalog has no part list for this set yet.", icon: "info.circle")
+                EmptyState(title: L.countNoInventoryTitle, message: L.countNoInventoryMessage, icon: "info.circle")
             } else if visible.isEmpty && !extrasVisible {
-                EmptyState(title: "All sorted!", message: "Every part for this set is accounted for.", icon: "party.popper")
+                EmptyState(title: L.countAllSortedTitle, message: L.everyPartAccountedFor, icon: "party.popper")
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
@@ -111,25 +131,88 @@ struct RebuildView: View {
         }
     }
 
-    // MARK: - Header (back + circle actions)
+    // MARK: - Header (branded green field: nav row + progress summary)
 
-    private func header(vm: RebuildViewModel, inv: RebuildInventory?) -> some View {
-        HStack(spacing: AppSpacing.s8) {
-            Pressable(onTap: { Task { await vm.flush(); env.homeRouter.pop() } }) {
-                Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
-            }
-            Spacer()
-            CircleIconButton(icon: "flag") { Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) } }
-            if startingParty {
-                ProgressView().tint(AppColors.primary).frame(width: 40, height: 40)
-            } else {
-                CircleIconButton(icon: "person.2") { onParty(vm: vm) }
-            }
-            CircleIconButton(icon: "magnifyingglass") { showSearch = true }
-            CircleIconButton(icon: "slider.horizontal.3") { showSettings = true }
+    /// The set title + part count, shown as the native nav bar's centred title — riding between the
+    /// back button and the ••• menu — instead of in the plate body. White on the green field.
+    private func navTitle(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
+        VStack(spacing: 1) {
+            Text(inv.summary.name).font(AppText.title).foregroundStyle(.white).lineLimit(1)
+            Text(L.countHaveOfPartsTypes(have: vm.haveTotal, total: inv.summary.totalParts, types: inv.parts.count))
+                .font(AppText.caption).foregroundStyle(.white.opacity(0.85)).lineLimit(1)
         }
+    }
+
+    /// The branded green header *body*: just the slim progress bar now that the title + count ride
+    /// in the native nav bar above. The plate bleeds up behind the transparent bar.
+    private func header(vm: RebuildViewModel, inv: RebuildInventory?) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if let inv { progressBar(vm: vm, inv: inv) }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.screen)
-        .padding(.vertical, AppSpacing.s8)
+        .padding(.top, AppSpacing.s8)
+        .padding(.bottom, AppSpacing.s16)
+        .background(headerField)
+    }
+
+    /// A slim progress bar — the same bar used elsewhere, styled white so it (and a completed fill)
+    /// reads on the green field. Rides full-width below the inline title row.
+    private func progressBar(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
+        let total = inv.summary.totalParts
+        let value = total == 0 ? 0 : Double(vm.haveTotal) / Double(total)
+        return AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
+    }
+
+    /// The trailing ••• actions, as a native `Menu` — the system's own expand/collapse dropdown:
+    /// review & verify, start party, search parts, view settings. On iOS 26 the toolbar renders it
+    /// as a glass circular button; on older versions it falls back to a plain glyph — same menu.
+    private func actionsMenu(vm: RebuildViewModel) -> some View {
+        Menu {
+            Button {
+                Task { await vm.flush(); env.homeRouter.push(.review(rebuildSetId)) }
+            } label: { Label(L.menuReview, systemImage: "flag") }
+
+            Button { onParty(vm: vm) } label: { Label(L.menuStartParty, systemImage: "person.2") }
+
+            Button { showSearch = true } label: { Label(L.menuSearchParts, systemImage: "magnifyingglass") }
+
+            Button {
+                if let itemId = vm.inv?.summary.setItemId { env.homeRouter.push(.setDetail(itemId)) }
+            } label: { Label(L.menuSetDetails, systemImage: "info.circle") }
+
+            Button { showSettings = true } label: { Label(L.viewSettings, systemImage: "slider.horizontal.3") }
+        } label: {
+            Image(systemName: "ellipsis")
+        }
+        .accessibilityLabel(L.moreActions)
+    }
+
+    /// A lightweight blocking spinner while a party is being created (the async flush → push →
+    /// create round-trip). The old inline cluster spinner has no home now the actions are a menu.
+    private var partyStartingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.12).ignoresSafeArea()
+            ProgressView().tint(AppColors.primary)
+                .padding(AppSpacing.s24)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
+        }
+    }
+
+    /// The branded green "brick plate" that backs the header — the counting-screen counterpart to
+    /// Home's blue field: a gradient face raised on a darker bottom lip, bleeding into the status
+    /// bar and curving off at the bottom.
+    private var headerField: some View {
+        let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
+                                           bottomTrailingRadius: AppRadius.xl, style: .continuous)
+        return ZStack(alignment: .top) {
+            shape.fill(AppColors.buildEdge)
+            LinearGradient(colors: [AppColors.build, AppColors.buildDeep], startPoint: .top, endPoint: .bottom)
+                .clipShape(shape)
+                .padding(.bottom, AppDepth.brick + 1)
+        }
+        .ignoresSafeArea(edges: .top)
+        .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
     }
 
     /// Host a realtime party on this rebuild. Premium + account only (the paywall / sign-in bounce
@@ -144,7 +227,7 @@ struct RebuildView: View {
             await vm.flush()
             do {
                 await env.sync.pushNow()
-                let name = vm.inv?.summary.name ?? "Sort party"
+                let name = vm.inv?.summary.name ?? L.sortParty
                 let party = try await env.services.party.createParty(rebuildSetId, name: name)
                 startingParty = false
                 env.homeRouter.push(.party(party.id))
@@ -153,31 +236,6 @@ struct RebuildView: View {
                 partyError = "\(error)"
             }
         }
-    }
-
-    private func progressBlock(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
-        let total = inv.summary.totalParts
-        let value = total == 0 ? 0 : Double(vm.haveTotal) / Double(total)
-        return HStack(spacing: AppSpacing.s16) {
-            ProgressRing(value: value, size: 72, stroke: 8)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(inv.summary.name).font(AppText.h1).foregroundStyle(AppColors.ink).lineLimit(2)
-                Text("\(vm.haveTotal) of \(total) parts · \(inv.parts.count) types")
-                    .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                Spacer().frame(height: AppSpacing.s4)
-                Pressable(onTap: { vm.remainingOnly.toggle() }) {
-                    HStack(spacing: AppSpacing.s4) {
-                        Image(systemName: vm.remainingOnly ? "checkmark.square.fill" : "square")
-                            .font(.system(size: 18))
-                            .foregroundStyle(vm.remainingOnly ? AppColors.primary : AppColors.muted)
-                        Text("Remaining only").font(AppText.label).foregroundStyle(AppColors.muted)
-                    }
-                }
-            }
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.bottom, AppSpacing.s12)
     }
 
     // MARK: - Section (header + tile grid)
@@ -200,7 +258,7 @@ struct RebuildView: View {
                 } else if let leadingIcon {
                     Image(systemName: leadingIcon).font(.system(size: 15)).foregroundStyle(AppColors.inkSoft)
                 }
-                Text(section.label).font(AppText.label).foregroundStyle(AppColors.inkSoft).lineLimit(1)
+                Text(L.sectionTitle(section)).font(AppText.label).foregroundStyle(AppColors.inkSoft).lineLimit(1)
                 Spacer(minLength: AppSpacing.s8)
                 Text("\(haveN)/\(section.neededTotal)")
                     .font(AppText.caption)
@@ -221,23 +279,6 @@ struct RebuildView: View {
             }
         }
         .padding(.horizontal, AppSpacing.screen)
-    }
-}
-
-/// A 40pt circular header action button (matches the Flutter `_CircleButton`).
-struct CircleIconButton: View {
-    let icon: String
-    let onTap: () -> Void
-    var body: some View {
-        Pressable(onTap: onTap) {
-            Image(systemName: icon)
-                .font(.system(size: 18))
-                .foregroundStyle(AppColors.ink)
-                .frame(width: 40, height: 40)
-                .background(AppColors.card)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(AppColors.line, lineWidth: 1))
-        }
     }
 }
 

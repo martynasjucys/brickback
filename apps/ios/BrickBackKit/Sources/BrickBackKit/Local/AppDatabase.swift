@@ -39,7 +39,8 @@ public final class AppDatabase: Sendable {
     /// Named migrations reproducing the Drift history (00-architecture §5):
     /// - v1: rebuild_sets, rebuild_parts (no category_name), rebuild_minifigs, verifications
     /// - v2: + rebuild_parts.category_name; create rebuild_extra_parts
-    /// There is **no** v3 (step_qty) step — deliberate divergence.
+    /// - v3: + rebuild_sets.images_cached_at (S9 offline image cache; device-local, not synced).
+    ///   This is **not** the Drift v3 `step_qty` column — that stays dropped (00-architecture §5).
     static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
 
@@ -130,6 +131,15 @@ public final class AppDatabase: Sendable {
                 t.column("color_rgb", .text)
                 t.column("image_url", .text)
                 t.primaryKey(["rebuild_set_id", "part_item_id", "color_id"])
+            }
+        }
+
+        migrator.registerMigration("v3") { db in
+            // Offline mode (S9): a device-local marker per set — stamped once every one of the
+            // set's image URLs is cached on disk. NULL ⇒ prefetch incomplete ⇒ resume when next
+            // online. Never synced (no dirty/deleted); the cloud schema is unchanged.
+            try db.alter(table: "rebuild_sets") { t in
+                t.add(column: "images_cached_at", .datetime)
             }
         }
 

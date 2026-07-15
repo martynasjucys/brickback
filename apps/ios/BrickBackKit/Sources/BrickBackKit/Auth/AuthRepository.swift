@@ -29,9 +29,31 @@ public final class AuthRepository: @unchecked Sendable {
         self.client = client
     }
 
-    public var isSignedIn: Bool { client.auth.currentUser != nil }
+    /// A real (non-anonymous) account. A guest who joined a party holds a transparent *anonymous*
+    /// session — they have a `currentUserId` (so the party RPCs work) but count as signed-OUT for
+    /// premium, cloud sync, and the Profile UI. Only a real sign-in unlocks those.
+    public var isSignedIn: Bool {
+        guard let user = client.auth.currentUser else { return false }
+        return !user.isAnonymous
+    }
+    /// True when the only session is a transparent guest (anonymous) one.
+    public var isAnonymous: Bool { client.auth.currentUser?.isAnonymous ?? false }
     public var currentUserId: String? { client.auth.currentUser?.id.uuidString.lowercased() }
     public var currentUserEmail: String? { client.auth.currentUser?.email }
+
+    /// Guarantee *some* session so an authenticated-only RPC (`join_party`) works for a guest,
+    /// WITHOUT forcing a real sign-in: joining a party needs neither premium nor an account. A
+    /// no-op if already signed in (real or guest); otherwise it mints a transparent anonymous
+    /// session, stamping `displayName` into `raw_user_meta_data.name` so the server's
+    /// `_party_display_name()` shows the chosen name in the roster instead of "Builder". Requires
+    /// anonymous sign-ins to be enabled on the user project.
+    public func ensureGuestSession(displayName: String? = nil) async throws {
+        if client.auth.currentUser == nil {
+            let name = displayName?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let data: [String: AnyJSON]? = (name?.isEmpty == false) ? ["name": .string(name!)] : nil
+            try await client.auth.signInAnonymously(data: data)
+        }
+    }
 
     // MARK: - Sign-in
 
@@ -71,13 +93,14 @@ public final class AuthRepository: @unchecked Sendable {
         try await client.auth.signOut()
     }
 
-    /// Emits the signed-in state on every auth change (sign-in, sign-out, token refresh). The
-    /// sync controller listens to this. Yields the current state first.
+    /// Emits the **real-account** signed-in state on every auth change (sign-in, sign-out, token
+    /// refresh). The sync controller and Profile listen to this; a transparent guest (anonymous)
+    /// session reads as signed-out here, exactly like `isSignedIn`. Yields the current state first.
     public func signInStates() -> AsyncStream<Bool> {
         AsyncStream { continuation in
             let task = Task { [client] in
                 for await change in client.auth.authStateChanges {
-                    continuation.yield(change.session != nil)
+                    continuation.yield(change.session?.user.isAnonymous == false)
                 }
                 continuation.finish()
             }

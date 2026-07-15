@@ -5,3 +5,11 @@ project_id = "brickback"
 
 [db]
 major_version = 17
+
+[auth]
+# Party mode: JOINING a party requires neither premium nor a real account. A guest joins with a
+# transparent anonymous session (client: AuthRepository.ensureGuestSession → signInAnonymously),
+# which carries the `authenticated` role the `join_party` RPC needs. Hosting still requires a real
+# premium account. NOTE: this toggle configures the LOCAL stack only — the remote user project
+# (nthbhcqufiuyrnioxglm) must have "Allow anonymous sign-ins" enabled in its Auth settings too.
+enable_anonymous_sign_ins = true

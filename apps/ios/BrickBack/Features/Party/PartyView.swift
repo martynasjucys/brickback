@@ -14,6 +14,17 @@ struct PartyView: View {
 
     private var router: Router { activeRouter ?? env.homeRouter }
 
+    /// The native bar's inline title: the party's own name once loaded (the big content heading in a
+    /// compact form the bar keeps as you scroll), falling back to the generic label while it loads.
+    private var navTitle: String { vm?.party?.name ?? L.partyModeTitle }
+
+    /// Invite is only offered on a live, loaded party — an ended/paused one has nothing to invite
+    /// into, and a failed load has no party to invite to at all.
+    private var showInvite: Bool {
+        guard let vm, case .ready = vm.phase, let party = vm.party else { return false }
+        return party.isActive
+    }
+
     var body: some View {
         ZStack {
             AppColors.canvas.ignoresSafeArea()
@@ -22,15 +33,23 @@ struct PartyView: View {
                 case .loading:
                     ProgressView().tint(AppColors.primary)
                 case .failed(let message):
-                    VStack(spacing: 0) {
-                        headerBar(showInvite: false)
-                        EmptyState(title: "Couldn't load party", message: message, icon: "exclamationmark.triangle")
-                    }
+                    EmptyState(title: L.couldntLoadParty, message: message, icon: "exclamationmark.triangle")
                 case .ready:
                     content(vm: vm)
                 }
             } else {
                 ProgressView().tint(AppColors.primary)
+            }
+        }
+        .navigationTitle(navTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showInvite {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { router.push(.partyInvite(partyId)) } label: {
+                        Label(L.invite, systemImage: "person.badge.plus")
+                    }
+                }
             }
         }
         .task {
@@ -42,11 +61,11 @@ struct PartyView: View {
         .onDisappear {
             if let vm { Task { await vm.reconcile(); vm.teardown() } }
         }
-        .alert("End this party?", isPresented: $confirmEnd) {
-            Button("End party", role: .destructive) { end() }
-            Button("Cancel", role: .cancel) {}
+        .alert(L.endThisParty, isPresented: $confirmEnd) {
+            Button(L.endParty, role: .destructive) { end() }
+            Button(L.cancel, role: .cancel) {}
         } message: {
-            Text("Members won't be able to add parts anymore.")
+            Text(L.endPartyBody)
         }
     }
 
@@ -56,22 +75,21 @@ struct PartyView: View {
         let party = vm.party!
         let active = party.isActive
         return VStack(alignment: .leading, spacing: 0) {
-            headerBar(showInvite: active)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline) {
                         Text(party.name).font(AppText.display).foregroundStyle(AppColors.ink)
                         Spacer(minLength: AppSpacing.s8)
                         if !active {
-                            AppBadge(party.status == "ended" ? "Ended" : "Paused", color: AppColors.warning)
+                            AppBadge(party.status == "ended" ? L.statusEnded : L.statusPaused, color: AppColors.warning)
                         }
                     }
-                    Text("Party · code \(party.joinCode)").font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                    Text(L.partyCodeCaption(party.joinCode)).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
 
                     Spacer().frame(height: AppSpacing.s20)
                     VStack(spacing: AppSpacing.s8) {
                         ProgressRing(value: vm.progress.value, size: 132, stroke: 10)
-                        Text("\(vm.progress.have) of \(vm.progress.total) parts")
+                        Text(L.partyProgress(have: vm.progress.have, total: vm.progress.total))
                             .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
                     }
                     .frame(maxWidth: .infinity)
@@ -79,18 +97,18 @@ struct PartyView: View {
                     Spacer().frame(height: AppSpacing.s16)
                     HStack(spacing: AppSpacing.s8) {
                         AvatarStack(members: vm.members)
-                        Text(memberCount(vm.members.count)).font(AppText.label).foregroundStyle(AppColors.muted)
+                        Text(L.memberCount(vm.members.count)).font(AppText.label).foregroundStyle(AppColors.muted)
                     }
 
                     Spacer().frame(height: AppSpacing.s16)
-                    AppButton("Add found parts", icon: "plus.circle", expand: true,
+                    AppButton(L.addFoundParts, icon: "plus.circle", expand: true,
                               onTap: active ? { router.push(.partyAddParts(party.id)) } : nil)
 
                     Spacer().frame(height: AppSpacing.s24)
-                    Text("Activity").font(AppText.h2).foregroundStyle(AppColors.ink)
+                    Text(L.activity).font(AppText.h2).foregroundStyle(AppColors.ink)
                     Spacer().frame(height: AppSpacing.s8)
                     if vm.feed.isEmpty {
-                        Text("No parts added yet.").font(AppText.caption).foregroundStyle(AppColors.muted)
+                        Text(L.noActivity).font(AppText.caption).foregroundStyle(AppColors.muted)
                     } else {
                         ForEach(vm.feed) { c in
                             ActivityItem(who: vm.memberName(c.memberId), contribution: c)
@@ -99,7 +117,7 @@ struct PartyView: View {
 
                     if vm.isHost && active {
                         Spacer().frame(height: AppSpacing.s24)
-                        AppButton("End party", variant: .ghost, icon: "stop.circle",
+                        AppButton(L.endParty, variant: .ghost, icon: "stop.circle",
                                   loading: vm.ending, expand: true,
                                   onTap: vm.ending ? nil : { confirmEnd = true })
                     }
@@ -110,41 +128,12 @@ struct PartyView: View {
         }
     }
 
-    // MARK: - Header
-
-    private func headerBar(showInvite: Bool) -> some View {
-        HStack {
-            Pressable(onTap: { back() }) {
-                Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
-            }
-            Spacer()
-            if showInvite {
-                Pressable(onTap: { router.push(.partyInvite(partyId)) }) {
-                    HStack(spacing: AppSpacing.s4) {
-                        Image(systemName: "person.badge.plus").font(.system(size: 18)).foregroundStyle(AppColors.info)
-                        Text("Invite").font(AppText.label).foregroundStyle(AppColors.info)
-                    }
-                    .padding(AppSpacing.s8)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.s12)
-        .padding(.vertical, AppSpacing.s8)
-    }
-
-    private func back() {
-        guard let vm else { router.pop(); return }
-        Task { await vm.reconcile(); router.pop() }
-    }
-
     private func end() {
         guard let vm else { return }
         Task {
             if await vm.endParty() { router.pop() }
         }
     }
-
-    private func memberCount(_ n: Int) -> String { n == 1 ? "1 member" : "\(n) members" }
 }
 
 /// One activity-feed row: "{who} added {what}" + a +qty pill.
@@ -159,7 +148,7 @@ private struct ActivityItem: View {
     var body: some View {
         AppCard(padding: AppSpacing.s12) {
             HStack(spacing: AppSpacing.s8) {
-                Text("\(who) added \(what)").font(AppText.body).foregroundStyle(AppColors.ink)
+                Text(L.activityLine(who: who, what: what)).font(AppText.body).foregroundStyle(AppColors.ink)
                 Spacer(minLength: AppSpacing.s8)
                 Text("+\(contribution.qty)")
                     .font(AppText.label).foregroundStyle(AppColors.success)

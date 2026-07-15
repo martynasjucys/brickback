@@ -34,27 +34,38 @@ struct PartTile: View {
         // tap so a held press opens detail without also incrementing.
         Button(action: handleTap) {
             VStack(spacing: AppSpacing.s4) {
+                // Fixed square image area — `Color.clear` holds the square regardless of the
+                // image's own aspect or a loading/error placeholder, so every tile's image
+                // region is identical; the part image just fits within it.
                 ZStack(alignment: .topTrailing) {
+                    Color.clear
                     partImage
-                        .frame(maxWidth: .infinity)
-                        .aspectRatio(1, contentMode: .fit)
                     if complete {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 18))
                             .foregroundStyle(AppColors.success)
                             .padding(2)
+                            .transition(.scale.combined(with: .opacity)) // pops in on completion
                     }
                 }
+                .frame(maxWidth: .infinity)
+                .aspectRatio(1, contentMode: .fit)
+                // Reserve space for two name lines + one number line so a 1-line name or a part
+                // with no number doesn't shrink the tile — every tile ends up the same height.
                 Text(part.partName)
                     .font(.system(size: 11))
                     .foregroundStyle(AppColors.ink)
-                    .lineLimit(2)
+                    .lineLimit(2, reservesSpace: true)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: .infinity)
-                if let num = part.partNum {
-                    Text(num).font(.system(size: 10)).foregroundStyle(AppColors.muted).lineLimit(1)
-                }
+                Text(part.partNum ?? "")
+                    .font(.system(size: 10)).foregroundStyle(AppColors.muted)
+                    .lineLimit(1, reservesSpace: true)
+                    .minimumScaleFactor(0.7) // shrink, don't truncate, at large Dynamic Type
                 Text("\(have)/\(part.neededQty)").font(AppText.label).foregroundStyle(countColor)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .contentTransition(.numericText()) // count rolls as it changes
             }
             .padding(AppSpacing.s8)
             .frame(maxWidth: .infinity)
@@ -65,6 +76,9 @@ struct PartTile: View {
                     .stroke(borderColor, lineWidth: (complete || started) ? 1.5 : 1)
             )
             .contentShape(RoundedRectangle(cornerRadius: AppRadius.md))
+            // Cross-fade the state colours, roll the count, and pop the checkmark as `have`
+            // changes — all instant under Reduce Motion.
+            .brickAnimation(Motion.state, value: have)
         }
         .buttonStyle(TilePressStyle())
         .simultaneousGesture(
@@ -74,6 +88,33 @@ struct PartTile: View {
                 onLongPress()
             }
         )
+        // VoiceOver: collapse the tile into one element reading "Brick 2×4, Red" · value "3 of 5,
+        // complete" · hint "adds one". Activate adds one; the detail sheet is a rotor **action**
+        // (a long-press gesture is impractical under VoiceOver). Apple's documented pattern for a
+        // custom control — the tile's rich content otherwise reads as "name, number, count".
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(complete ? [.isButton, .isSelected] : .isButton)
+        .accessibilityLabel(a11yLabel)
+        .accessibilityValue(a11yValue)
+        .accessibilityHint(L.a11yTileAddHint)
+        .accessibilityAction { onTap() }
+        .modifier(OptionalAccessibilityAction(enabled: onLongPress != nil, name: L.a11yDetails) {
+            onLongPress?()
+        })
+    }
+
+    /// "<part name>, <colour>" (or just the name when the tile has no colour, e.g. extras).
+    private var a11yLabel: String {
+        if let color = part.colorName, !color.isEmpty {
+            return L.a11yNameColor(name: part.partName, color: color)
+        }
+        return part.partName
+    }
+
+    /// "<have> of <needed>" — and ", complete" once every one is counted.
+    private var a11yValue: String {
+        complete ? L.a11yCountComplete(have: have, needed: part.neededQty)
+                 : L.a11yCount(have: have, needed: part.neededQty)
     }
 
     private func handleTap() {
@@ -94,6 +135,21 @@ struct PartTile: View {
             }
         } else {
             Image(systemName: "photo").foregroundStyle(AppColors.faint)
+        }
+    }
+}
+
+/// Adds a named VoiceOver action only when `enabled` (so extras tiles, which have no detail sheet,
+/// don't advertise a dead "Details" action).
+private struct OptionalAccessibilityAction: ViewModifier {
+    let enabled: Bool
+    let name: String
+    let action: () -> Void
+    func body(content: Content) -> some View {
+        if enabled {
+            content.accessibilityAction(named: Text(name), action)
+        } else {
+            content
         }
     }
 }
