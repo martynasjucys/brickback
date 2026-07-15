@@ -83,6 +83,10 @@ private struct SearchTab: View {
     @Bindable var router: Router
     @State private var query = ""
 
+    /// Tab-bar placement is an idiom decision, not a size-class one (a Max iPhone in landscape is
+    /// `.regular` but still gets the bottom bar), so key off the idiom.
+    static var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
+
     var body: some View {
         NavigationStack(path: $router.path) {
             CatalogSearchResults(query: query)
@@ -91,7 +95,11 @@ private struct SearchTab: View {
                 // catalog screens (set detail → parts / minifigs) all ride the native bar themselves
                 // (back chevron + inline title), so they must NOT be force-hidden here, or a deeper
                 // push loses its header entirely.
-                .toolbar(.hidden, for: .navigationBar)
+                //
+                // Only iPhone can hide it: there the search-role tab hosts the field in the tab bar
+                // itself. iPad renders the tab bar as a plain top pill with no field, so hiding the
+                // nav bar leaves `.searchable` nowhere to draw and the tab becomes a dead end.
+                .toolbar(Self.isPad ? .visible : .hidden, for: .navigationBar)
                 .navigationDestination(for: Route.self) { route in
                     RouteView(route: route)
                 }
