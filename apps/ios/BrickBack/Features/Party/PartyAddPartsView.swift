@@ -79,7 +79,6 @@ struct PartyAddPartsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(L.addFoundParts, onBack: { router.pop() })
             if let vm {
                 switch vm.phase {
                 case .loading:
@@ -95,6 +94,8 @@ struct PartyAddPartsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.addFoundParts)
+        .navigationBarTitleDisplayMode(.inline)
         .task {
             if vm == nil { vm = PartyAddPartsViewModel(partyId: partyId, repo: env.services.party) }
             await vm?.load()

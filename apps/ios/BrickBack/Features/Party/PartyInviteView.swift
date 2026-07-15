@@ -18,7 +18,6 @@ struct PartyInviteView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.invite, onBack: { router.pop() })
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -30,6 +29,8 @@ struct PartyInviteView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.invite)
+        .navigationBarTitleDisplayMode(.inline)
         .task(id: partyId) {
             state = .loading
             do {

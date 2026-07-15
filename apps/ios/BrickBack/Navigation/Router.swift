@@ -27,14 +27,19 @@ enum Route: Hashable {
     /// (`.setDetail`/`.setParts`/`.setMinifigs`) also keeps it so those screens look identical
     /// wherever they're opened (the search tab or the counting screen's ••• menu): native back
     /// chevron + inline title. The Profile settings pickers (`.appearance`/`.language`) do the same —
-    /// a single push off the Profile root, exactly like `.paywall`/`.signIn`. Keeping neighbours in a
+    /// a single push off the Profile root, exactly like `.paywall`/`.signIn`. The party family
+    /// (`.party`/`.partyJoin`/`.partyInvite`/`.partyAddParts`) keeps it too: `.party` is dual-entry
+    /// (the Party tab's join flow and the counting screen's "host" action), so it has to agree with
+    /// `.rebuild` on the Home stack as well as with its own siblings. Keeping neighbours in a
     /// stack consistent also avoids the SwiftUI glitch where toggling nav-bar visibility between
-    /// pushes corrupts the returning screen's header.
+    /// pushes corrupts the returning screen's header. Only *pushed* destinations need to agree — a
+    /// tab root may still hide the bar and draw its own brand plate (Party and Profile both do).
     var hidesNavBar: Bool {
         switch self {
         case .rebuild, .review, .report, .paywall, .signIn,
              .setDetail, .setParts, .setMinifigs,
-             .appearance, .language: return false
+             .appearance, .language,
+             .party, .partyJoin, .partyInvite, .partyAddParts: return false
         default: return true
         }
     }

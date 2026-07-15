@@ -14,6 +14,17 @@ struct PartyView: View {
 
     private var router: Router { activeRouter ?? env.homeRouter }
 
+    /// The native bar's inline title: the party's own name once loaded (the big content heading in a
+    /// compact form the bar keeps as you scroll), falling back to the generic label while it loads.
+    private var navTitle: String { vm?.party?.name ?? L.partyModeTitle }
+
+    /// Invite is only offered on a live, loaded party — an ended/paused one has nothing to invite
+    /// into, and a failed load has no party to invite to at all.
+    private var showInvite: Bool {
+        guard let vm, case .ready = vm.phase, let party = vm.party else { return false }
+        return party.isActive
+    }
+
     var body: some View {
         ZStack {
             AppColors.canvas.ignoresSafeArea()
@@ -22,15 +33,23 @@ struct PartyView: View {
                 case .loading:
                     ProgressView().tint(AppColors.primary)
                 case .failed(let message):
-                    VStack(spacing: 0) {
-                        headerBar(showInvite: false)
-                        EmptyState(title: L.couldntLoadParty, message: message, icon: "exclamationmark.triangle")
-                    }
+                    EmptyState(title: L.couldntLoadParty, message: message, icon: "exclamationmark.triangle")
                 case .ready:
                     content(vm: vm)
                 }
             } else {
                 ProgressView().tint(AppColors.primary)
+            }
+        }
+        .navigationTitle(navTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if showInvite {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { router.push(.partyInvite(partyId)) } label: {
+                        Label(L.invite, systemImage: "person.badge.plus")
+                    }
+                }
             }
         }
         .task {
@@ -56,7 +75,6 @@ struct PartyView: View {
         let party = vm.party!
         let active = party.isActive
         return VStack(alignment: .leading, spacing: 0) {
-            headerBar(showInvite: active)
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .firstTextBaseline) {
@@ -108,33 +126,6 @@ struct PartyView: View {
                 .padding(.bottom, AppSpacing.s24)
             }
         }
-    }
-
-    // MARK: - Header
-
-    private func headerBar(showInvite: Bool) -> some View {
-        HStack {
-            Pressable(onTap: { back() }) {
-                Image(systemName: "arrow.left").foregroundStyle(AppColors.ink).padding(AppSpacing.s4)
-            }
-            Spacer()
-            if showInvite {
-                Pressable(onTap: { router.push(.partyInvite(partyId)) }) {
-                    HStack(spacing: AppSpacing.s4) {
-                        Image(systemName: "person.badge.plus").font(.system(size: 18)).foregroundStyle(AppColors.info)
-                        Text(L.invite).font(AppText.label).foregroundStyle(AppColors.info)
-                    }
-                    .padding(AppSpacing.s8)
-                }
-            }
-        }
-        .padding(.horizontal, AppSpacing.s12)
-        .padding(.vertical, AppSpacing.s8)
-    }
-
-    private func back() {
-        guard let vm else { router.pop(); return }
-        Task { await vm.reconcile(); router.pop() }
     }
 
     private func end() {

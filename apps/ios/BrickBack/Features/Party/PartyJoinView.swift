@@ -16,7 +16,6 @@ struct PartyJoinView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.partyJoinTitle, onBack: { router.pop() })
             VStack(alignment: .leading, spacing: 0) {
                 Text(L.partyJoinSubtitle)
                     .font(AppText.body).foregroundStyle(AppColors.inkSoft)
@@ -52,6 +51,8 @@ struct PartyJoinView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.partyJoinTitle)
+        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             Task { @MainActor in try? await Task.sleep(for: .milliseconds(350)); focused = true }
         }
