@@ -267,6 +267,8 @@ enum L {
     static var partyJoinSubtitle: String { s("partyJoinSubtitle") }
     static var partyJoinCta: String { s("partyJoinCta") }
     static var partyJoinError: String { s("partyJoinError") }
+    static var partyJoinOffline: String { s("partyJoinOffline") }
+    static var partyJoinFailed: String { s("partyJoinFailed") }
     static func inviteTitle(_ name: String) -> String {
         String(localized: "inviteTitle", defaultValue: "Invite to \(name)", bundle: I18n.bundle, locale: I18n.locale)
     }

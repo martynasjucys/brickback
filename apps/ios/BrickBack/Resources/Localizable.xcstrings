@@ -3661,6 +3661,38 @@
         }
       }
     },
+    "partyJoinOffline": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You're offline. Check your connection and try again."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nesate prisijungę prie interneto. Patikrinkite ryšį ir bandykite dar kartą."
+          }
+        }
+      }
+    },
+    "partyJoinFailed": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't join that party. Try again."
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nepavyko prisijungti prie sesijos. Bandykite dar kartą."
+          }
+        }
+      }
+    },
     "inviteTitle": {
       "localizations": {
         "en": {

@@ -333,6 +333,10 @@ plain("partyJoinSubtitle", "Enter the code the host shared with you.",
 plain("partyJoinCta", "Join", "Prisijungti")
 plain("partyJoinError", "Couldn't find that party. Check the code.",
       "Tokia sesija nerasta. Patikrinkite kodą.")
+plain("partyJoinOffline", "You're offline. Check your connection and try again.",
+      "Nesate prisijungę prie interneto. Patikrinkite ryšį ir bandykite dar kartą.")
+plain("partyJoinFailed", "Couldn't join that party. Try again.",
+      "Nepavyko prisijungti prie sesijos. Bandykite dar kartą.")
 fmt("inviteTitle", "_ name: String", "Invite to \\(name)", "Invite to %@", "Pakvieskite į „%@“")
 plain("inviteSubtitle", "Scan the code or share the link to join the sort.",
       "Nuskenuokite kodą arba pasidalinkite nuoroda, kad prisijungtų.")

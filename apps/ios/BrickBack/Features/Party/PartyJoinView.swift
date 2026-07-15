@@ -72,10 +72,36 @@ struct PartyJoinView: View {
                 let party = try await env.services.party.joinParty(trimmed)
                 // Replace the code-entry screen so "back" from the hub returns to the tab root.
                 router.replaceTop(.party(party.id))
+            }
+            // Only a genuine "no such code" may blame the code. Guest sign-in, connectivity and
+            // decode failures all reach here too, and telling someone to check a code that was
+            // right sends them in circles — so each failure gets the message that names the thing
+            // they can actually act on.
+            catch PartyError.notFound {
+                fail(L.partyJoinError)
+            } catch let error as URLError where Self.isOffline(error) {
+                fail(L.partyJoinOffline)
             } catch {
-                self.error = L.partyJoinError
-                loading = false
+                fail(L.partyJoinFailed)
             }
         }
+    }
+
+    /// Only the can't-reach-the-network codes earn the connection copy. Other `URLError`s (a
+    /// malformed response, say) aren't the user's connection and fall through to the generic
+    /// message.
+    private static func isOffline(_ error: URLError) -> Bool {
+        switch error.code {
+        case .notConnectedToInternet, .networkConnectionLost, .cannotFindHost,
+             .cannotConnectToHost, .timedOut, .dataNotAllowed, .internationalRoamingOff:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func fail(_ message: String) {
+        error = message
+        loading = false
     }
 }

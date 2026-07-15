@@ -79,10 +79,22 @@ public final class SupabasePartyRemote: PartyRemote, @unchecked Sendable {
     }
 
     public func joinParty(_ code: String) async throws -> Party {
-        let data = try await client
-            .rpc("join_party", params: ["p_code": code])
-            .execute().data
-        return try Self.decodeRow(PartyRow.self, from: data).toModel()
+        do {
+            let data = try await client
+                .rpc("join_party", params: ["p_code": code])
+                .execute().data
+            return try Self.decodeRow(PartyRow.self, from: data).toModel()
+        } catch let error as PostgrestError where Self.isPartyNotFound(error) {
+            throw PartyError.notFound
+        }
+    }
+
+    /// `join_party` reports an unknown/ended code with `raise exception 'party not found'`. plpgsql
+    /// RAISE always surfaces as the catch-all SQLSTATE P0001, so the message is the only thing that
+    /// distinguishes it from any other server-side raise — match on both, and let anything else
+    /// propagate as itself rather than being mistaken for a bad code.
+    private static func isPartyNotFound(_ error: PostgrestError) -> Bool {
+        error.code == "P0001" && error.message.localizedCaseInsensitiveContains("party not found")
     }
 
     public func progress(_ partyId: String) async throws -> PartyProgress {
