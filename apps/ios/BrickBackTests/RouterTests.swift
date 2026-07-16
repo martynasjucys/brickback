@@ -3,7 +3,7 @@ import Foundation
 import BrickBackKit
 @testable import BrickBack
 
-/// The navigation layer's first tests (S8). `Router`/`Route`/`AppEnvironment` live in the app
+/// The navigation layer's first tests (S10). `Router`/`Route`/`AppEnvironment` live in the app
 /// target, so the 42 `BrickBackKit` tests can't reach them — this bundle exists to pin navigation
 /// behaviour *before* the adaptive-layout rework moves every router mutation into a split view.
 ///

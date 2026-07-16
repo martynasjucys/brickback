@@ -64,7 +64,7 @@ targets:
 
   # The app target's own tests. BrickBackKit has its own (`swift test`, 42 of them), but the kit is
   # pure domain/data — Router, Route and AppEnvironment live in the app, which had no test bundle at
-  # all until S8. Added to pin navigation behaviour before the adaptive-layout rework moves it.
+  # all until S10. Added to pin navigation behaviour before the adaptive-layout rework moves it.
   BrickBackTests:
     type: bundle.unit-test
     platform: iOS
