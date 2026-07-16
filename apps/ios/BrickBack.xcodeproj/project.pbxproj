@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		02788360CFB53FB663A2123C /* RouterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 990AEBF173007D308395FD6A /* RouterTests.swift */; };
 		050622B665AD90863B2E8ED2 /* L+Sections.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BB040A46DEE5F7E2A806DB0 /* L+Sections.swift */; };
 		0CE798036D20BBBA8D503C94 /* PartyLandingScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B77ED7EA5964A33A69ED3B9 /* PartyLandingScreen.swift */; };
 		0D5C055584BE845CE4CBC670 /* PartTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 131E5602E9431B332DB867CA /* PartTile.swift */; };
@@ -58,6 +59,16 @@
 		F6FFF66BC6A197AD3FF577EF /* NukeUI in Frameworks */ = {isa = PBXBuildFile; productRef = 7CA4C30743EB84D499196D10 /* NukeUI */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		8BBF1BE12720B9D3DC5BE935 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = E323FD4245DE4A16613652DE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B7A2D8592D08C3DC234ED8EC;
+			remoteInfo = BrickBack;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		00D4288FA2862F3E617CC288 /* Router.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Router.swift; sourceTree = "<group>"; };
 		06E8B4C833895BE00A142408 /* LocaleController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocaleController.swift; sourceTree = "<group>"; };
@@ -92,6 +103,7 @@
 		7D5E4A0B7ABBE76F58295D33 /* PartyJoinView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyJoinView.swift; sourceTree = "<group>"; };
 		84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */ = {isa = PBXFileReference; path = Secrets.xcconfig.example; sourceTree = "<group>"; };
 		923A877247FE3DC852A2D974 /* VerificationReportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VerificationReportView.swift; sourceTree = "<group>"; };
+		990AEBF173007D308395FD6A /* RouterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RouterTests.swift; sourceTree = "<group>"; };
 		A3B9881C4984EEBBC15CCA87 /* DisplayNameController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DisplayNameController.swift; sourceTree = "<group>"; };
 		A42FD04275F4E3F5A5A0CF19 /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		A6B75EB16D636E9E6D0A739A /* BrickBack.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = BrickBack.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -108,6 +120,7 @@
 		D426EE71408364787FC3DD8F /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		D8C9DE9497E66D729480E0BE /* PartyAddPartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyAddPartsView.swift; sourceTree = "<group>"; };
 		DAA6B0EC4CAE350186236C60 /* LoadState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadState.swift; sourceTree = "<group>"; };
+		DBD064A659911CC053F11409 /* BrickBackTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = BrickBackTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E897EE2D9CDDAE7293F8D8E9 /* L.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L.swift; sourceTree = "<group>"; };
 		F220B3D9A4277B55CF909786 /* ReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewViewModel.swift; sourceTree = "<group>"; };
 		F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Primitives.swift; sourceTree = "<group>"; };
@@ -176,6 +189,7 @@
 			isa = PBXGroup;
 			children = (
 				A6B75EB16D636E9E6D0A739A /* BrickBack.app */,
+				DBD064A659911CC053F11409 /* BrickBackTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -237,6 +251,14 @@
 				00D4288FA2862F3E617CC288 /* Router.swift */,
 			);
 			path = Navigation;
+			sourceTree = "<group>";
+		};
+		7F75E55E54D1C310E5696E9C /* BrickBackTests */ = {
+			isa = PBXGroup;
+			children = (
+				990AEBF173007D308395FD6A /* RouterTests.swift */,
+			);
+			path = BrickBackTests;
 			sourceTree = "<group>";
 		};
 		812EB1EE5696D4EA348E16B1 /* Review */ = {
@@ -323,6 +345,7 @@
 			isa = PBXGroup;
 			children = (
 				57BD5A061A6AED6153BDDE0E /* BrickBack */,
+				7F75E55E54D1C310E5696E9C /* BrickBackTests */,
 				B9C3E601A48A98DF5BC603C2 /* Packages */,
 				2C4625CE1F219B493F46839E /* Products */,
 			);
@@ -361,6 +384,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		AA72C38D2C53625CBBA65EF3 /* BrickBackTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AEE633EAB77D08D6D6A452EA /* Build configuration list for PBXNativeTarget "BrickBackTests" */;
+			buildPhases = (
+				C0D53BF0A14A4D19D618993F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A0BEDCF36039CA9D737C6B39 /* PBXTargetDependency */,
+			);
+			name = BrickBackTests;
+			packageProductDependencies = (
+			);
+			productName = BrickBackTests;
+			productReference = DBD064A659911CC053F11409 /* BrickBackTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		B7A2D8592D08C3DC234ED8EC /* BrickBack */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A3B1639F3A341A787A0B6F86 /* Build configuration list for PBXNativeTarget "BrickBack" */;
@@ -391,6 +432,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					AA72C38D2C53625CBBA65EF3 = {
+						DevelopmentTeam = 2ZK892FL89;
+						ProvisioningStyle = Automatic;
+					};
 					B7A2D8592D08C3DC234ED8EC = {
 						DevelopmentTeam = 2ZK892FL89;
 						ProvisioningStyle = Automatic;
@@ -417,6 +462,7 @@
 			projectRoot = "";
 			targets = (
 				B7A2D8592D08C3DC234ED8EC /* BrickBack */,
+				AA72C38D2C53625CBBA65EF3 /* BrickBackTests */,
 			);
 		};
 /* End PBXProject section */
@@ -486,7 +532,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C0D53BF0A14A4D19D618993F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				02788360CFB53FB663A2123C /* RouterTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A0BEDCF36039CA9D737C6B39 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B7A2D8592D08C3DC234ED8EC /* BrickBack */;
+			targetProxy = 8BBF1BE12720B9D3DC5BE935 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		08A645C672820DEE049D66EF /* Debug */ = {
@@ -555,6 +617,24 @@
 			};
 			name = Debug;
 		};
+		71D770A3AD667806646BEB6C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.brickback.brickback.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BrickBack.app/BrickBack";
+			};
+			name = Debug;
+		};
 		B0296F0B615893B87D5111A7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = A42FD04275F4E3F5A5A0CF19 /* Debug.xcconfig */;
@@ -578,6 +658,24 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		BEF8C3D4C5A813F99389386F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.brickback.brickback.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/BrickBack.app/BrickBack";
+			};
+			name = Release;
 		};
 		C2E4C6E5E0B607F0EDC58A09 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -670,6 +768,15 @@
 			buildConfigurations = (
 				B0296F0B615893B87D5111A7 /* Debug */,
 				E430703F1ED74F12D1CD43A0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		AEE633EAB77D08D6D6A452EA /* Build configuration list for PBXNativeTarget "BrickBackTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				71D770A3AD667806646BEB6C /* Debug */,
+				BEF8C3D4C5A813F99389386F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

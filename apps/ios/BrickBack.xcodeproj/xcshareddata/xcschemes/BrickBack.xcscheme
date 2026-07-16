@@ -21,6 +21,20 @@
                ReferencedContainer = "container:BrickBack.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AA72C38D2C53625CBBA65EF3"
+               BuildableName = "BrickBackTests.xctest"
+               BlueprintName = "BrickBackTests"
+               ReferencedContainer = "container:BrickBack.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,6 +53,17 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AA72C38D2C53625CBBA65EF3"
+               BuildableName = "BrickBackTests.xctest"
+               BlueprintName = "BrickBackTests"
+               ReferencedContainer = "container:BrickBack.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
       <CommandLineArguments>
       </CommandLineArguments>

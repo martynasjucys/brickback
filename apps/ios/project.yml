@@ -62,12 +62,31 @@ targets:
         CURRENT_PROJECT_VERSION: 1
         MARKETING_VERSION: "0.1.0"
 
+  # The app target's own tests. BrickBackKit has its own (`swift test`, 42 of them), but the kit is
+  # pure domain/data — Router, Route and AppEnvironment live in the app, which had no test bundle at
+  # all until S8. Added to pin navigation behaviour before the adaptive-layout rework moves it.
+  BrickBackTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: BrickBackTests
+    dependencies:
+      - target: BrickBack
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.brickback.brickback.tests
+        GENERATE_INFOPLIST_FILE: YES
+
 schemes:
   BrickBack:
     build:
       targets:
         BrickBack: all
+        BrickBackTests: [test]
     run:
       config: Debug
     test:
       config: Debug
+      targets:
+        - BrickBackTests

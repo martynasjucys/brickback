@@ -126,7 +126,9 @@ final class AppEnvironment {
 
     /// Once a session exists, collapse any sign-in / paywall screen still on a stack so the user
     /// lands back where they started (mirrors the Flutter "bounce away from sign-in").
-    private func dismissAuthScreens() {
+    /// Internal, not private, so `BrickBackTests` can pin it — `@testable` raises `internal`, not
+    /// `private`. Still module-scoped; nothing outside the app target can see it.
+    func dismissAuthScreens() {
         for router in [homeRouter, partyRouter, profileRouter, searchRouter] {
             while let last = router.path.last, last == .signIn || last == .paywall {
                 router.pop()
