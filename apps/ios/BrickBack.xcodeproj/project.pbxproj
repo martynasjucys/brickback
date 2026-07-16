@@ -14,6 +14,7 @@
 		14082D1E143615AD4B225E32 /* RebuildView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 633A02930FB4ED5237080558 /* RebuildView.swift */; };
 		160D46A66951553CC219CC0A /* SetMinifigsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78B59F0D65B4DFB3F354864F /* SetMinifigsScreen.swift */; };
 		1DFD1A6DD1A7AF4836E1E624 /* SetPartsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 73FC3A86D02A8D3B7A440061 /* SetPartsScreen.swift */; };
+		2973E6EA53271135CB2A6EB7 /* RootShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C1BDEF29CE5E6C7C4F218E5 /* RootShell.swift */; };
 		2AA586332AA4FEBEE4897B13 /* DisplayNameController.swift in Sources */ = {isa = PBXBuildFile; fileRef = A3B9881C4984EEBBC15CCA87 /* DisplayNameController.swift */; };
 		2FC8F508BDECF73CC7ACFD1B /* Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FE4EB6806C761C92697613C /* Tokens.swift */; };
 		3169F0E63A3851F69C2AFE52 /* SettingsPickerScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CF9B0104219F1B8AFF5C47C /* SettingsPickerScreen.swift */; };
@@ -43,7 +44,6 @@
 		99A5C878F26273039F63DC17 /* RebuildSheets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5985729F4D5316B01B84CBA1 /* RebuildSheets.swift */; };
 		9E000264942D9D2725C1681C /* PartyAddPartsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8C9DE9497E66D729480E0BE /* PartyAddPartsView.swift */; };
 		9F4C1CA0A434F44DE5FBA6DA /* ReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43FCBAA4ECF6ABD0CFCE15C5 /* ReviewView.swift */; };
-		A91D9A694B815864A9BD05AA /* RootTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD035666999A65E898B62A56 /* RootTabView.swift */; };
 		BDF07383BD8F1CBFF6D32038 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4E67D880D540AC55894A7181 /* Assets.xcassets */; };
 		BFA482C5F8225754987DAA77 /* ReviewViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F220B3D9A4277B55CF909786 /* ReviewViewModel.swift */; };
 		D06B4D0AA92EFFDA9369ADA8 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40FC2187EFE55CB24A51F26D /* AppEnvironment.swift */; };
@@ -77,6 +77,7 @@
 		18729E0FD83A03C3CEB9F01E /* ImageCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCache.swift; sourceTree = "<group>"; };
 		19546E50D1239498DD1FD16F /* SearchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchScreen.swift; sourceTree = "<group>"; };
 		1B77ED7EA5964A33A69ED3B9 /* PartyLandingScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyLandingScreen.swift; sourceTree = "<group>"; };
+		1C1BDEF29CE5E6C7C4F218E5 /* RootShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootShell.swift; sourceTree = "<group>"; };
 		278E70934294A7B3834226E6 /* PartyAvatar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyAvatar.swift; sourceTree = "<group>"; };
 		2FE4EB6806C761C92697613C /* Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tokens.swift; sourceTree = "<group>"; };
 		34FF419B3A8C4208DF99DDD8 /* ProfileScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileScreen.swift; sourceTree = "<group>"; };
@@ -114,7 +115,6 @@
 		BD7B296F2F18F57BBAA2A727 /* PartyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyView.swift; sourceTree = "<group>"; };
 		C5C02FB75C71B1A99A08F452 /* BrickBackKit */ = {isa = PBXFileReference; lastKnownFileType = folder; name = BrickBackKit; path = BrickBackKit; sourceTree = SOURCE_ROOT; };
 		C988995BB8097446496D700C /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
-		CD035666999A65E898B62A56 /* RootTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTabView.swift; sourceTree = "<group>"; };
 		CDD689AE1F0C1C11C4BF9F2B /* BrickBackApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrickBackApp.swift; sourceTree = "<group>"; };
 		D426EE71408364787FC3DD8F /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		D8C9DE9497E66D729480E0BE /* PartyAddPartsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PartyAddPartsView.swift; sourceTree = "<group>"; };
@@ -236,7 +236,7 @@
 		6A2E76356EAF0E5616AB3156 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
-				CD035666999A65E898B62A56 /* RootTabView.swift */,
+				1C1BDEF29CE5E6C7C4F218E5 /* RootShell.swift */,
 				00D4288FA2862F3E617CC288 /* Router.swift */,
 			);
 			path = Navigation;
@@ -505,7 +505,7 @@
 				7CC84346248940C7504B2822 /* ReportViewModel.swift in Sources */,
 				9F4C1CA0A434F44DE5FBA6DA /* ReviewView.swift in Sources */,
 				BFA482C5F8225754987DAA77 /* ReviewViewModel.swift in Sources */,
-				A91D9A694B815864A9BD05AA /* RootTabView.swift in Sources */,
+				2973E6EA53271135CB2A6EB7 /* RootShell.swift in Sources */,
 				70EAE9ABC9B80E7515FFC4BF /* Router.swift in Sources */,
 				F5090E2878FCDC4C8EE33082 /* SearchScreen.swift in Sources */,
 				78789B2601298A40834D26B5 /* SetDetailScreen.swift in Sources */,

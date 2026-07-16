@@ -283,13 +283,9 @@ private struct StartSortingButton: View {
                 // S9: eagerly cache this set's images for offline while we're still online.
                 Task { await env.services.offlineImages.ensureCached(id) }
                 loading = false
-                // Starting the build ends the "add set" flow. Clear the stack we came in on
-                // (the search tab on iOS 18+, or Home on iOS 17) so returning to search is clean,
-                // then open counting on the Rebuilds tab — so Back from counting lands on Home.
-                router.popToRoot()
-                env.selectedTab = 0
-                env.homeRouter.popToRoot()
-                env.homeRouter.push(.rebuild(id))
+                // Starting the build ends the "add set" flow: clear the stack we came in on and
+                // open counting over on Rebuilds.
+                env.openRebuild(id, clearing: router)
             } catch {
                 loading = false
                 errorMessage = "\(error)"

@@ -12,10 +12,9 @@ final class AppEnvironment {
     let homeRouter = Router()
     let partyRouter = Router()
     let profileRouter = Router()
-    /// The catalog-search stack. On iOS 18+ search is its own `role: .search` tab (a native,
-    /// expandable button on the tab bar's trailing edge), so its pushes (set detail → parts …)
-    /// live on their own stack. On iOS 17 search is pushed onto `homeRouter` instead and this is
-    /// unused. See `RootTabView`.
+    /// The catalog-search stack. Search is its own section — a `role: .search` tab on compact, a
+    /// sidebar row on regular — so its pushes (set detail → parts …) live on their own stack.
+    /// See `RootShell`.
     let searchRouter = Router()
     let sync: SyncController
 
@@ -31,17 +30,38 @@ final class AppEnvironment {
     /// name); editable in Profile. Rides into the anonymous guest session's metadata on join.
     let displayName = DisplayNameController()
 
-    /// Selected tab (0 = Rebuilds, 1 = Party, 2 = Profile, 3 = Search on iOS 18+). Held here (not
-    /// view `@State`) so it — like the routers — survives the language-switch view-tree rebuild
-    /// keyed on `locale.language`.
-    var selectedTab = 0
+    /// The section the shell is showing — a tab on compact, a sidebar row on regular. Held here
+    /// (not view `@State`) so it — like the routers — survives the language-switch view-tree
+    /// rebuild keyed on `locale.language`.
+    var selectedSection: AppSection = .rebuilds
 
-    /// The `role: .search` tab's selection value. Sits after the three main tabs.
-    static let searchTab = 3
-
-    /// Open catalog search — selects the native search tab, which expands its own search field.
+    /// Open catalog search — selects the search section, which hosts its own field.
     func openSearch() {
-        selectedTab = Self.searchTab
+        selectedSection = .search
+    }
+
+    /// Hand the user off from the add-a-set flow to counting the set they just added: clear the
+    /// stack they came in on (so returning to search is clean), then open counting on Rebuilds —
+    /// where Back lands on Home rather than back in the catalog.
+    ///
+    /// The app's only cross-stack hand-off, and the trickiest transition in the shell: on regular
+    /// width it swaps the sidebar selection *and* the detail column. It lives here rather than in
+    /// the button that calls it precisely so it can be tested.
+    ///
+    /// **The push has to land a turn late, and that is load-bearing.** In the sidebar shell only
+    /// the selected section's `NavigationStack` is mounted, so switching to Rebuilds *builds* one —
+    /// and a `NavigationStack` created in the same update that makes its path non-empty silently
+    /// ignores the seeded path and renders its root. No warning, and the path is left intact, which
+    /// is what makes it so confusing live: `homeRouter.path` reads `[.rebuild(id)]` while the screen
+    /// shows Home. (Verified on the iPad 18.6 sim: pushing in-line lands on Home; hopping one turn
+    /// lands on counting. A stack that is *already* mounted takes a push immediately — hence the
+    /// hop, not a redesign.) So: select the section, let the shell mount its stack, then push.
+    /// Harmless on compact, where `TabView` keeps all four mounted and this is just a turn's delay.
+    func openRebuild(_ id: String, clearing origin: Router?) {
+        origin?.popToRoot()
+        selectedSection = .rebuilds
+        homeRouter.popToRoot()
+        Task { @MainActor in homeRouter.push(.rebuild(id)) }
     }
 
     /// Premium unlock + free-cap source of truth (S5). Observed by the paywall/profile; read

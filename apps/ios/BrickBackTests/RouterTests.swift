@@ -84,14 +84,62 @@ struct AppEnvironmentNavigationTests {
         return AppEnvironment(services: services)
     }
 
-    /// On iOS 18+ search is its own `role: .search` tab, so opening it is a tab selection and must
-    /// NOT push. (The iOS 17 branch pushes `.search` onto Home instead; these tests run on 18+.)
-    @Test("openSearch selects the search tab without pushing")
-    func openSearchSelectsTab() throws {
+    /// Search is its own section, so opening it is a selection change and must NOT push.
+    @Test("openSearch selects the search section without pushing")
+    func openSearchSelectsSection() throws {
         let env = try Self.makeEnv()
         env.openSearch()
-        #expect(env.selectedTab == AppEnvironment.searchTab)
+        #expect(env.selectedSection == .search)
         #expect(env.homeRouter.path.isEmpty)
+    }
+
+    /// The one cross-stack hand-off (`StartSortingButton`): it has to clear the stack the user was
+    /// on, move the shell to Rebuilds, and leave counting as the *only* thing on Home's stack — on
+    /// regular width that's a sidebar swap plus a detail-column swap in one shot.
+    @Test("openRebuild clears the origin stack and opens counting on Rebuilds")
+    func openRebuildHandsOffToRebuilds() async throws {
+        let env = try Self.makeEnv()
+        env.selectedSection = .search
+        env.searchRouter.path = [.setDetail(1)]
+        env.homeRouter.path = [.rebuild("stale"), .review("stale")]
+
+        env.openRebuild("new", clearing: env.searchRouter)
+
+        // The section swap is immediate — the shell has to mount Rebuilds' stack before the push.
+        #expect(env.selectedSection == .rebuilds)
+        #expect(env.searchRouter.path.isEmpty)
+
+        await Task.yield()
+        // Not appended to what was already there: Back from counting must land on Home.
+        #expect(env.homeRouter.path == [.rebuild("new")])
+    }
+
+    /// Pins the deferral itself, because it looks like a bug and reads like one: the push lands a
+    /// turn late *on purpose*. A stack mounted in the same update that seeds its path renders its
+    /// root and ignores the path, so `openRebuild` selects the section, lets the shell mount, and
+    /// only then pushes. Anyone "simplifying" this to an in-line push breaks Start sorting on iPad
+    /// in a way no test but this one would catch.
+    @Test("openRebuild defers the push until after the section swap")
+    func openRebuildDefersThePush() async throws {
+        let env = try Self.makeEnv()
+        env.selectedSection = .search
+
+        env.openRebuild("new", clearing: env.searchRouter)
+        #expect(env.homeRouter.path.isEmpty) // not yet — the stack has to mount first
+
+        await Task.yield()
+        #expect(env.homeRouter.path == [.rebuild("new")])
+    }
+
+    /// The origin can *be* Home — entering set detail from the Rebuilds stack rather than search.
+    /// Clearing then pushing on the same router still has to leave exactly one entry.
+    @Test("openRebuild handles Home as its own origin")
+    func openRebuildFromHomeOrigin() async throws {
+        let env = try Self.makeEnv()
+        env.homeRouter.path = [.setDetail(1)]
+        env.openRebuild("new", clearing: env.homeRouter)
+        await Task.yield()
+        #expect(env.homeRouter.path == [.rebuild("new")])
     }
 
     /// Fires from the auth stream on sign-in, and mutates all four routers — including ones the
