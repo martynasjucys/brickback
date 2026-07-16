@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../catalog/catalog_models.dart';
 import '../catalog/catalog_repository.dart';
 
@@ -42,7 +43,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: ReadableColumn(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ScreenHeader(context.l10n.addASet, onBack: () => Navigator.of(context).maybePop()),
@@ -59,11 +61,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             Expanded(child: _results()),
           ],
         ),
+        ),
       ),
     );
   }
 
   Widget _results() {
+    final c = BrickColors.of(context);
     if (_query.length < 2) {
       return EmptyState(
         icon: Icons.search,
@@ -73,7 +77,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
     final results = ref.watch(searchProvider(_query));
     return results.when(
-      loading: () => const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      loading: () => Center(child: CircularProgressIndicator(color: c.primary)),
       error: (e, _) => EmptyState(
         icon: Icons.error_outline,
         title: context.l10n.searchFailedTitle,
@@ -102,6 +106,7 @@ class _ResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final meta = [
       result.ref,
       if (result.year != null && result.year != 0) '${result.year}',
@@ -128,7 +133,7 @@ class _ResultTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.s8),
-            const Icon(Icons.chevron_right, color: AppColors.muted),
+            Icon(Icons.chevron_right, color: c.muted),
           ],
         ),
       ),

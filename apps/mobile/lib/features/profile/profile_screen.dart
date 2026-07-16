@@ -8,6 +8,7 @@ import '../../core/sync/sync_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../auth/auth_repository.dart';
 
 /// Profile / Settings tab. The sign-in + premium-sync hub. Local-first: signed
@@ -17,6 +18,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     // Rebuild on any auth change (sign-in / sign-out / token refresh).
     ref.watch(authStateProvider);
     final user = ref.read(authRepositoryProvider).currentUser;
@@ -24,7 +26,8 @@ class ProfileScreen extends ConsumerWidget {
     final isPremium = ref.watch(isPremiumProvider);
 
     return SafeArea(
-      child: ListView(
+      child: ReadableColumn(
+        child: ListView(
         children: [
           ScreenHeader(context.l10n.profileTitle),
           Padding(
@@ -54,7 +57,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       AppBadge(
                         isPremium ? context.l10n.premium : context.l10n.free,
-                        color: isPremium ? AppColors.primary : null,
+                        color: isPremium ? c.primary : null,
                       ),
                     ],
                   ),
@@ -76,6 +79,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -164,13 +168,14 @@ class _PartyCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.groups_2_outlined, size: 18, color: AppColors.ink),
+              Icon(Icons.groups_2_outlined, size: 18, color: c.ink),
               const SizedBox(width: AppSpacing.s8),
               Text(context.l10n.partyModeTitle, style: AppText.title),
             ],
@@ -196,6 +201,7 @@ class _LanguageCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final current = ref.watch(localeControllerProvider).languageCode;
     return AppCard(
       child: Column(
@@ -203,7 +209,7 @@ class _LanguageCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.language, size: 18, color: AppColors.ink),
+              Icon(Icons.language, size: 18, color: c.ink),
               const SizedBox(width: AppSpacing.s8),
               Text(context.l10n.language, style: AppText.title),
             ],
@@ -242,27 +248,28 @@ class _LangOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.card,
+          color: selected ? c.primary : c.card,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: selected ? AppColors.primary : AppColors.line),
+          border: Border.all(color: selected ? c.primary : c.line),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              const Icon(Icons.check, size: 16, color: AppColors.onPrimary),
+              Icon(Icons.check, size: 16, color: c.onPrimary),
               const SizedBox(width: 6),
             ],
             Text(
               label,
               style: AppText.label
-                  .copyWith(color: selected ? AppColors.onPrimary : AppColors.ink),
+                  .copyWith(color: selected ? c.onPrimary : c.ink),
             ),
           ],
         ),

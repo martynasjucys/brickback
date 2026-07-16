@@ -53,11 +53,12 @@
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
+	<!-- F3: the phone stays portrait-locked (a landscape iPhone would otherwise clear
+	     the ~640pt wide breakpoint and flip into the tablet sidebar shell). The iPad
+	     allows all four orientations — landscape is in scope there. -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>

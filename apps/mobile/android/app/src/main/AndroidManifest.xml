@@ -4,6 +4,11 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round">
+        <!-- F3 orientation policy: the app allows all orientations so tablets get
+             landscape (the tablet requirement). A manifest can't lock orientation by
+             device idiom, and the phone portrait-lock the iOS Info.plist applies would
+             need runtime SystemChrome in lib/app.dart (out of this phase's scope), so
+             Android phones are left free to rotate. iOS is the F3 verification target. -->
         <activity
             android:name=".MainActivity"
             android:exported="true"

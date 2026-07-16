@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../rebuild/rebuild_repository.dart';
 import 'party_avatar.dart';
 import 'party_models.dart';
@@ -138,9 +139,10 @@ class _PartyScreenState extends ConsumerState<PartyScreen> {
   }
 
   Future<void> _confirmEnd() async {
+    final c = BrickColors.of(context);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
@@ -184,28 +186,32 @@ class _PartyScreenState extends ConsumerState<PartyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
-        child: _loading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-            : _error != null
-                ? Column(children: [
-                    _HeaderBar(partyId: widget.partyId, onBack: _onBack, showInvite: false),
-                    Expanded(
-                      child: EmptyState(
-                        icon: Icons.error_outline,
-                        title: context.l10n.partyCouldntLoad,
-                        message: _error,
+        child: ReadableColumn(
+          child: _loading
+              ? Center(child: CircularProgressIndicator(color: c.primary))
+              : _error != null
+                  ? Column(children: [
+                      _HeaderBar(partyId: widget.partyId, onBack: _onBack, showInvite: false),
+                      Expanded(
+                        child: EmptyState(
+                          icon: Icons.error_outline,
+                          title: context.l10n.partyCouldntLoad,
+                          message: _error,
+                        ),
                       ),
-                    ),
-                  ])
-                : _content(),
+                    ])
+                  : _content(),
+        ),
       ),
     );
   }
 
   Widget _content() {
+    final c = BrickColors.of(context);
     final party = _party!;
     final active = party.isActive;
     return Column(
@@ -223,7 +229,7 @@ class _PartyScreenState extends ConsumerState<PartyScreen> {
                   if (!active)
                     AppBadge(
                       party.status == 'ended' ? context.l10n.partyStatusEnded : context.l10n.partyStatusPaused,
-                      color: AppColors.warning,
+                      color: c.warning,
                     ),
                 ],
               ),
@@ -245,7 +251,7 @@ class _PartyScreenState extends ConsumerState<PartyScreen> {
                   AvatarStack(members: _members),
                   const SizedBox(width: AppSpacing.s8),
                   Text(context.l10n.partyMemberCount(_members.length),
-                      style: AppText.label.copyWith(color: AppColors.muted)),
+                      style: AppText.label.copyWith(color: c.muted)),
                 ],
               ),
               const SizedBox(height: AppSpacing.s16),
@@ -260,7 +266,7 @@ class _PartyScreenState extends ConsumerState<PartyScreen> {
               const SizedBox(height: AppSpacing.s8),
               if (_feed.isEmpty)
                 Text(context.l10n.partyNoActivity,
-                    style: AppText.caption.copyWith(color: AppColors.muted))
+                    style: AppText.caption.copyWith(color: c.muted))
               else
                 ..._feed.map((c) => _ActivityItem(who: _memberName(c.memberId), contribution: c)),
               if (_isHost && active) ...[
@@ -290,12 +296,13 @@ class _HeaderBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.s12, AppSpacing.s8, AppSpacing.screen, AppSpacing.s8),
       child: Row(
         children: [
-          Pressable(onTap: onBack, child: const Icon(Icons.arrow_back, color: AppColors.ink)),
+          Pressable(onTap: onBack, child: Icon(Icons.arrow_back, color: c.ink)),
           const Spacer(),
           if (showInvite)
             Pressable(
@@ -303,10 +310,10 @@ class _HeaderBar extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.s8),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  const Icon(Icons.person_add_alt_1, size: 18, color: AppColors.info),
+                  Icon(Icons.person_add_alt_1, size: 18, color: c.info),
                   const SizedBox(width: AppSpacing.s4),
                   Text(context.l10n.partyInvite,
-                      style: AppText.label.copyWith(color: AppColors.info)),
+                      style: AppText.label.copyWith(color: c.info)),
                 ]),
               ),
             ),
@@ -323,6 +330,7 @@ class _ActivityItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bc = BrickColors.of(context);
     final c = contribution;
     final what = c.colorName == null ? c.partName : '${c.colorName} ${c.partName}';
     return Padding(
@@ -336,10 +344,10 @@ class _ActivityItem extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8, vertical: AppSpacing.s4),
               decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.12),
+                color: bc.success.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.pill),
               ),
-              child: Text('+${c.qty}', style: AppText.label.copyWith(color: AppColors.success)),
+              child: Text('+${c.qty}', style: AppText.label.copyWith(color: bc.success)),
             ),
           ],
         ),

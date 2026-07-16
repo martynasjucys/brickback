@@ -7,6 +7,7 @@ import '../../core/sync/sync_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../rebuild/rebuild_models.dart';
 import '../rebuild/rebuild_repository.dart';
 
@@ -17,9 +18,11 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final list = ref.watch(rebuildListProvider);
     return SafeArea(
-      child: Column(
+      child: ReadableColumn(
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ScreenHeader(
@@ -34,7 +37,7 @@ class HomeScreen extends ConsumerWidget {
           Expanded(
             child: list.when(
               loading: () =>
-                  const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  Center(child: CircularProgressIndicator(color: c.primary)),
               error: (e, _) =>
                   EmptyState(icon: Icons.error_outline, title: context.l10n.couldntLoad, message: '$e'),
               data: (rebuilds) => rebuilds.isEmpty
@@ -52,6 +55,7 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -108,6 +112,7 @@ class _ContinueCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final pct = (rebuild.progress * 100).round();
     return Pressable(
       onTap: () => context.push('/rebuild/${rebuild.id}'),
@@ -115,9 +120,9 @@ class _ContinueCard extends StatelessWidget {
         width: 236,
         padding: const EdgeInsets.all(AppSpacing.s12),
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: AppColors.line),
+          border: Border.all(color: c.line),
         ),
         child: Row(
           children: [
@@ -160,6 +165,7 @@ class _RebuildCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final pct = (rebuild.progress * 100).round();
     return Slidable(
       key: ValueKey(rebuild.id),
@@ -170,16 +176,16 @@ class _RebuildCard extends ConsumerWidget {
         children: [
           CustomSlidableAction(
             onPressed: (_) => _remove(ref),
-            backgroundColor: AppColors.danger,
-            foregroundColor: AppColors.onPrimary,
+            backgroundColor: c.danger,
+            foregroundColor: c.onPrimary,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.delete_outline_rounded, size: 22, color: AppColors.onPrimary),
+                Icon(Icons.delete_outline_rounded, size: 22, color: c.onPrimary),
                 const SizedBox(height: AppSpacing.s4),
                 Text(context.l10n.remove,
-                    style: AppText.caption.copyWith(color: AppColors.onPrimary)),
+                    style: AppText.caption.copyWith(color: c.onPrimary)),
               ],
             ),
           ),
@@ -203,7 +209,7 @@ class _RebuildCard extends ConsumerWidget {
                       ),
                       if (rebuild.verified) ...[
                         const SizedBox(width: AppSpacing.s8),
-                        AppBadge(context.l10n.verifiedBadge, color: AppColors.success),
+                        AppBadge(context.l10n.verifiedBadge, color: c.success),
                       ],
                     ],
                   ),
@@ -213,7 +219,7 @@ class _RebuildCard extends ConsumerWidget {
                         ? context.l10n.completeParts(rebuild.totalParts)
                         : context.l10n.partsProgress(rebuild.haveTotal, rebuild.totalParts, pct),
                     style: AppText.caption.copyWith(
-                      color: rebuild.complete ? AppColors.success : AppColors.inkSoft,
+                      color: rebuild.complete ? c.success : c.inkSoft,
                     ),
                   ),
                 ],

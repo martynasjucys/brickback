@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import 'auth_repository.dart';
 
 /// `/sign-in` — the premium-sync entry point. Local-first, so this is only
@@ -58,10 +59,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
-        child: ListView(
+        child: ReadableColumn(
+          child: ListView(
           children: [
             ScreenHeader(context.l10n.signInTitle, onBack: () => Navigator.of(context).maybePop()),
             Padding(
@@ -101,12 +104,12 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const SizedBox(height: AppSpacing.s24),
                   Row(
                     children: [
-                      const Expanded(child: Divider(color: AppColors.line)),
+                      Expanded(child: Divider(color: c.line)),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
                         child: Text(context.l10n.orDivider, style: AppText.caption),
                       ),
-                      const Expanded(child: Divider(color: AppColors.line)),
+                      Expanded(child: Divider(color: c.line)),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s16),
@@ -127,24 +130,25 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                     const SizedBox(height: AppSpacing.s12),
                     Text(
                       context.l10n.emailSentConfirm,
-                      style: AppText.caption.copyWith(color: AppColors.success),
+                      style: AppText.caption.copyWith(color: c.success),
                     ),
                   ],
                   if (_error != null) ...[
                     const SizedBox(height: AppSpacing.s12),
                     Text('$_error',
-                        style: AppText.caption.copyWith(color: AppColors.danger)),
+                        style: AppText.caption.copyWith(color: c.danger)),
                   ],
                   const SizedBox(height: AppSpacing.s24),
                   Text(
                     context.l10n.signInFooter,
-                    style: AppText.caption.copyWith(color: AppColors.muted),
+                    style: AppText.caption.copyWith(color: c.muted),
                     textAlign: TextAlign.center,
                   ),
                 ],
               ),
             ),
           ],
+        ),
         ),
       ),
     );

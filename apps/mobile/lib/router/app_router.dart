@@ -25,8 +25,16 @@ import '../widgets/design_gallery.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 
-/// Root-navigator screens render their own `ColoredBox`/`SafeArea` chrome without
-/// a `Scaffold`, so wrap them in a transparent [Material]. Without a Material
+/// The detail-pane navigator (F3). All routes — the bottom-tab [AppShell] and the
+/// deep routes pushed on top of it — live under the top-level [AdaptiveShell]
+/// `ShellRoute`, so on a wide iPad a third-level push renders **inside** the detail
+/// pane beside the persistent sidebar, while on the phone it is (as before) a
+/// full-screen push over the tab shell. The container is width-conditional; the
+/// route tree is not, so screen navigation calls are identical in both shells.
+final _shellKey = GlobalKey<NavigatorState>();
+
+/// Detail-pane screens render their own `ColoredBox`/`SafeArea` chrome without a
+/// `Scaffold`, so wrap them in a transparent [Material]. Without a Material
 /// ancestor, `Text` falls back to the framework's yellow-underlined debug style.
 /// The tab screens don't need this — [AppShell] already provides a `Scaffold`.
 Widget _rootPage(Widget child) => Material(type: MaterialType.transparency, child: child);
@@ -50,96 +58,90 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, shell) => AppShell(navigationShell: shell),
-        branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
-          ]),
+      // Top-level shell = the adaptive container (sidebar+detail on wide, plain
+      // pass-through on narrow). Everything below renders in the detail pane.
+      ShellRoute(
+        navigatorKey: _shellKey,
+        builder: (context, state, child) => AdaptiveShell(child: child),
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, shell) => AppShell(navigationShell: shell),
+            branches: [
+              StatefulShellBranch(routes: [
+                GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+              ]),
+              StatefulShellBranch(routes: [
+                GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+              ]),
+            ],
+          ),
+          GoRoute(
+            path: '/search',
+            builder: (_, _) => _rootPage(const SearchScreen()),
+          ),
+          GoRoute(
+            path: '/set/:id',
+            builder: (_, state) =>
+                _rootPage(SetDetailScreen(itemId: int.parse(state.pathParameters['id']!))),
+          ),
+          GoRoute(
+            path: '/set/:id/parts',
+            builder: (_, state) =>
+                _rootPage(SetPartsScreen(itemId: int.parse(state.pathParameters['id']!))),
+          ),
+          GoRoute(
+            path: '/set/:id/minifigs',
+            builder: (_, state) =>
+                _rootPage(SetMinifigsScreen(itemId: int.parse(state.pathParameters['id']!))),
+          ),
+          GoRoute(
+            path: '/rebuild/:id',
+            builder: (_, state) =>
+                _rootPage(RebuildScreen(rebuildSetId: state.pathParameters['id']!)),
+          ),
+          GoRoute(
+            path: '/review/:id',
+            builder: (_, state) =>
+                _rootPage(ReviewScreen(rebuildSetId: state.pathParameters['id']!)),
+          ),
+          GoRoute(
+            path: '/report/:id',
+            builder: (_, state) =>
+                _rootPage(ReportScreen(rebuildSetId: state.pathParameters['id']!)),
+          ),
+          GoRoute(
+            path: '/sign-in',
+            builder: (_, _) => _rootPage(const SignInScreen()),
+          ),
+          GoRoute(
+            path: '/paywall',
+            builder: (_, _) => _rootPage(const PaywallScreen()),
+          ),
+          // Party mode (Phase 6). `/party/join` MUST precede `/party/:id` so the
+          // literal 'join' segment isn't captured as an :id.
+          GoRoute(
+            path: '/party/join',
+            builder: (_, _) => _rootPage(const PartyJoinScreen()),
+          ),
+          GoRoute(
+            path: '/party/:id/invite',
+            builder: (_, state) =>
+                _rootPage(PartyInviteScreen(partyId: state.pathParameters['id']!)),
+          ),
+          GoRoute(
+            path: '/party/:id/add',
+            builder: (_, state) =>
+                _rootPage(PartyAddPartsScreen(partyId: state.pathParameters['id']!)),
+          ),
+          GoRoute(
+            path: '/party/:id',
+            builder: (_, state) => _rootPage(PartyScreen(partyId: state.pathParameters['id']!)),
+          ),
+          GoRoute(
+            path: '/design',
+            builder: (_, _) => _rootPage(const DesignGallery()),
+          ),
         ],
-      ),
-      GoRoute(
-        path: '/search',
-        parentNavigatorKey: _rootKey,
-        builder: (_, _) => _rootPage(const SearchScreen()),
-      ),
-      GoRoute(
-        path: '/set/:id',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(SetDetailScreen(itemId: int.parse(state.pathParameters['id']!))),
-      ),
-      GoRoute(
-        path: '/set/:id/parts',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(SetPartsScreen(itemId: int.parse(state.pathParameters['id']!))),
-      ),
-      GoRoute(
-        path: '/set/:id/minifigs',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(SetMinifigsScreen(itemId: int.parse(state.pathParameters['id']!))),
-      ),
-      GoRoute(
-        path: '/rebuild/:id',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(RebuildScreen(rebuildSetId: state.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/review/:id',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(ReviewScreen(rebuildSetId: state.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/report/:id',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(ReportScreen(rebuildSetId: state.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/sign-in',
-        parentNavigatorKey: _rootKey,
-        builder: (_, _) => _rootPage(const SignInScreen()),
-      ),
-      GoRoute(
-        path: '/paywall',
-        parentNavigatorKey: _rootKey,
-        builder: (_, _) => _rootPage(const PaywallScreen()),
-      ),
-      // Party mode (Phase 6). `/party/join` MUST precede `/party/:id` so the
-      // literal 'join' segment isn't captured as an :id.
-      GoRoute(
-        path: '/party/join',
-        parentNavigatorKey: _rootKey,
-        builder: (_, _) => _rootPage(const PartyJoinScreen()),
-      ),
-      GoRoute(
-        path: '/party/:id/invite',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(PartyInviteScreen(partyId: state.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/party/:id/add',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            _rootPage(PartyAddPartsScreen(partyId: state.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/party/:id',
-        parentNavigatorKey: _rootKey,
-        builder: (_, state) => _rootPage(PartyScreen(partyId: state.pathParameters['id']!)),
-      ),
-      GoRoute(
-        path: '/design',
-        parentNavigatorKey: _rootKey,
-        builder: (_, _) => _rootPage(const DesignGallery()),
       ),
     ],
   );
