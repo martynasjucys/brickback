@@ -20,9 +20,22 @@ item remains the **app-icon vector** — everything around it is wired, see
 > why S10 exists. It is an iPad **idiom** issue, not an old-iOS one (it reproduces on 18.6, 26.2
 > and 26.5).
 >
-> **S10 progress:** step 1 (app-target test bundle, 9 tests) and step 2 (iOS 18 floor, −328 lines
-> of deleted iOS 17 shell) are **done and committed**. **Next is step 3: the adaptive shell** —
-> `NavigationSplitView` on `.regular`, `TabView` on `.compact`, both driving the same routers.
+> **S10 progress:** steps 1–3 are **done and committed** — the app-target test bundle (9 tests),
+> the iOS 18 floor (−328 lines of iOS 17 shell), and **the adaptive shell** (`46b629f`):
+> `NavigationSplitView` on `.regular`, `TabView` on `.compact`, both driving the same routers. The
+> iPad no longer has a tab bar on its brand plate. **Next is step 4** (delete the plates, tint the
+> native bars), then step 5 (width clamp + adaptive grid).
+>
+> **The shell is `RootShell.swift`, not `RootTabView`**, and there is no `selectedTab: Int` — it's
+> `selectedSection: AppSection` (an enum; `AppEnvironment.searchTab` is gone). `TabNavigation` is
+> now `SectionStack`.
+>
+> **⚠️ The mount rule** — a `NavigationStack` built in the same update that makes its path non-empty
+> **silently ignores the path** and renders its root, with no warning and the path left intact (so
+> the router reads `[.rebuild(id)]` while the screen shows Home). Harmless under `TabView`, which
+> keeps all four stacks mounted; the sidebar's detail column mounts one on demand. **Pushing onto a
+> section that isn't showing must let the mount happen first** — see
+> `AppEnvironment.openRebuild`, which hops one turn, and the two tests pinning it.
 >
 > **Phase numbering:** the adaptive rework is **S10** — S8 is App Store launch and S9 is offline
 > mode (both pre-existing). Early commits in this session briefly mislabelled it S8; corrected

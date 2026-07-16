@@ -1,6 +1,6 @@
 # S10 — Adaptive layout: one app, phone and tablet
 
-> **Status: in progress** (branch `ios/s10-adaptive-layout`). Steps 1–2 done, 3–5 open.
+> **Status: in progress** (branch `ios/s10-adaptive-layout`). Steps 1–3 done, 4–5 open.
 > Numbered **S10** because S8 (App Store launch) and S9 (offline mode) were already taken.
 
 ## Why
@@ -73,25 +73,58 @@ mutations (incl. two silent edge cases: `pop()` on empty no-ops; `replaceTop` on
 - Killing `systemProvidesBack` also removed the `activeRouter === env.searchRouter` **router-identity
   comparisons** — a trap this plan had flagged, gone for free.
 
-## Next — step 3: the adaptive shell
+**Step 3 — the adaptive shell** (`46b629f`). `RootTabView.swift` → `RootShell.swift`: `.regular` →
+`NavigationSplitView` (sidebar `List` + the section's stack as detail), `.compact` → the shipped tab
+shell. `ModernTabView` → `TabShell`, `TabNavigation` → `SectionStack`, `SearchTab` → `SearchStack`;
+`RouteView` kept as-is. `.environment(\.activeRouter, router)` rides on `SectionStack`/`SearchStack`,
+so both shells get it for free.
+- New **`AppSection`** enum — the four sections defined once, because two containers now render them.
+  `selectedTab: Int` → **`selectedSection: AppSection`**, retiring the magic 0/1/2/3 and
+  `AppEnvironment.searchTab`.
+- **`SearchStack.barHidden`** replaces the `isPad` check that lived inside the view. The sidebar
+  shell needs the nav bar to host `.searchable` — same reason the iPad tab bar did (`67103fd`).
+- `StartSortingButton`'s hand-off → **`AppEnvironment.openRebuild(_:clearing:)`**, now unit-tested
+  (the trap this plan flagged as untestable inside a View).
 
-`Navigation/RootTabView.swift` (consider renaming to `RootShell.swift`). Keep `TabNavigation` and
-`RouteView` as-is — they already do the right thing. Add a `NavigationSplitView` branch: sidebar =
-a `List` of the four sections bound to `env.selectedTab`; detail = the same `TabNavigation` per
-section. Preserve `.environment(\.activeRouter, router)` on **every** column (today it's injected
-in only two places).
+### ⚠️ The mount rule (found the hard way in step 3)
 
-Then **step 4** (delete the plates, tint native bars) and **step 5** (width clamp + adaptive grid).
+**A `NavigationStack` built in the same update that makes its path non-empty silently ignores the
+path and renders its root.** No console warning, and *the path is left intact* — `homeRouter.path`
+reads `[.rebuild(id)]` while the screen shows Home, which is what makes it so confusing live. It
+never bit the tab shell because `TabView` keeps all four stacks mounted from launch; the sidebar's
+detail column mounts one on demand, so it bites there.
+
+So **pushing a route onto a section that isn't currently showing needs the mount to happen first**:
+select the section, let the shell mount its stack, *then* push (`openRebuild` hops one turn via
+`Task { @MainActor in … }`). A stack that is already mounted takes a push immediately — hence the
+hop rather than a redesign. `openRebuild` is the only place that pushes cross-section today; any new
+one (a deep link, a notification tap) will need the same hop. Two tests pin it, one specifically so
+that "simplifying" the deferral away fails loudly.
+
+## Next — step 4: delete the plates, tint the native bars
+
+Then **step 5** (width clamp + adaptive grid). Both are scoped in the audit below.
+
+**Re-check in step 4:** the sidebar is collapsible and today that is safe only by accident. The
+system puts the toggle in the *detail* column's nav bar, so Party/Profile (which hide their bar for
+the plate) can't collapse it, and the sections that can (Home, Add a set) keep a bar to bring it
+back. Giving every section a native bar gives every section a toggle — verify no section can strand
+the user with no way back.
 
 ## Traps (verified against the code)
 
-- **`StartSortingButton`** (`SetDetailScreen.swift`) does `popToRoot` + `selectedTab = 0` +
-  `homeRouter.popToRoot()` + `push(.rebuild)` — a cross-stack hand-off. In a split view that means
-  "swap sidebar selection *and* detail column". The trickiest transition; it lives inside a View, so
-  it needs extracting before it can be unit-tested.
+- ~~**`StartSortingButton`** — a cross-stack hand-off, untestable inside a View.~~ **Done in step 3:**
+  extracted to `AppEnvironment.openRebuild(_:clearing:)`, unit-tested, and it is what surfaced the
+  mount rule above.
 - **`activeRouter` fallbacks disagree** — party screens → `homeRouter`, `PartyJoinView` →
   `profileRouter`, `PartyLandingScreen` → `partyRouter`. A nil key in an unwrapped column routes to
-  the *wrong* column silently rather than failing loudly.
+  the *wrong* column silently rather than failing loudly. (Step 3 left these alone: both shells
+  inject `activeRouter` on every stack, so nothing reads the fallback today.)
+- **Screen-local `@State` doesn't survive a section swap** on regular width — only the selected
+  section's stack is mounted, unlike `TabView`. Navigation survives (the `Router`s live in
+  `AppEnvironment`); what resets is e.g. `RebuildViewModel`'s in-memory step map, back to 1. Counts
+  are safe — the VM flushes on disappear — so this is a session nicety, not data. Revisit only if it
+  reads badly on the real device.
 - **Routers must stay in `AppEnvironment`, not view `@State`** — the root is
   `.id(env.locale.language)`-keyed, so a language switch rebuilds the tree and only env-owned state
   survives.
