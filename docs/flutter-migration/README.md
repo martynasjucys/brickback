@@ -87,9 +87,9 @@ Claude-Code-driven estimates (hours/days), not hand-coding weeks.
 |---|---|---|---|
 | **F0** | [F0-revive-and-baseline.md](F0-revive-and-baseline.md) · [results](F0-results.md) | Flutter app builds & runs against the live backend; deps refreshed; 1–6 smoke-tested; Swift set up as the side-by-side oracle | **✅ Done (2026-07-16)** |
 | **F1** | [F1-parity-diff.md](F1-parity-diff.md) · [backlog](reconciliation-backlog.md) | A Swift↔Flutter behavioural diff → the **reconciliation backlog** (de-risks the July-11 freeze) | **✅ Done (2026-07-16)** |
-| **F2** | [F2-design-system.md](F2-design-system.md) | Branded design tokens + primitives ported from `Tokens.swift`; dark mode, motion, haptics parity | Planned |
-| **F3** | [F3-adaptive-layout.md](F3-adaptive-layout.md) | **The marquee.** iPad master-detail + tab-on-compact shell, readable-width clamp, adaptive counting grid, landscape | Planned |
-| **F4** | [F4-offline-images.md](F4-offline-images.md) | Durable, deduplicated, pin-aware on-device image store; prefetch-on-add; reconnect resume | Planned |
+| **F2** | [F2-design-system.md](F2-design-system.md) · [results](F2-results.md) | Branded design tokens + primitives ported from `Tokens.swift`; dark mode, motion, haptics parity | **✅ Done (2026-07-16)** |
+| **F3** | [F3-adaptive-layout.md](F3-adaptive-layout.md) · [results](F3-results.md) | **The marquee.** iPad master-detail + tab-on-compact shell, readable-width clamp, adaptive counting grid, landscape | **✅ Done (2026-07-16)** |
+| **F4** | [F4-offline-images.md](F4-offline-images.md) · [results](F4-results.md) | Durable, deduplicated, pin-aware on-device image store; prefetch-on-add; reconnect resume | **✅ Done (2026-07-16)** |
 | **F5** | [F5-reconciliation-and-polish.md](F5-reconciliation-and-polish.md) | Burn down the F1 backlog (lifecycle stage, price guide, locale auto-detect, report month names, …); accessibility + i18n parity | Planned |
 
 **Critical path to parity:** F0 → F1 → (F2 ∥ F3 ∥ F4 can run in parallel once F0/F1 land) → F5.
