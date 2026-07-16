@@ -1,5 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import '../core/offline/brick_image_provider.dart';
 import '../theme/app_theme.dart';
 
 /// Branded primitive widgets (F2) — a Flutter port of the Swift oracle
@@ -519,12 +519,14 @@ class _RingPainter extends CustomPainter {
       old.fillColor != fillColor;
 }
 
-/// Square catalog thumbnail. Renders the real image (cached) when [imageUrl] is
-/// set, falling back to a branded placeholder box on null or load failure.
+/// Square catalog thumbnail. Renders the real image when [imageUrl] is set,
+/// falling back to a branded placeholder box on null or load failure.
 ///
-/// **F4 note:** the network-image fetch path (the [CachedNetworkImage] call) is
-/// deliberately left structurally as-is — F2 only re-skins the chrome (radius,
-/// stroke, placeholder). Keep the fetch seam clean for F4's offline-image pass.
+/// **F4:** the byte-loading path routes through [BrickImageProvider] — a
+/// disk-first provider backed by the durable offline store (store, then
+/// network with write-through). Once a set's images are prefetched they render
+/// with no network. Only the fetch seam changed here; the F2 chrome (radius,
+/// stroke, placeholder, hairline) is untouched.
 class SetThumb extends StatelessWidget {
   const SetThumb(
       {super.key, this.imageUrl, this.size = 56, this.label, this.radius = AppRadius.md});
@@ -556,10 +558,12 @@ class SetThumb extends StatelessWidget {
                 ? _placeholder(c)
                 : ColoredBox(
                     color: c.card,
-                    child: CachedNetworkImage(
-                      imageUrl: imageUrl!,
+                    child: Image(
+                      image: BrickImageProvider(imageUrl!),
                       fit: BoxFit.contain,
-                      errorWidget: (_, _, _) => _placeholder(c),
+                      // Fade nothing in on a synchronous disk hit; still smooth
+                      // for a network load. Placeholder on decode/network error.
+                      errorBuilder: (_, _, _) => _placeholder(c),
                     ),
                   ),
           ),

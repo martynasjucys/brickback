@@ -36,6 +36,10 @@ dependencies:
   # Images
   cached_network_image: ^3.4.1
 
+  # Offline images (Phase F4): durable, deduplicated, pin-aware on-device store
+  crypto: ^3.0.7                 # sha256(url) → content-addressed filename
+  connectivity_plus: ^7.3.0      # online/offline transitions → sync + prefetch resume
+
   # External links (BrickLink deep link from the part detail sheet)
   url_launcher: ^6.3.2
 

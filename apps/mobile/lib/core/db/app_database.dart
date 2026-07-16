@@ -24,6 +24,12 @@ class RebuildSets extends Table {
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get dirty => boolean().withDefault(const Constant(true))();
   BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+  // Device-local F4 offline-image completeness marker. NULL ⇒ prefetch
+  // incomplete ⇒ resume when next online/opened; stamped once every one of the
+  // set's live image URLs is on disk. NEVER synced — the cloud schema is
+  // unchanged and push/pull touch explicit column lists that exclude this one
+  // (verified in sync_service.dart). v4.
+  DateTimeColumn get imagesCachedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -130,13 +136,14 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
         // v1 -> v2: "group by type" + the extras (spares) list.
         // v2 -> v3: per-part counting step.
+        // v3 -> v4: device-local F4 offline-image completeness marker.
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(rebuildParts, rebuildParts.categoryName);
@@ -144,6 +151,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 3) {
             await m.addColumn(rebuildParts, rebuildParts.stepQty);
+          }
+          if (from < 4) {
+            await m.addColumn(rebuildSets, rebuildSets.imagesCachedAt);
           }
         },
       );
