@@ -2037,6 +2037,22 @@
         }
       }
     },
+    "partyAppearAs": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You'll appear as %@"
+          }
+        },
+        "lt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kiti jus matys kaip %@"
+          }
+        }
+      }
+    },
     "partyHostNote": {
       "localizations": {
         "en": {

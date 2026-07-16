@@ -112,6 +112,7 @@ struct ReviewView: View {
                 }
                 Spacer().frame(height: AppSpacing.s24)
             }
+            .readableColumn()
         }
     }
 

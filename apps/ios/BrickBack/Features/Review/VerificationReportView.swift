@@ -53,8 +53,11 @@ struct ReportView: View {
         ScrollView {
             VStack(spacing: AppSpacing.s20) {
                 // The certificate is a "paper" document (shared as PNG/PDF), so it always renders
-                // light — even in dark mode — sitting on the themed report background.
+                // light — even in dark mode — sitting on the themed report background. Pinned to the
+                // same 360pt the export uses (see `share`), so the preview *is* what you share — on
+                // the wide iPad column it would otherwise balloon to ~780pt and mislead.
                 VerificationReportCard(record: record, setName: vm.setName, image: vm.image)
+                    .frame(width: 360)
                     .environment(\.colorScheme, .light)
                 VStack(spacing: AppSpacing.s12) {
                     AppButton(L.shareImage, variant: .secondary, icon: "photo", loading: busy, expand: true) {

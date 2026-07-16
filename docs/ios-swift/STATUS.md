@@ -5,11 +5,52 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** **S7 — motion/haptics, accessibility (Dynamic Type + VoiceOver), and app-icon /
-launch-screen scaffolding** landed on top of the branded-design + i18n + dark-mode passes.
-**Current state:** S0–S6 are **code-complete and verified**; **S7 is functionally complete** — the
-only open item is dropping in the **app-icon vector** (everything around it is wired; see
-[branding-assets.md](branding-assets.md)).
+**Last updated: 2026-07-16.** **S7 is done and merged to `main`** (merge `2722b41`; its only open
+item remains the **app-icon vector** — everything around it is wired, see
+[branding-assets.md](branding-assets.md)). **S0–S7 + S9 are code-complete and verified.**
+
+**Current work: S10 — adaptive layout**, branch **`ios/s10-adaptive-layout`** — **code-complete, all
+five steps committed; awaiting physical-iPad re-verify + merge.** See
+**[10-adaptive-layout.md](10-adaptive-layout.md)** for the full record.
+
+> ### 👉 Resuming? Read this first
+>
+> **iPad is the app's PRIMARY device**, and the Swift app was built iPhone-first — that's why S10
+> exists (found 2026-07-15 on the real iPad: tab bar at the *top* on the brand plate, nothing
+> clamping width). **S10 has now fixed all of it in code.**
+>
+> **S10 is DONE (in code) — all five steps committed on the branch:** test bundle (`1b86ad1`) · iOS
+> 18 floor (`5ccbe00`) · **adaptive shell** (`46b629f`: `NavigationSplitView` on `.regular`,
+> `TabView` on `.compact`, same routers) · **tinted native bars** replacing the brand plates
+> (`f8bebc1`) · **width clamp + adaptive grid** (`f5421ae`). Verified on the iPad (A16) 18.6 sim in
+> both orientations and iPhone 17 Pro. **The one thing left before merge: re-install on the physical
+> iPad (18.7.8, `94BBEFF4-…`) — the device that started S10 — to confirm end-to-end.**
+>
+> **The shell is `RootShell.swift`, not `RootTabView`**, and there is no `selectedTab: Int` — it's
+> `selectedSection: AppSection` (an enum; `AppEnvironment.searchTab` is gone). `TabNavigation` is
+> now `SectionStack`.
+>
+> **Width: `.readableColumn()`** (`Primitives.swift`, cap `AppLayout.readableWidth` = 620) centres
+> wide-column content; **the counting grid** uses size-class-aware `AppLayout.tileMin*`. Both no-op
+> on iPhone. Don't reintroduce a full-width settings row or a phone-sized grid minimum.
+>
+> **There are no brand plates.** `BrandHeader` / `BrandHeaderBackground` / `headerField` /
+> `rootBarHidden` no longer exist — a screen tints its **native** bar via **`.brandBar(_:)`**
+> (`Primitives.swift`), per-screen, and the tint doesn't leak down a stack.
+>
+> **⚠️ The mount rule** — a `NavigationStack` built in the same update that makes its path non-empty
+> **silently ignores the path** and renders its root, with no warning and the path left intact (so
+> the router reads `[.rebuild(id)]` while the screen shows Home). Harmless under `TabView`, which
+> keeps all four stacks mounted; the sidebar's detail column mounts one on demand. **Pushing onto a
+> section that isn't showing must let the mount happen first** — see
+> `AppEnvironment.openRebuild`, which hops one turn, and the two tests pinning it.
+>
+> **Phase numbering:** the adaptive rework is **S10** — S8 is App Store launch and S9 is offline
+> mode (both pre-existing). Early commits in this session briefly mislabelled it S8; corrected
+> before pushing.
+>
+> **Deployment target is now iOS 18.0** (was 17.0). `Route.hidesNavBar` and `ScreenHeader`/
+> `BackButton` no longer exist — don't look for them.
 
 <details><summary>S7 motion + haptics + accessibility summary (Dynamic Type, VoiceOver, Reduce Motion)</summary>
 
@@ -183,6 +224,8 @@ Ready to start **S6** (party mode).
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
 - [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
 - [~] **S7 — Design polish & i18n** ← branded design + i18n + dark mode + **motion/haptics + Dynamic Type + VoiceOver done**; only the app-icon vector remains ([branding-assets.md](branding-assets.md))
+- [x] **S9 — Offline mode** ✅ (done, verified)
+- [~] **S10 — Adaptive layout (iPad-first)** ← all five steps code-complete + sim-verified ([10-adaptive-layout.md](10-adaptive-layout.md)); physical-iPad re-verify + merge pending
 - [ ] S8 — Launch / App Store
 
 ---

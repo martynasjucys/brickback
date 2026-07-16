@@ -1,11 +1,13 @@
 import SwiftUI
 import BrickBackKit
 
-/// Home / "Rebuilds" tab. A branded header (wordmark + search + scan) pins to the top; below it a
-/// scrolling list resumes in-progress rebuilds (the "Continue building" strip) and lists every
-/// rebuild ("All sets"). Add a set from the header search/scan or the empty state.
+/// Home / "Rebuilds" — the Rebuilds section's root. A brand-blue native nav bar carries the
+/// wordmark and the filter; below it a scrolling list resumes in-progress rebuilds (the "Continue
+/// building" strip) and lists every rebuild ("All sets"). Add a set from the Add a set section or
+/// the empty state.
 struct HomeScreen: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.horizontalSizeClass) private var widthClass
     @State private var vm: HomeViewModel?
     @State private var filter = HomeFilter()
     @State private var showFilter = false
@@ -17,13 +19,6 @@ struct HomeScreen: View {
         return Set(vm.summaries.compactMap(\.theme))
             .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
-
-    /// The brand band drawn *below* the nav bar (0 = the plate hugs the nav bar strip only). Bump
-    /// this to give the colourful header more presence beneath the native toolbar.
-    private let headerBand: CGFloat = 12
-    /// Measured top safe-area inset (status bar + nav bar), so the brand plate can be sized to cover
-    /// exactly the nav-bar region and extend `headerBand` below it.
-    @State private var topInset: CGFloat = 60
 
     var body: some View {
         Group {
@@ -60,36 +55,32 @@ struct HomeScreen: View {
                 Spacer()
             }
         }
-        .padding(.top, headerBand) // clear the brand band that dips below the nav bar
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         // Pull-to-refresh forces a full cloud sync (push + pull + apply) so a premium user can grab
         // changes made on another device mid-session. The `enabled` gate makes it a no-op (returns
         // immediately) for free/guest users, whose data never leaves the device. The `List` inside
         // `RebuildList` reads this refresh action from the environment.
         .refreshable { await env.sync.syncNow() }
-        // Layer order (front → back): content · brand plate (top only) · canvas fill · inset probe.
-        // The plate must sit *in front of* the opaque canvas, or the canvas hides it.
-        .background(alignment: .top) {
-            BrandHeaderBackground(height: topInset + headerBand)
-        }
         .background(AppColors.canvas)
-        .background { // probe the true top inset (nav bar + status) once, to size the plate
-            GeometryReader { geo in
-                Color.clear.preference(key: HomeTopInsetKey.self, value: geo.safeAreaInsets.top)
-            }
-        }
-        .onPreferenceChange(HomeTopInsetKey.self) { if $0 > 0 { topInset = $0 } }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
-                BrickBackWordmark(size: 22)
+                // The wordmark is the brand anchor on iPhone, where nothing else says the app's
+                // name. On regular width the sidebar already does, so a second wordmark two inches
+                // away would just be shouting — name the section instead.
+                if widthClass == .regular {
+                    Text(AppSection.rebuilds.title)
+                        .font(AppText.title)
+                        .foregroundStyle(.white)
+                } else {
+                    BrickBackWordmark(size: 22)
+                }
             }
             ToolbarItem(placement: .topBarTrailing) {
                 FilterToolbarButton(count: filter.badgeCount) { showFilter = true }
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar) // transparent — the brand plate shows through
-        .toolbarColorScheme(.dark, for: .navigationBar)  // white title + glyphs on the blue field
+        .brandBar(AppColors.brand)
         .task {
             if vm == nil { vm = HomeViewModel(services: env.services) }
             vm?.start()
@@ -107,28 +98,7 @@ struct HomeScreen: View {
     }
 }
 
-// MARK: - Header (native toolbar over a brand plate)
-
-/// The colourful brand plate drawn behind the transparent native navigation bar, so the native
-/// toolbar — wordmark + filter — rides on the brand field. Same gradient, curved bottom and raised
-/// lip as the old custom header, now purely a decorative background sized to the nav-bar region.
-private struct BrandHeaderBackground: View {
-    let height: CGFloat
-    var body: some View {
-        let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
-                                           bottomTrailingRadius: AppRadius.xl, style: .continuous)
-        ZStack(alignment: .top) {
-            shape.fill(AppColors.brandEdge)
-            LinearGradient(colors: [AppColors.brand, AppColors.brandDeep], startPoint: .top, endPoint: .bottom)
-                .clipShape(shape)
-                .padding(.bottom, AppDepth.brick + 1)
-        }
-        .frame(height: height)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea(edges: .top)
-        .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
-    }
-}
+// MARK: - Toolbar
 
 /// Native trailing toolbar button for the Home list filter. A white glyph on the brand bar; swaps
 /// to the filled variant with a count badge when a filter is active.
@@ -152,12 +122,6 @@ private struct FilterToolbarButton: View {
         }
         .accessibilityLabel(count > 0 ? L.filterSetsActive(count) : L.filterSets)
     }
-}
-
-/// Publishes the top safe-area inset so the brand plate can be sized to the nav-bar region.
-private struct HomeTopInsetKey: PreferenceKey {
-    static let defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = nextValue() }
 }
 
 // MARK: - List
@@ -216,6 +180,10 @@ private struct RebuildList: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.defaultMinListRowHeight, 1)
+        // Centre the list in a wide iPad column like the other roots, so its cards don't stretch to
+        // ~1560pt in landscape while Profile/search sit at a readable width. Swipe-to-remove keeps
+        // working — it acts on rows *within* the clamped list, which is now the whole list.
+        .readableColumn()
     }
 }
 

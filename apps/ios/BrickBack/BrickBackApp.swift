@@ -26,7 +26,7 @@ struct BrickBackApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootTabView()
+            RootShell()
                 .environment(env)
                 .environment(env.locale)
                 .environment(env.theme)

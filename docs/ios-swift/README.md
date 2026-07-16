@@ -73,11 +73,12 @@ it). Each Swift phase is accepted against the matching Flutter phase.
 | **S2** | [02-catalog-and-set-selection.md](02-catalog-and-set-selection.md) | Catalog search, set detail (+ unique-parts / minifig lists), `expand_set_parts`, image CDN, "Add set" snapshot | ✅ |
 | **S3** | [03-inventory-collection.md](03-inventory-collection.md) | The core loop: tap-to-count grid, live progress, offline persistence, per-part step, view settings (group-by + extras) | ✅ |
 | **S4** | [04-review-and-verification.md](04-review-and-verification.md) | Completion %, missing parts, minifig verify, verification report (image + PDF), BrickLink wanted-list export | ✅ |
-| **S5** | [05-auth-and-cloud-sync.md](05-auth-and-cloud-sync.md) | Supabase auth (native Apple/Google/OTP), entitlement, live push/pull sync, free cap, paywall | — |
-| **S6** | [06-party-mode.md](06-party-mode.md) | Realtime collaborative counting (premium): create/join by code, contribution rollup, QR invite | — |
-| **S7** | [07-design-polish-and-i18n.md](07-design-polish-and-i18n.md) | Wireframe → branded design system, motion, haptics, dark mode, full i18n, accessibility | — |
-| **S9** | [09-offline-mode.md](09-offline-mode.md) | Pinned, deduplicated on-device image store (added sets openable offline), prefetch-on-add, reconnect-triggered sync + prefetch resume | — |
+| **S5** | [05-auth-and-cloud-sync.md](05-auth-and-cloud-sync.md) | Supabase auth (native Apple/Google/OTP), entitlement, live push/pull sync, free cap, paywall | ✅ |
+| **S6** | [06-party-mode.md](06-party-mode.md) | Realtime collaborative counting (premium): create/join by code, contribution rollup, QR invite | ✅ |
+| **S7** | [07-design-polish-and-i18n.md](07-design-polish-and-i18n.md) | Wireframe → branded design system, motion, haptics, dark mode, full i18n, accessibility | ✅ |
+| **S9** | [09-offline-mode.md](09-offline-mode.md) | Pinned, deduplicated on-device image store (added sets openable offline), prefetch-on-add, reconnect-triggered sync + prefetch resume | ✅ |
 | **S8** | [08-launch-appstore.md](08-launch-appstore.md) | RevenueCat/StoreKit, external OAuth/SMTP config, TestFlight, App Store review, privacy manifest | — |
+| **S10** | [10-adaptive-layout.md](10-adaptive-layout.md) | **iPad is the primary device.** Size-class shell (`NavigationSplitView` on regular, `TabView` on compact), brand plates → tinted native bars, width clamp + adaptive grid, landscape | 🚧 |
 
 **Critical path to a shippable MVP:** S0 → S1 → S2 → S3 → S4. **S7 (polish) runs partly in
 parallel** once the design system lands. S5–S6 reuse the already-built backend. **S9 (offline

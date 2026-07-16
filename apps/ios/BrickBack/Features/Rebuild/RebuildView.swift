@@ -9,6 +9,7 @@ import BrickBackKit
 struct RebuildView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var widthClass
     let rebuildSetId: String
 
     @State private var vm: RebuildViewModel?
@@ -22,6 +23,11 @@ struct RebuildView: View {
     @State private var partyError: String?
 
     private var grouping: PartGrouping { PartGrouping(rawValue: groupingRaw) ?? .color }
+
+    /// Tile-width bounds for the counting grid, widened on iPad so the tiles grow into fewer, more
+    /// tappable columns instead of the grid packing ~7 phone-sized ones (see `AppLayout.tileMin`).
+    private var tileMin: CGFloat { widthClass == .regular ? AppLayout.tileMinRegular : AppLayout.tileMin }
+    private var tileMax: CGFloat { widthClass == .regular ? AppLayout.tileMaxRegular : AppLayout.tileMax }
 
     var body: some View {
         ZStack {
@@ -43,8 +49,7 @@ struct RebuildView: View {
             }
         }
         .overlay { if startingParty { partyStartingOverlay } }
-        // Native nav bar (transparent) hosting the back button + ••• actions menu, riding on the
-        // brand plate drawn by `header`. White glyphs via the dark toolbar colour scheme.
+        // The green nav bar hosts the back button, the set title + count, and the ••• actions menu.
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .principal) {
@@ -54,8 +59,7 @@ struct RebuildView: View {
                 if let vm, vm.inv != nil { actionsMenu(vm: vm) }
             }
         }
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .brandBar(AppColors.build)
         .task {
             if vm == nil {
                 vm = RebuildViewModel(rebuildSetId: rebuildSetId, repo: env.services.rebuild, onNudge: { env.sync.nudge() })
@@ -131,10 +135,10 @@ struct RebuildView: View {
         }
     }
 
-    // MARK: - Header (branded green field: nav row + progress summary)
+    // MARK: - Header (green nav bar + a progress strip pinned below it)
 
     /// The set title + part count, shown as the native nav bar's centred title — riding between the
-    /// back button and the ••• menu — instead of in the plate body. White on the green field.
+    /// back button and the ••• menu. White on the green bar (see `brandBar`).
     private func navTitle(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
         VStack(spacing: 1) {
             Text(inv.summary.name).font(AppText.title).foregroundStyle(.white).lineLimit(1)
@@ -143,25 +147,27 @@ struct RebuildView: View {
         }
     }
 
-    /// The branded green header *body*: just the slim progress bar now that the title + count ride
-    /// in the native nav bar above. The plate bleeds up behind the transparent bar.
+    /// The progress strip: a slim bar pinned under the nav bar, above the scrolling grid, so
+    /// progress stays visible while counting. It sat on the green plate until S10 step 4 — now it
+    /// sits on the canvas below a green *bar*, with a hairline to divide the two.
     private func header(vm: RebuildViewModel, inv: RebuildInventory?) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if let inv { progressBar(vm: vm, inv: inv) }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.screen)
-        .padding(.top, AppSpacing.s8)
-        .padding(.bottom, AppSpacing.s16)
-        .background(headerField)
+        .padding(.top, AppSpacing.s12)
+        .padding(.bottom, AppSpacing.s12)
+        .background(AppColors.canvas)
+        .overlay(alignment: .bottom) { Rectangle().fill(AppColors.line).frame(height: 1) }
     }
 
-    /// A slim progress bar — the same bar used elsewhere, styled white so it (and a completed fill)
-    /// reads on the green field. Rides full-width below the inline title row.
+    /// A slim progress bar. It was white-on-green for the plate; on the canvas white would be an
+    /// invisible bar on an invisible track, so it takes the build green and the standard track.
     private func progressBar(vm: RebuildViewModel, inv: RebuildInventory) -> some View {
         let total = inv.summary.totalParts
         let value = total == 0 ? 0 : Double(vm.haveTotal) / Double(total)
-        return AppProgressBar(value: value, height: 8, track: .white.opacity(0.28), tint: .white)
+        return AppProgressBar(value: value, height: 8, tint: AppColors.build)
     }
 
     /// The trailing ••• actions, as a native `Menu` — the system's own expand/collapse dropdown:
@@ -197,22 +203,6 @@ struct RebuildView: View {
                 .padding(AppSpacing.s24)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: AppRadius.lg, style: .continuous))
         }
-    }
-
-    /// The branded green "brick plate" that backs the header — the counting-screen counterpart to
-    /// Home's blue field: a gradient face raised on a darker bottom lip, bleeding into the status
-    /// bar and curving off at the bottom.
-    private var headerField: some View {
-        let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
-                                           bottomTrailingRadius: AppRadius.xl, style: .continuous)
-        return ZStack(alignment: .top) {
-            shape.fill(AppColors.buildEdge)
-            LinearGradient(colors: [AppColors.build, AppColors.buildDeep], startPoint: .top, endPoint: .bottom)
-                .clipShape(shape)
-                .padding(.bottom, AppDepth.brick + 1)
-        }
-        .ignoresSafeArea(edges: .top)
-        .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
     }
 
     /// Host a realtime party on this rebuild. Premium + account only (the paywall / sign-in bounce
@@ -266,7 +256,7 @@ struct RebuildView: View {
             }
             .padding(.top, AppSpacing.s16)
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 176), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: tileMin, maximum: tileMax), spacing: 12)], spacing: 12) {
                 ForEach(tiles) { p in
                     PartTile(
                         part: p,

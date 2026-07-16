@@ -84,6 +84,23 @@ enum AppSpacing {
     static let screen: CGFloat = 20 // page gutter
 }
 
+enum AppLayout {
+    /// The widest a form/card column should get. Past this, a wide iPad detail column would strand a
+    /// settings row's value ~800pt from its label; `.readableColumn()` caps the column here and
+    /// centres it instead. iPhone content is always narrower than this, so it's a no-op there — the
+    /// clamp only bites on iPad (landscape, and the larger models even in portrait). Apple's own
+    /// readable-content width sits near here.
+    static let readableWidth: CGFloat = 620
+
+    /// The counting grid's tile-width bounds, per size class. `.adaptive` picks the column *count*
+    /// from the minimum, so a phone-sized minimum on iPad just packs more small tiles (the bug):
+    /// raise the floor on regular width and the same tiles grow into fewer, tappable columns.
+    static let tileMin: CGFloat = 104         // compact (iPhone): ~3 columns
+    static let tileMinRegular: CGFloat = 150  // regular (iPad): fewer, bigger
+    static let tileMax: CGFloat = 176
+    static let tileMaxRegular: CGFloat = 200
+}
+
 enum AppRadius {
     // Softer + rounder than the wireframe — friendly, toy-like. Primitives pair these with
     // `.continuous` corners for the squircle "moulded plastic" feel.

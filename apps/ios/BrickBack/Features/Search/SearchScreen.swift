@@ -1,33 +1,9 @@
 import SwiftUI
 import BrickBackKit
 
-/// Legacy (iOS 17) catalog search, pushed as `.search`. Owns its own header + search field and
-/// feeds `CatalogSearchResults`. On iOS 18+ search is a `role: .search` tab instead (see
-/// `RootTabView.SearchTab`), where the tab bar supplies the field and this screen is unused.
-struct SearchScreen: View {
-    @Environment(AppEnvironment.self) private var env
-    @Environment(\.activeRouter) private var activeRouter
-    @State private var query = ""
-
-    private var router: Router { activeRouter ?? env.homeRouter }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(L.addASet, onBack: { router.pop() })
-            SearchField(hint: L.searchHint, text: $query, autofocus: true)
-                .padding(.horizontal, AppSpacing.screen)
-            Spacer().frame(height: AppSpacing.s8)
-            CatalogSearchResults(query: query)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AppColors.canvas)
-    }
-}
-
-/// The debounced catalog search + result list, driven by an external `query` string. Both entry
-/// points feed it: the legacy pushed `SearchScreen` (query from its own field) and the iOS 18+
-/// `role: .search` tab (query from the tab bar's native `.searchable`). Result taps push set detail
-/// onto whatever stack we're on (`activeRouter`) — the search tab on iOS 18+, Home on iOS 17.
+/// The debounced catalog search + result list, driven by an external `query` string supplied by the
+/// `role: .search` tab's native `.searchable`. Result taps push set detail onto whatever stack we're
+/// on (`activeRouter`).
 ///
 /// Port of `search_screen.dart`'s list — the Dart `Timer`-based debounce becomes a `.task(id:)`
 /// that sleeps before searching, so a fresh keystroke cancels the in-flight one.
@@ -101,6 +77,7 @@ struct CatalogSearchResults: View {
                     .padding(.horizontal, AppSpacing.screen)
                     .padding(.top, AppSpacing.s12)
                     .padding(.bottom, AppSpacing.s24)
+                    .readableColumn()
                 }
             }
         }
