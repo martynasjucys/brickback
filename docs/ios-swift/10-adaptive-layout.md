@@ -1,6 +1,6 @@
 # S10 — Adaptive layout: one app, phone and tablet
 
-> **Status: in progress** (branch `ios/s10-adaptive-layout`). Steps 1–3 done, 4–5 open.
+> **Status: in progress** (branch `ios/s10-adaptive-layout`). Steps 1–4 done, step 5 open.
 > Numbered **S10** because S8 (App Store launch) and S9 (offline mode) were already taken.
 
 ## Why
@@ -101,15 +101,29 @@ hop rather than a redesign. `openRebuild` is the only place that pushes cross-se
 one (a deep link, a notification tap) will need the same hop. Two tests pin it, one specifically so
 that "simplifying" the deferral away fails loudly.
 
-## Next — step 4: delete the plates, tint the native bars
+**Step 4 — brand plates → brand-tinted native bars** (`f8bebc1`). `BrandHeader` → a **`.brandBar(_:)`**
+modifier (`toolbarBackground` + `.visible` + `toolbarColorScheme(.dark)`); one definition, four
+sections, each keeping its S7 hue. `BrandHeaderBackground` / `headerBand` / `topInset` /
+`HomeTopInsetKey` died as a unit — the probe existed only to size the plate to the nav bar.
+- **`rootBarHidden` is gone**: every root has a native bar now. That retires the S7 hazard of mixing
+  hidden/shown bars in one stack, and settles step 3's open question — the sidebar toggle lives in
+  the detail column's bar, so no section can strand the user with a collapsed sidebar (verified from
+  Profile, which had no bar before).
+- **Rehomed content** (the plates carried more than chrome): Profile's stats → a card;
+  Party's display name → the join card as **"You'll appear as %@"** (new `partyAppearAs`, en+lt).
+  Editing the name stays in Profile → Name.
+- `RebuildView`'s progress bar was white *for the green plate* → now build-green on the standard
+  track, pinned under the bar with a hairline. The ••• menu is untouched.
+- Home's wordmark is `.principal` on **compact only**; on regular the sidebar names the app, so the
+  bar names the section.
+- **The tint does not leak down a stack** — a pushed Review keeps its own neutral bar. Verified, and
+  worth knowing before adding a tint anywhere else: `.brandBar` is per-screen, by design.
 
-Then **step 5** (width clamp + adaptive grid). Both are scoped in the audit below.
+## Next — step 5: width clamp + adaptive grid
 
-**Re-check in step 4:** the sidebar is collapsible and today that is safe only by accident. The
-system puts the toggle in the *detail* column's nav bar, so Party/Profile (which hide their bar for
-the plate) can't collapse it, and the sections that can (Home, Add a set) keep a bar to bring it
-back. Giving every section a native bar gives every section a toggle — verify no section can strand
-the user with no way back.
+The last step, and the one that fixes what the iPad still gets wrong: nothing clamps width (Profile
+rows strand their values ~800pt from their labels) and the counting grid packs ~7 narrow columns.
+Scoped in the audit below.
 
 ## Traps (verified against the code)
 
@@ -133,18 +147,18 @@ the user with no way back.
 - **Do not re-break:** `ShareSheet` uses `.sheet(item:)` to dodge the iPad popover anchor;
   `SettingsPickerScreen` pops via the router, not `dismiss`, because a Language change re-ids the tree.
 
-### Step 4/5 specifics (from the audit)
+### Step 5 specifics (from the audit)
 
-- Removing Home's plate **must** also remove `.toolbarBackground(.hidden)` + `.toolbarColorScheme(.dark)`
-  or the white glyphs go white-on-white. `topInset`/`headerBand`/`HomeTopInsetKey`/the probe die as a
-  unit. **`FilterToolbarButton` must survive** — sole entry to `HomeFilterSheet`.
-- `RebuildView`'s progress bar and `.principal` navTitle are **white for the green plate** — restyle
-  or they vanish. **The ••• menu must survive** — sole route to `.review`, `.party`, part search,
-  `.setDetail`, view settings.
-- `BrandHeader`'s consumers lose content, not just chrome: **Profile's setsBuilt/partsCollected stats
-  and Party's displayName have no other home** — rehome as a card.
-- `BrickBackWordmark` is used **only** by Home's `.principal` and is hardcoded white-on-brand → dead
-  once the plate goes.
+Step 4's items are all closed: the toolbar/glyph coupling, the probe teardown, the progress-bar and
+navTitle restyle, and rehoming Profile's stats + Party's display name. Two corrections the audit got
+wrong, worth keeping straight:
+- `.toolbarColorScheme(.dark)` **stays** — the bar is still brand-coloured, so the glyphs must still
+  be white. Only `.toolbarBackground(.hidden)` had to go, replaced by a *visible* tinted background.
+- `BrickBackWordmark` is **not** dead: a tinted bar is still white-on-brand, so it kept its
+  `.principal` slot on compact. It is the sidebar, not the plate's removal, that made it redundant —
+  and only on regular width.
+
+Still open for step 5:
 - Counting grid: `.adaptive(minimum: 100, maximum: 176)` maximises column count at the *minimum*, so
   `maximum` never engages → 7 columns at ~101pt. Tap targets stay iPhone-small. Fix the column spec,
   not `PartTile` (already fluid).

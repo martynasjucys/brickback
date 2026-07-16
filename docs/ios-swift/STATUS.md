@@ -20,15 +20,20 @@ item remains the **app-icon vector** — everything around it is wired, see
 > why S10 exists. It is an iPad **idiom** issue, not an old-iOS one (it reproduces on 18.6, 26.2
 > and 26.5).
 >
-> **S10 progress:** steps 1–3 are **done and committed** — the app-target test bundle (9 tests),
-> the iOS 18 floor (−328 lines of iOS 17 shell), and **the adaptive shell** (`46b629f`):
-> `NavigationSplitView` on `.regular`, `TabView` on `.compact`, both driving the same routers. The
-> iPad no longer has a tab bar on its brand plate. **Next is step 4** (delete the plates, tint the
-> native bars), then step 5 (width clamp + adaptive grid).
+> **S10 progress:** steps 1–4 are **done and committed** — the app-target test bundle (9 tests), the
+> iOS 18 floor (−328 lines of iOS 17 shell), **the adaptive shell** (`46b629f`: `NavigationSplitView`
+> on `.regular`, `TabView` on `.compact`, same routers), and **the brand plates retired for tinted
+> native bars** (`f8bebc1`). The iPad's tab-bar-on-the-plate problem is gone. **Next is step 5** —
+> the width clamp + adaptive grid, which is what still reads wrong on iPad (rows strand their values
+> ~800pt from their labels; the counting grid packs ~7 narrow columns).
 >
 > **The shell is `RootShell.swift`, not `RootTabView`**, and there is no `selectedTab: Int` — it's
 > `selectedSection: AppSection` (an enum; `AppEnvironment.searchTab` is gone). `TabNavigation` is
 > now `SectionStack`.
+>
+> **There are no brand plates.** `BrandHeader` / `BrandHeaderBackground` / `headerField` /
+> `rootBarHidden` no longer exist — a screen tints its **native** bar via **`.brandBar(_:)`**
+> (`Primitives.swift`), per-screen, and the tint doesn't leak down a stack.
 >
 > **⚠️ The mount rule** — a `NavigationStack` built in the same update that makes its path non-empty
 > **silently ignores the path** and renders its root, with no warning and the path left intact (so
