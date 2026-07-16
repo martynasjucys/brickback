@@ -11,6 +11,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../core/offline/brick_image_provider.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
@@ -33,7 +34,30 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
   final GlobalKey _repaintKey = GlobalKey();
   bool _busy = false;
 
+  /// The certificate renders (and exports) at this fixed width. Pinning the
+  /// on-screen preview to it means the preview reads exactly like the shared
+  /// PNG/PDF (the Swift preview misrepresented the ~360 output at ~780 before
+  /// this cap). F3 brief task 7, owned here.
+  static const double _certWidth = 360;
+
   Future<Uint8List> _capturePng() async {
+    // Ensure the set image is decoded from the durable store BEFORE the capture,
+    // so an offline export bakes in the real image (not a placeholder). The Set
+    // thumb in the certificate uses the same BrickImageProvider(url) key, so
+    // precaching it populates the ImageCache the RepaintBoundary paints from.
+    final url = ref
+        .read(inventoryProvider(widget.rebuildSetId))
+        .asData
+        ?.value
+        .summary
+        .imageUrl;
+    if (url != null && mounted) {
+      try {
+        await precacheImage(BrickImageProvider(url), context);
+      } catch (_) {
+        // Offline with nothing cached — fall through; capture shows placeholder.
+      }
+    }
     final boundary =
         _repaintKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
     final image = await boundary.toImage(pixelRatio: 3.0);
@@ -124,12 +148,20 @@ class _ReportScreenState extends ConsumerState<ReportScreen> {
                         AppSpacing.screen, AppSpacing.s24),
                     child: Column(
                       children: [
-                        RepaintBoundary(
-                          key: _repaintKey,
-                          child: VerificationReport(
-                            record: record,
-                            setName: setName,
-                            imageUrl: imageUrl,
+                        // Pin the preview to the export width so what's shown is
+                        // exactly what's shared (no iPad-wide misrepresentation).
+                        Center(
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxWidth: _certWidth),
+                            child: RepaintBoundary(
+                              key: _repaintKey,
+                              child: VerificationReport(
+                                record: record,
+                                setName: setName,
+                                imageUrl: imageUrl,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.s20),

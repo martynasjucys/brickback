@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
@@ -6,6 +7,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../core/db/app_database.dart';
 import '../../core/db/database_provider.dart';
+import '../../core/offline/offline_image_service.dart';
+import '../../core/offline/offline_images.dart';
 import '../catalog/catalog_repository.dart';
 import 'rebuild_models.dart';
 import 'verification_models.dart';
@@ -16,9 +19,14 @@ import 'wanted_list.dart';
 /// when a set is *added* and then snapshotted, so counting works fully offline.
 /// Cloud sync is a Phase 5 premium mirror — rows are marked `dirty` for it now.
 class RebuildRepository {
-  RebuildRepository(this._catalog, this._db);
+  RebuildRepository(this._catalog, this._db, [this._offline]);
   final CatalogReader _catalog;
   final AppDatabase _db;
+
+  /// F4 offline-image prefetch. Optional so tests construct the repo with two
+  /// args (no prefetch → deterministic, no network). Triggers are fire-and-forget
+  /// (`unawaited`) — the set is usable immediately; images fill in behind it.
+  final OfflineImageService? _offline;
   static const _uuid = Uuid();
 
   /// Add a target set as a NEW independent rebuild instance (the same set can be
@@ -86,6 +94,8 @@ class RebuildRepository {
         _insertExtras(b, id, extras);
       });
     });
+    // Eager prefetch on add (online): cache the set's images so it opens offline.
+    unawaited(_offline?.ensureCached(id));
     return id;
   }
 
@@ -187,6 +197,9 @@ class RebuildRepository {
         _insertExtras(b, id, extras);
       });
     });
+    // Cloud-import prefetch: a new-to-device set arriving via sync pull caches
+    // its images too (device-local; not premium-gated at the image layer).
+    unawaited(_offline?.ensureCached(id));
   }
 
   /// Absolute-write a part's have count (Phase 3 counting). Writes straight to
@@ -279,6 +292,9 @@ class RebuildRepository {
 
   /// Full local checklist for one rebuild (parts + minifigs + have counts).
   Future<RebuildInventory> detail(String rebuildSetId) async {
+    // Set-open prefetch: a no-op once `images_cached_at` is stamped; otherwise
+    // (incomplete + online) it finishes caching so the set opens offline later.
+    unawaited(_offline?.ensureCached(rebuildSetId));
     final r = await (_db.select(_db.rebuildSets)..where((t) => t.id.equals(rebuildSetId)))
         .getSingle();
     final partRows = await (_db.select(_db.rebuildParts)
@@ -495,7 +511,11 @@ class RebuildRepository {
 }
 
 final rebuildRepositoryProvider = Provider<RebuildRepository>(
-  (ref) => RebuildRepository(ref.read(catalogRepositoryProvider), ref.read(databaseProvider)),
+  (ref) => RebuildRepository(
+    ref.read(catalogRepositoryProvider),
+    ref.read(databaseProvider),
+    ref.read(offlineImageServiceProvider),
+  ),
 );
 
 final rebuildListProvider = FutureProvider.autoDispose<List<RebuildSummary>>(

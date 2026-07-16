@@ -143,6 +143,18 @@ class $RebuildSetsTable extends RebuildSets
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _imagesCachedAtMeta = const VerificationMeta(
+    'imagesCachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> imagesCachedAt =
+      GeneratedColumn<DateTime>(
+        'images_cached_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -157,6 +169,7 @@ class $RebuildSetsTable extends RebuildSets
     updatedAt,
     dirty,
     deleted,
+    imagesCachedAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -243,6 +256,15 @@ class $RebuildSetsTable extends RebuildSets
         deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
       );
     }
+    if (data.containsKey('images_cached_at')) {
+      context.handle(
+        _imagesCachedAtMeta,
+        imagesCachedAt.isAcceptableOrUnknown(
+          data['images_cached_at']!,
+          _imagesCachedAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -300,6 +322,10 @@ class $RebuildSetsTable extends RebuildSets
         DriftSqlType.bool,
         data['${effectivePrefix}deleted'],
       )!,
+      imagesCachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}images_cached_at'],
+      ),
     );
   }
 
@@ -322,6 +348,7 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
   final DateTime updatedAt;
   final bool dirty;
   final bool deleted;
+  final DateTime? imagesCachedAt;
   const RebuildSetRow({
     required this.id,
     required this.setItemId,
@@ -335,6 +362,7 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
     required this.updatedAt,
     required this.dirty,
     required this.deleted,
+    this.imagesCachedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -359,6 +387,9 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['dirty'] = Variable<bool>(dirty);
     map['deleted'] = Variable<bool>(deleted);
+    if (!nullToAbsent || imagesCachedAt != null) {
+      map['images_cached_at'] = Variable<DateTime>(imagesCachedAt);
+    }
     return map;
   }
 
@@ -382,6 +413,9 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
       updatedAt: Value(updatedAt),
       dirty: Value(dirty),
       deleted: Value(deleted),
+      imagesCachedAt: imagesCachedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(imagesCachedAt),
     );
   }
 
@@ -403,6 +437,7 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       dirty: serializer.fromJson<bool>(json['dirty']),
       deleted: serializer.fromJson<bool>(json['deleted']),
+      imagesCachedAt: serializer.fromJson<DateTime?>(json['imagesCachedAt']),
     );
   }
   @override
@@ -421,6 +456,7 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'dirty': serializer.toJson<bool>(dirty),
       'deleted': serializer.toJson<bool>(deleted),
+      'imagesCachedAt': serializer.toJson<DateTime?>(imagesCachedAt),
     };
   }
 
@@ -437,6 +473,7 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
     DateTime? updatedAt,
     bool? dirty,
     bool? deleted,
+    Value<DateTime?> imagesCachedAt = const Value.absent(),
   }) => RebuildSetRow(
     id: id ?? this.id,
     setItemId: setItemId ?? this.setItemId,
@@ -450,6 +487,9 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
     updatedAt: updatedAt ?? this.updatedAt,
     dirty: dirty ?? this.dirty,
     deleted: deleted ?? this.deleted,
+    imagesCachedAt: imagesCachedAt.present
+        ? imagesCachedAt.value
+        : this.imagesCachedAt,
   );
   RebuildSetRow copyWithCompanion(RebuildSetsCompanion data) {
     return RebuildSetRow(
@@ -469,6 +509,9 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       dirty: data.dirty.present ? data.dirty.value : this.dirty,
       deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      imagesCachedAt: data.imagesCachedAt.present
+          ? data.imagesCachedAt.value
+          : this.imagesCachedAt,
     );
   }
 
@@ -486,7 +529,8 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('dirty: $dirty, ')
-          ..write('deleted: $deleted')
+          ..write('deleted: $deleted, ')
+          ..write('imagesCachedAt: $imagesCachedAt')
           ..write(')'))
         .toString();
   }
@@ -505,6 +549,7 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
     updatedAt,
     dirty,
     deleted,
+    imagesCachedAt,
   );
   @override
   bool operator ==(Object other) =>
@@ -521,7 +566,8 @@ class RebuildSetRow extends DataClass implements Insertable<RebuildSetRow> {
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt &&
           other.dirty == this.dirty &&
-          other.deleted == this.deleted);
+          other.deleted == this.deleted &&
+          other.imagesCachedAt == this.imagesCachedAt);
 }
 
 class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
@@ -537,6 +583,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
   final Value<DateTime> updatedAt;
   final Value<bool> dirty;
   final Value<bool> deleted;
+  final Value<DateTime?> imagesCachedAt;
   final Value<int> rowid;
   const RebuildSetsCompanion({
     this.id = const Value.absent(),
@@ -551,6 +598,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
     this.updatedAt = const Value.absent(),
     this.dirty = const Value.absent(),
     this.deleted = const Value.absent(),
+    this.imagesCachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   RebuildSetsCompanion.insert({
@@ -566,6 +614,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
     this.updatedAt = const Value.absent(),
     this.dirty = const Value.absent(),
     this.deleted = const Value.absent(),
+    this.imagesCachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        setItemId = Value(setItemId);
@@ -582,6 +631,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
     Expression<DateTime>? updatedAt,
     Expression<bool>? dirty,
     Expression<bool>? deleted,
+    Expression<DateTime>? imagesCachedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -597,6 +647,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
       if (updatedAt != null) 'updated_at': updatedAt,
       if (dirty != null) 'dirty': dirty,
       if (deleted != null) 'deleted': deleted,
+      if (imagesCachedAt != null) 'images_cached_at': imagesCachedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -614,6 +665,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
     Value<DateTime>? updatedAt,
     Value<bool>? dirty,
     Value<bool>? deleted,
+    Value<DateTime?>? imagesCachedAt,
     Value<int>? rowid,
   }) {
     return RebuildSetsCompanion(
@@ -629,6 +681,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
       updatedAt: updatedAt ?? this.updatedAt,
       dirty: dirty ?? this.dirty,
       deleted: deleted ?? this.deleted,
+      imagesCachedAt: imagesCachedAt ?? this.imagesCachedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -672,6 +725,9 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
     if (deleted.present) {
       map['deleted'] = Variable<bool>(deleted.value);
     }
+    if (imagesCachedAt.present) {
+      map['images_cached_at'] = Variable<DateTime>(imagesCachedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -693,6 +749,7 @@ class RebuildSetsCompanion extends UpdateCompanion<RebuildSetRow> {
           ..write('updatedAt: $updatedAt, ')
           ..write('dirty: $dirty, ')
           ..write('deleted: $deleted, ')
+          ..write('imagesCachedAt: $imagesCachedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3865,6 +3922,7 @@ typedef $$RebuildSetsTableCreateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> dirty,
       Value<bool> deleted,
+      Value<DateTime?> imagesCachedAt,
       Value<int> rowid,
     });
 typedef $$RebuildSetsTableUpdateCompanionBuilder =
@@ -3881,6 +3939,7 @@ typedef $$RebuildSetsTableUpdateCompanionBuilder =
       Value<DateTime> updatedAt,
       Value<bool> dirty,
       Value<bool> deleted,
+      Value<DateTime?> imagesCachedAt,
       Value<int> rowid,
     });
 
@@ -3950,6 +4009,11 @@ class $$RebuildSetsTableFilterComposer
 
   ColumnFilters<bool> get deleted => $composableBuilder(
     column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get imagesCachedAt => $composableBuilder(
+    column: $table.imagesCachedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -4022,6 +4086,11 @@ class $$RebuildSetsTableOrderingComposer
     column: $table.deleted,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get imagesCachedAt => $composableBuilder(
+    column: $table.imagesCachedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$RebuildSetsTableAnnotationComposer
@@ -4072,6 +4141,11 @@ class $$RebuildSetsTableAnnotationComposer
 
   GeneratedColumn<bool> get deleted =>
       $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get imagesCachedAt => $composableBuilder(
+    column: $table.imagesCachedAt,
+    builder: (column) => column,
+  );
 }
 
 class $$RebuildSetsTableTableManager
@@ -4117,6 +4191,7 @@ class $$RebuildSetsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> dirty = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
+                Value<DateTime?> imagesCachedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RebuildSetsCompanion(
                 id: id,
@@ -4131,6 +4206,7 @@ class $$RebuildSetsTableTableManager
                 updatedAt: updatedAt,
                 dirty: dirty,
                 deleted: deleted,
+                imagesCachedAt: imagesCachedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -4147,6 +4223,7 @@ class $$RebuildSetsTableTableManager
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> dirty = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
+                Value<DateTime?> imagesCachedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => RebuildSetsCompanion.insert(
                 id: id,
@@ -4161,6 +4238,7 @@ class $$RebuildSetsTableTableManager
                 updatedAt: updatedAt,
                 dirty: dirty,
                 deleted: deleted,
+                imagesCachedAt: imagesCachedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
