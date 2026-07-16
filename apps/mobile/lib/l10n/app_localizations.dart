@@ -746,17 +746,11 @@ abstract class AppLocalizations {
   /// **'View on BrickLink'**
   String get countViewOnBrickLink;
 
-  /// No description provided for @countPriceComingSoon.
+  /// No description provided for @countAllAccountedFor.
   ///
   /// In en, this message translates to:
-  /// **'Price — coming soon'**
-  String get countPriceComingSoon;
-
-  /// No description provided for @count3dPreviewComingSoon.
-  ///
-  /// In en, this message translates to:
-  /// **'3D preview — coming soon'**
-  String get count3dPreviewComingSoon;
+  /// **'All accounted for'**
+  String get countAllAccountedFor;
 
   /// No description provided for @countSearchHint.
   ///

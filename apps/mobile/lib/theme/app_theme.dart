@@ -1,92 +1,258 @@
 import 'package:flutter/material.dart';
 
-/// BrickBack design tokens — **WIREFRAME fidelity** (Phase 1–4).
+import 'tokens.dart';
+
+// Re-export the token layer + motion/haptics so existing `import
+// 'theme/app_theme.dart'` call sites keep resolving `AppColors`, `AppText`, etc.
+export 'tokens.dart';
+export 'motion.dart';
+export 'haptics.dart';
+
+/// The dark-aware semantic palette, resolved from the active [Theme]. This is the
+/// Flutter analog of the Swift `Color(lightHex:darkHex:)` dynamic token: the
+/// branded primitives + the design gallery read `BrickColors.of(context)` so they
+/// render correctly in light **and** dark with no per-call-site branching.
 ///
-/// Deliberately low-fidelity: grayscale, boxy, hairline borders. The goal is to
-/// validate the flow, not the visuals. The polish pass (Phase 9) swaps this one
-/// file for the branded palette + typography — **keep these token NAMES stable**
-/// so screens don't need to change.
-class AppColors {
-  AppColors._();
+/// (Legacy screens still reference the `const` [AppColors] light snapshot directly;
+/// migrating them to `BrickColors.of(context)` is what unlocks full app-wide dark —
+/// a bounded follow-up left to the phase that owns those screen files.)
+@immutable
+class BrickColors extends ThemeExtension<BrickColors> {
+  const BrickColors({
+    required this.canvas,
+    required this.card,
+    required this.cardEdge,
+    required this.line,
+    required this.ink,
+    required this.inkSoft,
+    required this.muted,
+    required this.faint,
+    required this.shadow,
+    required this.brand,
+    required this.brandDeep,
+    required this.brandEdge,
+    required this.primary,
+    required this.onPrimary,
+    required this.primaryEdge,
+    required this.success,
+    required this.warning,
+    required this.danger,
+    required this.info,
+  });
 
-  // Neutrals (the whole wireframe lives here)
-  static const canvas = Color(0xFFF4F4F5); // page background
-  static const card = Color(0xFFFFFFFF); // surfaces
-  static const line = Color(0xFFD4D4D8); // hairline borders
-  static const ink = Color(0xFF18181B); // primary text / headings
-  static const inkSoft = Color(0xFF52525B); // secondary text
-  static const muted = Color(0xFF9CA3AF); // tertiary / placeholders
-  static const faint = Color(0xFFE4E4E7); // fills, skeletons
+  final Color canvas;
+  final Color card;
+  final Color cardEdge;
+  final Color line;
+  final Color ink;
+  final Color inkSoft;
+  final Color muted;
+  final Color faint;
+  final Color shadow;
+  final Color brand;
+  final Color brandDeep;
+  final Color brandEdge;
+  final Color primary;
+  final Color onPrimary;
+  final Color primaryEdge;
+  final Color success;
+  final Color warning;
+  final Color danger;
+  final Color info;
 
-  // Single interactive accent (grayscale-ink in wireframe; brand color in Phase 9)
-  static const primary = Color(0xFF18181B);
-  static const onPrimary = Color(0xFFFFFFFF);
+  static const light = BrickColors(
+    canvas: AppColors.canvas,
+    card: AppColors.card,
+    cardEdge: AppColors.cardEdge,
+    line: AppColors.line,
+    ink: AppColors.ink,
+    inkSoft: AppColors.inkSoft,
+    muted: AppColors.muted,
+    faint: AppColors.faint,
+    shadow: AppColors.shadow,
+    brand: AppColors.brand,
+    brandDeep: AppColors.brandDeep,
+    brandEdge: AppColors.brandEdge,
+    primary: AppColors.primary,
+    onPrimary: AppColors.onPrimary,
+    primaryEdge: AppColors.primaryEdge,
+    success: AppColors.success,
+    warning: AppColors.warning,
+    danger: AppColors.danger,
+    info: AppColors.info,
+  );
 
-  // Semantic (kept muted so it still reads as a wireframe; recolored in Phase 9)
-  static const success = Color(0xFF3F6212);
-  static const warning = Color(0xFF92600A);
-  static const danger = Color(0xFF991B1B);
-  static const info = Color(0xFF334155);
+  static const dark = BrickColors(
+    canvas: AppColorsDark.canvas,
+    card: AppColorsDark.card,
+    cardEdge: AppColorsDark.cardEdge,
+    line: AppColorsDark.line,
+    ink: AppColorsDark.ink,
+    inkSoft: AppColorsDark.inkSoft,
+    muted: AppColorsDark.muted,
+    faint: AppColorsDark.faint,
+    shadow: AppColorsDark.shadow,
+    brand: AppColorsDark.brand,
+    brandDeep: AppColorsDark.brandDeep,
+    brandEdge: AppColorsDark.brandEdge,
+    primary: AppColorsDark.primary,
+    onPrimary: AppColorsDark.onPrimary,
+    primaryEdge: AppColorsDark.primaryEdge,
+    success: AppColorsDark.success,
+    warning: AppColorsDark.warning,
+    danger: AppColorsDark.danger,
+    info: AppColorsDark.info,
+  );
+
+  /// The active brick palette, or the light snapshot when no theme carries it.
+  static BrickColors of(BuildContext context) =>
+      Theme.of(context).extension<BrickColors>() ?? light;
+
+  @override
+  BrickColors copyWith({
+    Color? canvas,
+    Color? card,
+    Color? cardEdge,
+    Color? line,
+    Color? ink,
+    Color? inkSoft,
+    Color? muted,
+    Color? faint,
+    Color? shadow,
+    Color? brand,
+    Color? brandDeep,
+    Color? brandEdge,
+    Color? primary,
+    Color? onPrimary,
+    Color? primaryEdge,
+    Color? success,
+    Color? warning,
+    Color? danger,
+    Color? info,
+  }) {
+    return BrickColors(
+      canvas: canvas ?? this.canvas,
+      card: card ?? this.card,
+      cardEdge: cardEdge ?? this.cardEdge,
+      line: line ?? this.line,
+      ink: ink ?? this.ink,
+      inkSoft: inkSoft ?? this.inkSoft,
+      muted: muted ?? this.muted,
+      faint: faint ?? this.faint,
+      shadow: shadow ?? this.shadow,
+      brand: brand ?? this.brand,
+      brandDeep: brandDeep ?? this.brandDeep,
+      brandEdge: brandEdge ?? this.brandEdge,
+      primary: primary ?? this.primary,
+      onPrimary: onPrimary ?? this.onPrimary,
+      primaryEdge: primaryEdge ?? this.primaryEdge,
+      success: success ?? this.success,
+      warning: warning ?? this.warning,
+      danger: danger ?? this.danger,
+      info: info ?? this.info,
+    );
+  }
+
+  @override
+  BrickColors lerp(ThemeExtension<BrickColors>? other, double t) {
+    if (other is! BrickColors) return this;
+    return BrickColors(
+      canvas: Color.lerp(canvas, other.canvas, t)!,
+      card: Color.lerp(card, other.card, t)!,
+      cardEdge: Color.lerp(cardEdge, other.cardEdge, t)!,
+      line: Color.lerp(line, other.line, t)!,
+      ink: Color.lerp(ink, other.ink, t)!,
+      inkSoft: Color.lerp(inkSoft, other.inkSoft, t)!,
+      muted: Color.lerp(muted, other.muted, t)!,
+      faint: Color.lerp(faint, other.faint, t)!,
+      shadow: Color.lerp(shadow, other.shadow, t)!,
+      brand: Color.lerp(brand, other.brand, t)!,
+      brandDeep: Color.lerp(brandDeep, other.brandDeep, t)!,
+      brandEdge: Color.lerp(brandEdge, other.brandEdge, t)!,
+      primary: Color.lerp(primary, other.primary, t)!,
+      onPrimary: Color.lerp(onPrimary, other.onPrimary, t)!,
+      primaryEdge: Color.lerp(primaryEdge, other.primaryEdge, t)!,
+      success: Color.lerp(success, other.success, t)!,
+      warning: Color.lerp(warning, other.warning, t)!,
+      danger: Color.lerp(danger, other.danger, t)!,
+      info: Color.lerp(info, other.info, t)!,
+    );
+  }
 }
 
-class AppSpacing {
-  AppSpacing._();
-  static const s4 = 4.0;
-  static const s8 = 8.0;
-  static const s12 = 12.0;
-  static const s16 = 16.0;
-  static const s20 = 20.0;
-  static const s24 = 24.0;
-  static const s32 = 32.0;
-  static const s40 = 40.0;
-  static const screen = 20.0; // page gutter
-}
+/// Branded light theme.
+final ThemeData appLightTheme = _buildTheme(Brightness.light);
 
-class AppRadius {
-  AppRadius._();
-  // Boxy on purpose for the wireframe stage.
-  static const sm = 6.0;
-  static const md = 8.0;
-  static const lg = 12.0;
-  static const xl = 16.0;
-  static const pill = 999.0;
-}
-
-class AppText {
-  AppText._();
-  // System font in wireframe (no google_fonts branding yet — Phase 9).
-  static const _base = TextStyle(color: AppColors.ink, height: 1.25);
-
-  static final display = _base.copyWith(fontSize: 30, fontWeight: FontWeight.w700);
-  static final h1 = _base.copyWith(fontSize: 24, fontWeight: FontWeight.w700);
-  static final h2 = _base.copyWith(fontSize: 20, fontWeight: FontWeight.w700);
-  static final title = _base.copyWith(fontSize: 16, fontWeight: FontWeight.w600);
-  static final body = _base.copyWith(fontSize: 15, fontWeight: FontWeight.w400);
-  static final label = _base.copyWith(fontSize: 13, fontWeight: FontWeight.w600);
-  static final caption =
-      _base.copyWith(fontSize: 12, fontWeight: FontWeight.w400, color: AppColors.inkSoft);
-}
+/// Branded dark theme.
+final ThemeData appDarkTheme = _buildTheme(Brightness.dark);
 
 /// Framework host theme. Material is used only as a scaffold — all splash/hover
-/// chrome is stripped so custom widgets fully own the look (whatabrick pattern).
-ThemeData buildAppTheme() {
+/// chrome is stripped so the branded primitives fully own the look. Both schemes
+/// are built from the token layer so dark mode is `ThemeMode` + a dark
+/// `ColorScheme`, with no per-widget branching.
+ThemeData _buildTheme(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  final c = isDark ? BrickColors.dark : BrickColors.light;
+
+  final scheme = ColorScheme(
+    brightness: brightness,
+    primary: c.primary, // LEGO-red CTA
+    onPrimary: c.onPrimary,
+    secondary: c.brand, // brand blue
+    onSecondary: Colors.white,
+    surface: c.card,
+    onSurface: c.ink,
+    surfaceContainerHighest: c.faint,
+    outline: c.line,
+    error: c.danger,
+    onError: Colors.white,
+  );
+
   final base = ThemeData(
     useMaterial3: true,
-    colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      surface: AppColors.canvas,
-    ),
-    scaffoldBackgroundColor: AppColors.canvas,
+    brightness: brightness,
+    colorScheme: scheme,
+    scaffoldBackgroundColor: c.canvas,
+    canvasColor: c.canvas,
     splashFactory: NoSplash.splashFactory,
     highlightColor: Colors.transparent,
     hoverColor: Colors.transparent,
     splashColor: Colors.transparent,
-    fontFamily: null,
-  );
-  return base.copyWith(
-    textTheme: base.textTheme.apply(
-      bodyColor: AppColors.ink,
-      displayColor: AppColors.ink,
+    fontFamily: null, // platform system font (see AppText deviation note)
+    extensions: [c],
+    dividerColor: c.line,
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: c.primary,
+      selectionColor: c.primary.withValues(alpha: 0.25),
+      selectionHandleColor: c.primary,
     ),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? Colors.white : c.card,
+      ),
+      trackColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? c.primary : c.faint,
+      ),
+      trackOutlineColor: WidgetStateProperty.resolveWith(
+        (s) => s.contains(WidgetState.selected) ? c.primary : c.line,
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(color: c.primary),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: c.card,
+      surfaceTintColor: Colors.transparent,
+      modalBackgroundColor: c.card,
+      showDragHandle: false,
+    ),
+    snackBarTheme: SnackBarThemeData(
+      backgroundColor: c.ink,
+      contentTextStyle: TextStyle(color: c.canvas),
+      behavior: SnackBarBehavior.floating,
+    ),
+    iconTheme: IconThemeData(color: c.ink),
+  );
+
+  return base.copyWith(
+    textTheme: base.textTheme.apply(bodyColor: c.ink, displayColor: c.ink),
   );
 }

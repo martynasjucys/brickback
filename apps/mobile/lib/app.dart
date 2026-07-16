@@ -5,6 +5,7 @@ import 'core/sync/sync_service.dart';
 import 'l10n/l10n.dart';
 import 'router/app_router.dart';
 import 'theme/app_theme.dart';
+import 'theme/theme_controller.dart';
 
 /// Root widget. Owns the app lifecycle hooks that flush/resume sync (no-ops until
 /// premium sync is enabled in Phase 5).
@@ -48,7 +49,9 @@ class _BrickBackAppState extends ConsumerState<BrickBackApp> with WidgetsBinding
     return MaterialApp.router(
       title: 'BrickBack',
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
+      theme: appLightTheme,
+      darkTheme: appDarkTheme,
+      themeMode: ref.watch(themeControllerProvider),
       locale: ref.watch(localeControllerProvider),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

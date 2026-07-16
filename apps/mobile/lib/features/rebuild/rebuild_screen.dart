@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -133,10 +132,19 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
     if (writes.isNotEmpty) await Future.wait(writes);
   }
 
+  /// True once every build part has reached its needed quantity — the moment the
+  /// whole set hits 100% and earns the celebration haptic.
+  bool _isSetComplete() {
+    final inv = _inv;
+    if (inv == null) return false;
+    final total = inv.summary.totalParts;
+    return total > 0 && _haveTotal(inv) >= total;
+  }
+
   void _setHave(ExpandedPart part, int qty) {
     final clamped = qty < 0 ? 0 : qty;
     setState(() => _have[part.key] = clamped);
-    HapticFeedback.selectionClick();
+    Haptics.selection();
     _pending[part.key] = part;
     _timers[part.key]?.cancel();
     _timers[part.key] = Timer(const Duration(milliseconds: 350), () async {
@@ -155,12 +163,19 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   void _tapPart(ExpandedPart part) {
     final have = _have[part.key] ?? 0;
     if (have >= part.neededQty) {
-      HapticFeedback.lightImpact();
+      Haptics.light();
       return;
     }
     final next = (have + _stepOf(part)).clamp(0, part.neededQty);
     _setHave(part, next);
-    if (next >= part.neededQty) HapticFeedback.mediumImpact();
+    if (next >= part.neededQty) {
+      // Finishing the whole set plays the celebration; a single part plays a thud.
+      if (_isSetComplete()) {
+        Haptics.celebrate();
+      } else {
+        Haptics.impactMedium();
+      }
+    }
   }
 
   /// Persist a part's per-tap step (edited from the detail sheet). Device-local
@@ -177,7 +192,7 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   void _setExtraHave(ExpandedPart part, int qty) {
     final clamped = qty < 0 ? 0 : qty;
     setState(() => _extraHave[part.key] = clamped);
-    HapticFeedback.selectionClick();
+    Haptics.selection();
     _extraPending[part.key] = part;
     _extraTimers[part.key]?.cancel();
     _extraTimers[part.key] = Timer(const Duration(milliseconds: 350), () async {
@@ -190,13 +205,13 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   void _tapExtra(ExpandedPart part) {
     final have = _extraHave[part.key] ?? 0;
     if (have >= part.neededQty) {
-      HapticFeedback.lightImpact();
+      Haptics.light();
       return;
     }
     // Extras have no detail sheet, so no per-part step — always count by one.
     final next = (have + 1).clamp(0, part.neededQty);
     _setExtraHave(part, next);
-    if (next >= part.neededQty) HapticFeedback.mediumImpact();
+    if (next >= part.neededQty) Haptics.impactMedium();
   }
 
   int _haveTotal(RebuildInventory inv) =>
@@ -884,8 +899,12 @@ class _PartTileState extends State<_PartTile> {
       onLongPress: widget.onLongPress,
       child: AnimatedScale(
         scale: _scale,
-        duration: const Duration(milliseconds: 90),
-        child: Container(
+        duration: Motion.pressDuration,
+        // Branded count-tile fill: the neutral → started → complete state change
+        // sweeps its colour/border (instant under Reduce Motion).
+        child: AnimatedContainer(
+          duration: Motion.gate(context, Motion.stateDuration),
+          curve: Curves.easeOut,
           padding: const EdgeInsets.all(AppSpacing.s8),
           decoration: BoxDecoration(
             color: bg,
@@ -1078,9 +1097,22 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(context.l10n.countHaveOfNeededSpaced(_have, p.neededQty),
-                    style: AppText.h1.copyWith(
-                        color: _have >= p.neededQty ? AppColors.success : AppColors.ink)),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(context.l10n.countHaveOfNeededSpaced(_have, p.neededQty),
+                        style: AppText.h1.copyWith(
+                            color:
+                                _have >= p.neededQty ? AppColors.success : AppColors.ink)),
+                    // Reassurance once the part is fully counted (oracle: L.allAccountedFor).
+                    if (_have >= p.neededQty) ...[
+                      const SizedBox(height: 2),
+                      Text(context.l10n.countAllAccountedFor,
+                          style: AppText.caption.copyWith(color: AppColors.success)),
+                    ],
+                  ],
+                ),
                 Row(
                   children: [
                     _StepBtn(icon: Icons.remove, onTap: _have > 0 ? () => _set(_have - _step) : null),
@@ -1115,14 +1147,6 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
                 label: context.l10n.countViewOnBrickLink,
                 onTap: _openBrickLink,
               ),
-            _DetailAction(
-                icon: Icons.sell_outlined,
-                label: context.l10n.countPriceComingSoon,
-                onTap: null),
-            _DetailAction(
-                icon: Icons.view_in_ar_outlined,
-                label: context.l10n.count3dPreviewComingSoon,
-                onTap: null),
           ],
         ),
       ),

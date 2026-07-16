@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Brand-blue field behind the adaptive launcher icon. -->
+    <color name="ic_launcher_background">#0253C4</color>
+    <!-- Launch splash canvas — cream in light (see values-night for dark). -->
+    <color name="launch_background">#F6F3E7</color>
+</resources>

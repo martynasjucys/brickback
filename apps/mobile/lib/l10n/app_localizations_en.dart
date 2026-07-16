@@ -387,10 +387,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get countViewOnBrickLink => 'View on BrickLink';
 
   @override
-  String get countPriceComingSoon => 'Price — coming soon';
-
-  @override
-  String get count3dPreviewComingSoon => '3D preview — coming soon';
+  String get countAllAccountedFor => 'All accounted for';
 
   @override
   String get countSearchHint => 'Search by name or code…';

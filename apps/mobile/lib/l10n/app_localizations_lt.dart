@@ -395,10 +395,7 @@ class AppLocalizationsLt extends AppLocalizations {
   String get countViewOnBrickLink => 'Žiūrėti BrickLink';
 
   @override
-  String get countPriceComingSoon => 'Kaina — netrukus';
-
-  @override
-  String get count3dPreviewComingSoon => '3D peržiūra — netrukus';
+  String get countAllAccountedFor => 'Viskas suskaičiuota';
 
   @override
   String get countSearchHint => 'Ieškokite pagal pavadinimą ar kodą…';
