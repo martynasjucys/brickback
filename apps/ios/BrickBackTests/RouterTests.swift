@@ -64,29 +64,6 @@ struct RouterTests {
     }
 }
 
-/// `hidesNavBar` is the invariant the whole nav-bar-consistency rule rests on: pushed neighbours in
-/// one stack must agree, or SwiftUI corrupts the returning screen's header. Pinning it here means
-/// the rework can't silently reintroduce a mixed stack.
-@Suite("Route — nav bar visibility")
-@MainActor
-struct RouteNavBarTests {
-
-    @Test("only .search hides the nav bar; every other route shows it")
-    func onlySearchHides() {
-        let showsNativeBar: [Route] = [
-            .setDetail(1), .setParts(1), .setMinifigs(1),
-            .rebuild("a"), .review("a"), .report("a"),
-            .signIn, .paywall,
-            .party("p"), .partyJoin, .partyInvite("p"), .partyAddParts("p"),
-            .appearance, .language,
-        ]
-        for route in showsNativeBar {
-            #expect(route.hidesNavBar == false, "\(route) should ride the native bar")
-        }
-        #expect(Route.search.hidesNavBar == true)
-    }
-}
-
 /// `AppEnvironment` owns the four routers and the two cross-cutting mutations the rework has to
 /// preserve. Constructing one is safe and offline: `AppServices` takes an injectable in-memory
 /// database, `SupabaseClient` does no I/O on init, and `AppEnvironment.init` spawns nothing (the

@@ -36,19 +36,12 @@ final class AppEnvironment {
     /// keyed on `locale.language`.
     var selectedTab = 0
 
-    /// The `role: .search` tab's selection value (iOS 18+ only). Sits after the three main tabs.
+    /// The `role: .search` tab's selection value. Sits after the three main tabs.
     static let searchTab = 3
 
-    /// Open catalog search. On iOS 18+ this selects the native search tab (which expands its search
-    /// field); on iOS 17 it pushes the search screen onto the Rebuilds stack (there is no search
-    /// tab). The single entry point so callers don't branch on OS version.
+    /// Open catalog search — selects the native search tab, which expands its own search field.
     func openSearch() {
-        if #available(iOS 18.0, *) {
-            selectedTab = Self.searchTab
-        } else {
-            selectedTab = 0
-            homeRouter.push(.search)
-        }
+        selectedTab = Self.searchTab
     }
 
     /// Premium unlock + free-cap source of truth (S5). Observed by the paywall/profile; read

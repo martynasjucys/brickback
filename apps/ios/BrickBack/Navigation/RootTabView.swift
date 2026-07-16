@@ -3,21 +3,14 @@ import SwiftUI
 /// The tab shell (Rebuilds + Party + Profile), each with its own `NavigationStack`. Replaces
 /// go_router's `StatefulShellRoute` (00-architecture §4).
 ///
-/// Adding a set = searching the catalog. On iOS 18+ that's a first-class `role: .search` tab
-/// (`ModernTabView`): a native, expandable search button that rides the tab bar's trailing edge —
-/// tapping it grows a search field in-place and collapses the other tabs (the system's own
-/// animation; the same one Slack/Mail use on iOS 26). On iOS 17 there's no search role, so we keep
-/// the previous shape (`LegacyTabView`): three `.tabItem` tabs plus a floating "add a set" button.
+/// Adding a set = searching the catalog, and that's a first-class `role: .search` tab: a native,
+/// expandable search button riding the tab bar's trailing edge — tapping it grows a search field
+/// in-place and collapses the other tabs (the system's own animation; the same one Slack/Mail use
+/// on iOS 26).
 struct RootTabView: View {
     var body: some View {
-        Group {
-            if #available(iOS 18.0, *) {
-                ModernTabView()
-            } else {
-                LegacyTabView()
-            }
-        }
-        .tint(AppColors.ink)
+        ModernTabView()
+            .tint(AppColors.ink)
     }
 }
 
@@ -26,7 +19,6 @@ struct RootTabView: View {
 /// The three main tabs plus a `role: .search` tab. The search tab carries the "add a set" affordance
 /// (a plus glyph) but behaves as native search — its content owns the query via `.searchable`, so
 /// the field lives in the tab bar rather than at the top of the screen.
-@available(iOS 18.0, *)
 private struct ModernTabView: View {
     @Environment(AppEnvironment.self) private var env
 
@@ -78,7 +70,6 @@ private extension View {
 /// The search tab's content: a `NavigationStack` bound to `searchRouter` whose root is the catalog
 /// result list, with `.searchable` supplying the query. No in-screen search field — the tab bar's
 /// native field feeds `query`. Results push set detail onto this same stack.
-@available(iOS 18.0, *)
 private struct SearchTab: View {
     @Bindable var router: Router
     @State private var query = ""
@@ -113,56 +104,6 @@ private struct SearchTab: View {
 
 // MARK: - Legacy (iOS 17): three tabs + floating add button
 
-/// The pre-iOS-18 shell: three `.tabItem` tabs and a floating "add a set" button riding the tab-bar
-/// line. Search is a pushed screen (with its own field) rather than a tab.
-private struct LegacyTabView: View {
-    @Environment(AppEnvironment.self) private var env
-
-    var body: some View {
-        @Bindable var env = env
-        TabView(selection: $env.selectedTab) {
-            TabNavigation(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
-                .tag(0)
-                .tabItem { Label(L.navRebuilds, systemImage: "square.grid.2x2") }
-
-            TabNavigation(router: env.partyRouter) { PartyLandingScreen() }
-                .tag(1)
-                .tabItem { Label(L.navParty, systemImage: "person.2") }
-
-            TabNavigation(router: env.profileRouter) { ProfileScreen() }
-                .tag(2)
-                .tabItem { Label(L.navProfile, systemImage: "person.crop.circle") }
-        }
-        // A separate floating action sitting on the tab-bar line (trailing). Adding a set is a
-        // Rebuilds-tab flow, so `openSearch()` snaps to that tab and pushes search.
-        .overlay(alignment: .bottomTrailing) {
-            AddSetButton { env.openSearch() }
-                .padding(.trailing, AppSpacing.screen)
-                .padding(.bottom, -10) // drop onto the tab-bar line (it floats below the safe-area inset)
-        }
-    }
-}
-
-/// The floating add-a-set control (iOS 17 only). Mirrors the system tab bar's floating capsule but
-/// stands apart as its own round button so it reads as a distinct action rather than a third tab.
-private struct AddSetButton: View {
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            Image(systemName: "plus")
-                .font(.system(size: 22, weight: .bold))
-                .foregroundStyle(AppColors.ink)
-                .frame(width: 56, height: 56)
-                .background(.regularMaterial, in: Circle())
-                .overlay(Circle().stroke(AppColors.ink.opacity(0.06), lineWidth: 0.5))
-                .shadow(color: AppColors.shadow.opacity(0.16), radius: 8, y: 3)
-        }
-        .buttonStyle(PressableStyle())
-        .accessibilityLabel(L.addASet)
-    }
-}
-
 // MARK: - Shared
 
 /// A tab whose root sits in a `NavigationStack` bound to its `Router`, resolving `Route`s to
@@ -180,8 +121,13 @@ private struct TabNavigation<Root: View>: View {
             root()
                 .navigationBarHidden(rootBarHidden)
                 .navigationDestination(for: Route.self) { route in
+                    // Every pushed destination rides the native bar, and they must keep agreeing:
+                    // toggling nav-bar visibility *between pushes* in one stack corrupts the
+                    // returning screen's header (a SwiftUI glitch that cost a live bug report). A
+                    // stack's ROOT may still differ — Party and Profile hide it and draw their own
+                    // brand plate — because only pushed neighbours have to match.
                     RouteView(route: route)
-                        .navigationBarHidden(route.hidesNavBar)
+                        .navigationBarHidden(false)
                 }
         }
         // Tell every screen on this stack which router it's on, so dual-entry screens (party mode)
@@ -197,8 +143,6 @@ struct RouteView: View {
 
     var body: some View {
         switch route {
-        case .search:
-            SearchScreen()
         case .setDetail(let id):
             SetDetailScreen(itemId: id)
         case .setParts(let id):

@@ -15,17 +15,6 @@ struct SetDetailScreen: View {
 
     private var router: Router { activeRouter ?? env.homeRouter }
 
-    /// On iOS 18+ this screen always rides a native nav bar with its own "back" chevron — the search
-    /// tab returns to the results, the counting screen's ••• menu returns to counting (`.setDetail`
-    /// keeps `hidesNavBar == false`, so `TabNavigation` shows the bar too). There we drop our custom
-    /// `ScreenHeader` entirely and hang the title off the native bar as an inline `navigationTitle`,
-    /// so it sits on the same row as the back button (matching the other native screens). The iOS 17
-    /// legacy pushed flow has no reliable native bar, so it keeps its `ScreenHeader`.
-    private var systemProvidesBack: Bool {
-        if #available(iOS 18.0, *) { return true }
-        return activeRouter === env.searchRouter
-    }
-
     /// The native bar's inline title: the set's own name once loaded (the big content heading in a
     /// compact form the bar keeps as you scroll), falling back to the generic label while it loads.
     private var navTitle: String {
@@ -35,9 +24,6 @@ struct SetDetailScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if !systemProvidesBack {
-                ScreenHeader(L.setHeader, onBack: { router.pop() })
-            }
             switch state {
             case .idle, .loading:
                 ProgressView().tint(AppColors.primary).frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -77,14 +63,6 @@ private struct Detail: View {
     let uniqueParts: String
 
     private var router: Router { activeRouter ?? env.homeRouter }
-
-    /// The native bar hosts the set name on iOS 18+, so the in-content heading would just repeat it —
-    /// drop it there. The iOS 17 `ScreenHeader` shows the generic "Set" label with the bar hidden, so
-    /// it keeps the heading as the only place the full name appears.
-    private var showsNameHeading: Bool {
-        if #available(iOS 18.0, *) { return false }
-        return activeRouter !== env.searchRouter
-    }
 
     // MARK: Lifecycle + value
 
@@ -194,10 +172,6 @@ private struct Detail: View {
                 SetThumb(imageUrl: detail.set.imageUrl, size: 200, radius: AppRadius.lg)
                     .frame(maxWidth: .infinity)
                 Spacer().frame(height: AppSpacing.s16)
-                if showsNameHeading {
-                    Text(detail.set.name).font(AppText.display).foregroundStyle(AppColors.ink)
-                    Spacer().frame(height: AppSpacing.s8)
-                }
                 if let theme = detail.themeName, !theme.isEmpty {
                     Text(theme).font(AppText.title).foregroundStyle(AppColors.inkSoft)
                     Spacer().frame(height: AppSpacing.s8)

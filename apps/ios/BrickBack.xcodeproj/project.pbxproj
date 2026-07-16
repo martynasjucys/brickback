@@ -20,7 +20,6 @@
 		3B6353D1E9EDF116BE67F70A /* LoadState.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAA6B0EC4CAE350186236C60 /* LoadState.swift */; };
 		3B8406735773119F6AEBA9D7 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F610260AF2595DE9138FC9EF /* ShareSheet.swift */; };
 		3DFED4AEC6DF5DB92DC14ACD /* Secrets.xcconfig.example in Resources */ = {isa = PBXBuildFile; fileRef = 84B987192B3E29745BFCCC90 /* Secrets.xcconfig.example */; };
-		40D1762A42C56F28144D5AAD /* DesignGalleryScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */; };
 		459F89D324AD02FEF1214887 /* Motion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 429E5B0295465F1D5BEACA48 /* Motion.swift */; };
 		48BBE177AB19B8083847AA5E /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = C988995BB8097446496D700C /* HomeScreen.swift */; };
 		4B0D6379183D73E4F3BD4E05 /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0846819BB2D2E8DDB55ED666 /* Haptics.swift */; };
@@ -124,7 +123,6 @@
 		E897EE2D9CDDAE7293F8D8E9 /* L.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L.swift; sourceTree = "<group>"; };
 		F220B3D9A4277B55CF909786 /* ReviewViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewViewModel.swift; sourceTree = "<group>"; };
 		F31B66F6ED83E46C5A54CFF2 /* Primitives.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Primitives.swift; sourceTree = "<group>"; };
-		F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignGalleryScreen.swift; sourceTree = "<group>"; };
 		F610260AF2595DE9138FC9EF /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		F99490CAAB5A666BA04F79C5 /* EntitlementController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntitlementController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -147,7 +145,6 @@
 			children = (
 				819F1C45AB71DD2EFEDD11A1 /* Auth */,
 				9E98C6AC28A9259CB9BB9D26 /* Catalog */,
-				4045556352AACDCAA94A8C37 /* DesignGallery */,
 				551279A56588F3224315D40E /* Home */,
 				1DA6D12F5205A3C62F7F5BF3 /* Party */,
 				55889047785A2336E2D000B1 /* Premium */,
@@ -192,14 +189,6 @@
 				DBD064A659911CC053F11409 /* BrickBackTests.xctest */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		4045556352AACDCAA94A8C37 /* DesignGallery */ = {
-			isa = PBXGroup;
-			children = (
-				F457CB7D8A4D3D94FF98E2C9 /* DesignGalleryScreen.swift */,
-			);
-			path = DesignGallery;
 			sourceTree = "<group>";
 		};
 		4A4F4157E18DF9F4F1AAB1DA /* Search */ = {
@@ -488,7 +477,6 @@
 				D06B4D0AA92EFFDA9369ADA8 /* AppEnvironment.swift in Sources */,
 				F35F98CCAE517F7B0C0212CF /* BrickBackApp.swift in Sources */,
 				8555F9351257D3893419D568 /* CatalogSupport.swift in Sources */,
-				40D1762A42C56F28144D5AAD /* DesignGalleryScreen.swift in Sources */,
 				2AA586332AA4FEBEE4897B13 /* DisplayNameController.swift in Sources */,
 				588A349B0C14DE6282691AD0 /* EntitlementController.swift in Sources */,
 				4B0D6379183D73E4F3BD4E05 /* Haptics.swift in Sources */,
@@ -605,7 +593,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -622,7 +610,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -646,7 +634,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = BrickBack/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -664,7 +652,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -725,7 +713,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -747,7 +735,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = BrickBack/Resources/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

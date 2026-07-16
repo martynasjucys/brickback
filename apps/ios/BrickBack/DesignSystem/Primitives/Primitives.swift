@@ -287,50 +287,6 @@ struct WrapLayout: Layout {
     }
 }
 
-// MARK: - BackButton
-
-/// The standard back control — a white brick-plate square with a bold left arrow. Shared by
-/// `ScreenHeader` and the counting screen's branded header so every back button reads the same.
-struct BackButton: View {
-    let onTap: () -> Void
-    var body: some View {
-        BrickIconButton(icon: "arrow.left", iconWeight: .bold, accessibilityLabel: "Back", onTap: onTap)
-    }
-}
-
-// MARK: - ScreenHeader
-
-struct ScreenHeader<Trailing: View>: View {
-    let title: String
-    var subtitle: String? = nil
-    var onBack: (() -> Void)? = nil
-    @ViewBuilder var trailing: () -> Trailing
-
-    init(_ title: String, subtitle: String? = nil, onBack: (() -> Void)? = nil, @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() }) {
-        self.title = title
-        self.subtitle = subtitle
-        self.onBack = onBack
-        self.trailing = trailing
-    }
-
-    var body: some View {
-        HStack(alignment: .center, spacing: AppSpacing.s8) {
-            if let onBack { BackButton(onTap: onBack) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(AppText.h1).foregroundStyle(AppColors.ink)
-                if let subtitle {
-                    Text(subtitle).font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                }
-            }
-            Spacer(minLength: 0)
-            trailing()
-        }
-        .padding(.horizontal, AppSpacing.screen)
-        .padding(.top, AppSpacing.s8)
-        .padding(.bottom, AppSpacing.s16)
-    }
-}
-
 // MARK: - BrandHeader
 
 /// A raised "brick plate" header field — a gradient face over a darker bottom lip that bleeds into

@@ -10,7 +10,6 @@ enum Route: Hashable {
     case rebuild(String)  // counting screen — S3
     case review(String)   // review + verify — S4
     case report(String)   // verification report — S4
-    case search           // catalog search — S2
     case signIn           // auth — S5
     case paywall          // premium paywall — S5
     case party(String)          // realtime party hub — S6
@@ -19,30 +18,6 @@ enum Route: Hashable {
     case partyAddParts(String)  // add-found-parts picker — S6
     case appearance             // Profile → Appearance picker — S7
     case language               // Profile → Language picker — S7
-
-    /// Whether this destination draws its own custom header and so hides the native nav bar. The
-    /// counting (`.rebuild`), review (`.review`), report (`.report`), paywall (`.paywall`) and
-    /// sign-in (`.signIn`) screens keep the native bar visible to host native toolbar controls —
-    /// back button + trailing actions — instead of brick buttons. The catalog family
-    /// (`.setDetail`/`.setParts`/`.setMinifigs`) also keeps it so those screens look identical
-    /// wherever they're opened (the search tab or the counting screen's ••• menu): native back
-    /// chevron + inline title. The Profile settings pickers (`.appearance`/`.language`) do the same —
-    /// a single push off the Profile root, exactly like `.paywall`/`.signIn`. The party family
-    /// (`.party`/`.partyJoin`/`.partyInvite`/`.partyAddParts`) keeps it too: `.party` is dual-entry
-    /// (the Party tab's join flow and the counting screen's "host" action), so it has to agree with
-    /// `.rebuild` on the Home stack as well as with its own siblings. Keeping neighbours in a
-    /// stack consistent also avoids the SwiftUI glitch where toggling nav-bar visibility between
-    /// pushes corrupts the returning screen's header. Only *pushed* destinations need to agree — a
-    /// tab root may still hide the bar and draw its own brand plate (Party and Profile both do).
-    var hidesNavBar: Bool {
-        switch self {
-        case .rebuild, .review, .report, .paywall, .signIn,
-             .setDetail, .setParts, .setMinifigs,
-             .appearance, .language,
-             .party, .partyJoin, .partyInvite, .partyAddParts: return false
-        default: return true
-        }
-    }
 }
 
 /// One `NavigationStack`'s path, as an `@Observable` so views can push/pop and the stack
