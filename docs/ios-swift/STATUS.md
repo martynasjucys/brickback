@@ -5,11 +5,31 @@
 > [README.md](README.md) + [00-architecture.md](00-architecture.md). The Flutter app
 > (`apps/mobile`) remains the acceptance oracle; its status is [../phases/STATUS.md](../phases/STATUS.md).
 
-**Last updated:** **S7 — motion/haptics, accessibility (Dynamic Type + VoiceOver), and app-icon /
-launch-screen scaffolding** landed on top of the branded-design + i18n + dark-mode passes.
-**Current state:** S0–S6 are **code-complete and verified**; **S7 is functionally complete** — the
-only open item is dropping in the **app-icon vector** (everything around it is wired; see
-[branding-assets.md](branding-assets.md)).
+**Last updated: 2026-07-16.** **S7 is done and merged to `main`** (merge `2722b41`; its only open
+item remains the **app-icon vector** — everything around it is wired, see
+[branding-assets.md](branding-assets.md)). **S0–S7 + S9 are code-complete and verified.**
+
+**Current work: S10 — adaptive layout**, branch **`ios/s10-adaptive-layout`**. See
+**[10-adaptive-layout.md](10-adaptive-layout.md)** for the full plan, what's done, and what's next.
+
+> ### 👉 Resuming? Read this first
+>
+> **iPad is the app's PRIMARY device**, and the Swift app was built iPhone-first — so iPad is
+> currently **visibly broken**: iPadOS puts the tab bar at the *top*, on the brand plate, and no
+> screen clamps its width. This was found on 2026-07-15 by installing on the real iPad, and it is
+> why S10 exists. It is an iPad **idiom** issue, not an old-iOS one (it reproduces on 18.6, 26.2
+> and 26.5).
+>
+> **S10 progress:** step 1 (app-target test bundle, 9 tests) and step 2 (iOS 18 floor, −328 lines
+> of deleted iOS 17 shell) are **done and committed**. **Next is step 3: the adaptive shell** —
+> `NavigationSplitView` on `.regular`, `TabView` on `.compact`, both driving the same routers.
+>
+> **Phase numbering:** the adaptive rework is **S10** — S8 is App Store launch and S9 is offline
+> mode (both pre-existing). Early commits in this session briefly mislabelled it S8; corrected
+> before pushing.
+>
+> **Deployment target is now iOS 18.0** (was 17.0). `Route.hidesNavBar` and `ScreenHeader`/
+> `BackButton` no longer exist — don't look for them.
 
 <details><summary>S7 motion + haptics + accessibility summary (Dynamic Type, VoiceOver, Reduce Motion)</summary>
 
