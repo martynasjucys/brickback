@@ -9,27 +9,30 @@
 item remains the **app-icon vector** — everything around it is wired, see
 [branding-assets.md](branding-assets.md)). **S0–S7 + S9 are code-complete and verified.**
 
-**Current work: S10 — adaptive layout**, branch **`ios/s10-adaptive-layout`**. See
-**[10-adaptive-layout.md](10-adaptive-layout.md)** for the full plan, what's done, and what's next.
+**Current work: S10 — adaptive layout**, branch **`ios/s10-adaptive-layout`** — **code-complete, all
+five steps committed; awaiting physical-iPad re-verify + merge.** See
+**[10-adaptive-layout.md](10-adaptive-layout.md)** for the full record.
 
 > ### 👉 Resuming? Read this first
 >
-> **iPad is the app's PRIMARY device**, and the Swift app was built iPhone-first — so iPad is
-> currently **visibly broken**: iPadOS puts the tab bar at the *top*, on the brand plate, and no
-> screen clamps its width. This was found on 2026-07-15 by installing on the real iPad, and it is
-> why S10 exists. It is an iPad **idiom** issue, not an old-iOS one (it reproduces on 18.6, 26.2
-> and 26.5).
+> **iPad is the app's PRIMARY device**, and the Swift app was built iPhone-first — that's why S10
+> exists (found 2026-07-15 on the real iPad: tab bar at the *top* on the brand plate, nothing
+> clamping width). **S10 has now fixed all of it in code.**
 >
-> **S10 progress:** steps 1–4 are **done and committed** — the app-target test bundle (9 tests), the
-> iOS 18 floor (−328 lines of iOS 17 shell), **the adaptive shell** (`46b629f`: `NavigationSplitView`
-> on `.regular`, `TabView` on `.compact`, same routers), and **the brand plates retired for tinted
-> native bars** (`f8bebc1`). The iPad's tab-bar-on-the-plate problem is gone. **Next is step 5** —
-> the width clamp + adaptive grid, which is what still reads wrong on iPad (rows strand their values
-> ~800pt from their labels; the counting grid packs ~7 narrow columns).
+> **S10 is DONE (in code) — all five steps committed on the branch:** test bundle (`1b86ad1`) · iOS
+> 18 floor (`5ccbe00`) · **adaptive shell** (`46b629f`: `NavigationSplitView` on `.regular`,
+> `TabView` on `.compact`, same routers) · **tinted native bars** replacing the brand plates
+> (`f8bebc1`) · **width clamp + adaptive grid** (`f5421ae`). Verified on the iPad (A16) 18.6 sim in
+> both orientations and iPhone 17 Pro. **The one thing left before merge: re-install on the physical
+> iPad (18.7.8, `94BBEFF4-…`) — the device that started S10 — to confirm end-to-end.**
 >
 > **The shell is `RootShell.swift`, not `RootTabView`**, and there is no `selectedTab: Int` — it's
 > `selectedSection: AppSection` (an enum; `AppEnvironment.searchTab` is gone). `TabNavigation` is
 > now `SectionStack`.
+>
+> **Width: `.readableColumn()`** (`Primitives.swift`, cap `AppLayout.readableWidth` = 620) centres
+> wide-column content; **the counting grid** uses size-class-aware `AppLayout.tileMin*`. Both no-op
+> on iPhone. Don't reintroduce a full-width settings row or a phone-sized grid minimum.
 >
 > **There are no brand plates.** `BrandHeader` / `BrandHeaderBackground` / `headerField` /
 > `rootBarHidden` no longer exist — a screen tints its **native** bar via **`.brandBar(_:)`**
@@ -221,6 +224,8 @@ Ready to start **S6** (party mode).
 - [x] **S5 — Auth & cloud sync (turns the sync engine ON)** ✅ (done, verified)
 - [x] **S6 — Party mode (realtime collaborative counting)** ✅ (done, verified)
 - [~] **S7 — Design polish & i18n** ← branded design + i18n + dark mode + **motion/haptics + Dynamic Type + VoiceOver done**; only the app-icon vector remains ([branding-assets.md](branding-assets.md))
+- [x] **S9 — Offline mode** ✅ (done, verified)
+- [~] **S10 — Adaptive layout (iPad-first)** ← all five steps code-complete + sim-verified ([10-adaptive-layout.md](10-adaptive-layout.md)); physical-iPad re-verify + merge pending
 - [ ] S8 — Launch / App Store
 
 ---

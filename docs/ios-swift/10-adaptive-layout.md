@@ -1,6 +1,6 @@
 # S10 — Adaptive layout: one app, phone and tablet
 
-> **Status: in progress** (branch `ios/s10-adaptive-layout`). Steps 1–4 done, step 5 open.
+> **Status: DONE** (branch `ios/s10-adaptive-layout`). All five steps complete and committed.
 > Numbered **S10** because S8 (App Store launch) and S9 (offline mode) were already taken.
 
 ## Why
@@ -119,11 +119,36 @@ sections, each keeping its S7 hue. `BrandHeaderBackground` / `headerBand` / `top
 - **The tint does not leak down a stack** — a pushed Review keeps its own neutral bar. Verified, and
   worth knowing before adding a tint anywhere else: `.brandBar` is per-screen, by design.
 
-## Next — step 5: width clamp + adaptive grid
+**Step 5 — width clamp + adaptive grid** (`f5421ae`), the last step.
+- **`.readableColumn()`** (`Primitives.swift`): caps a scrolling content column at
+  `AppLayout.readableWidth` (620) and centres it. On the roots that stretch — Profile, Party, Sign
+  in, Paywall, Set detail, Review, search results, **and Home's `List`** (an outer frame, so
+  `swipeActions` are untouched). A no-op on iPhone (content never reaches 620); bites only on iPad
+  (landscape, and the big models in portrait).
+- **Counting grid**: size-class-aware tile bounds (`AppLayout.tileMin`/`tileMinRegular` etc.).
+  `.adaptive` picks the column *count* from the minimum, so a phone-sized minimum on iPad just packs
+  more small tiles — raising the floor on regular gives fewer, bigger, tappable ones. iPhone
+  unchanged (~3 columns); iPad gets 3 across a portrait detail, more filling landscape.
+- **`EmptyState`** caps its centred prose at 420; the **certificate preview** is pinned to the 360
+  the export actually uses (it rendered ~780 on iPad before, so the preview misrepresented the
+  output).
 
-The last step, and the one that fixes what the iPad still gets wrong: nothing clamps width (Profile
-rows strand their values ~800pt from their labels) and the counting grid packs ~7 narrow columns.
-Scoped in the audit below.
+Verified on the iPad (A16) 18.6 sim in **both orientations** (rotate the sim via the Simulator
+*Device ▸ Rotate* menu — `simctl io screenshot` returns the raw portrait buffer, so rotate the PNG
+`-90` to read it, and navigate in portrait because `idb` taps don't transform under rotation).
+Portrait detail (580pt) is under the cap, so the roots are unchanged; landscape (~1560pt) centres
+every root at a readable width and the grid fills with big tiles. Filter sheet still a detented
+bottom sheet — no form-sheet regression.
+
+---
+
+## S10 is complete
+
+All five steps landed on `ios/s10-adaptive-layout`: test bundle (`1b86ad1`) · iOS 18 floor
+(`5ccbe00`) · adaptive shell (`46b629f`) · tinted native bars (`f8bebc1`) · width clamp + grid
+(`f5421ae`). The iPad is no longer iPhone-at-2×: a real sidebar, native bars, readable columns, and
+a grid that grows its tiles. **Not yet re-verified on the physical iPad (18.7.8)** — the sim covers
+18.6/26.5 but the real-device install is the final check before merge.
 
 ## Traps (verified against the code)
 
@@ -158,16 +183,16 @@ wrong, worth keeping straight:
   `.principal` slot on compact. It is the sidebar, not the plate's removal, that made it redundant —
   and only on regular width.
 
-Still open for step 5:
-- Counting grid: `.adaptive(minimum: 100, maximum: 176)` maximises column count at the *minimum*, so
-  `maximum` never engages → 7 columns at ~101pt. Tap targets stay iPhone-small. Fix the column spec,
-  not `PartTile` (already fluid).
-- No max-width clamp exists anywhere (~14 screen roots). Highest leverage: clamp `AppCard`,
-  `EmptyState` and the roots via a size-class-aware gutter at `Tokens.swift` (`screen: CGFloat = 20`).
-- Sheet detents are measured at iPhone width; iPad presents ~540pt form sheets.
-  `ProfileScreen` hardcodes `.height(280)`.
-- Certificate preview renders 780pt on iPad but exports at 360pt — the 360 is intentional; clamp the
-  preview.
+Closed in step 5 (`f5421ae`):
+- ~~Counting grid packs ~7 tiny columns~~ → size-class-aware `AppLayout.tileMin*`; the fix is the
+  column spec, not `PartTile` (already fluid), exactly as flagged.
+- ~~No max-width clamp anywhere~~ → `.readableColumn()` (620pt, centred). Chose a **content clamp
+  over the audit's "size-class-aware gutter"** — a wider gutter fights a centred column, and the
+  clamp is what Apple's own readable-content column does. Applied per-root, not to `AppCard`, so a
+  card that *should* stay wide (none today, but e.g. a future full-bleed banner) isn't forced narrow.
+- Sheet detents: **left as-is** — the filter/name sheets present as detented **bottom** sheets on
+  iPad, not the ~540pt form sheets the audit feared, and they read fine. No change made.
+- ~~Certificate preview rendered ~780 but exports 360~~ → preview pinned to 360, matching the export.
 
 ## Verification
 
