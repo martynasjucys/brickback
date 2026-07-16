@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import 'party_repository.dart';
 
 /// `/party/join` — resolve a short code to a party and enter it. Joining is by
@@ -46,60 +47,63 @@ class _PartyJoinScreenState extends ConsumerState<PartyJoinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ScreenHeader(context.l10n.partyJoinTitle, onBack: () => Navigator.of(context).maybePop()),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(context.l10n.partyJoinSubtitle,
-                      style: AppText.body.copyWith(color: AppColors.inkSoft)),
-                  const SizedBox(height: AppSpacing.s20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.s16, vertical: AppSpacing.s8),
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: AppColors.line),
-                    ),
-                    child: TextField(
-                      controller: _controller,
-                      autofocus: true,
-                      textCapitalization: TextCapitalization.characters,
-                      textInputAction: TextInputAction.go,
-                      onSubmitted: (_) => _join(),
-                      style: AppText.h1.copyWith(letterSpacing: 4),
-                      cursorColor: AppColors.primary,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        isDense: true,
-                        hintText: 'A1B2C3D4',
+        child: ReadableColumn(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ScreenHeader(context.l10n.partyJoinTitle, onBack: () => Navigator.of(context).maybePop()),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(context.l10n.partyJoinSubtitle,
+                        style: AppText.body.copyWith(color: c.inkSoft)),
+                    const SizedBox(height: AppSpacing.s20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.s16, vertical: AppSpacing.s8),
+                      decoration: BoxDecoration(
+                        color: c.card,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        border: Border.all(color: c.line),
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        autofocus: true,
+                        textCapitalization: TextCapitalization.characters,
+                        textInputAction: TextInputAction.go,
+                        onSubmitted: (_) => _join(),
+                        style: AppText.h1.copyWith(letterSpacing: 4),
+                        cursorColor: c.primary,
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                          hintText: 'A1B2C3D4',
+                        ),
                       ),
                     ),
-                  ),
-                  if (_error != null) ...[
-                    const SizedBox(height: AppSpacing.s8),
-                    Text(_error!, style: AppText.caption.copyWith(color: AppColors.danger)),
+                    if (_error != null) ...[
+                      const SizedBox(height: AppSpacing.s8),
+                      Text(_error!, style: AppText.caption.copyWith(color: c.danger)),
+                    ],
+                    const SizedBox(height: AppSpacing.s20),
+                    AppButton(
+                      context.l10n.partyJoinCta,
+                      icon: Icons.login,
+                      expand: true,
+                      loading: _loading,
+                      onPressed: _loading ? null : _join,
+                    ),
                   ],
-                  const SizedBox(height: AppSpacing.s20),
-                  AppButton(
-                    context.l10n.partyJoinCta,
-                    icon: Icons.login,
-                    expand: true,
-                    loading: _loading,
-                    onPressed: _loading ? null : _join,
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

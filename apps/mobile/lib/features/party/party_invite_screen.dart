@@ -6,6 +6,7 @@ import 'package:share_plus/share_plus.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import 'party_repository.dart';
 
 /// `/party/:id/invite` — a scannable QR + the short code + a share sheet. The QR
@@ -17,30 +18,34 @@ class PartyInviteScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final party = ref.watch(partyByIdProvider(partyId));
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ScreenHeader(context.l10n.partyInvite, onBack: () => Navigator.of(context).maybePop()),
-            Expanded(
-              child: party.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-                error: (e, _) => EmptyState(
-                    icon: Icons.error_outline, title: context.l10n.partyCouldntLoad, message: '$e'),
-                data: (p) => _invite(context, p.name, p.joinCode),
+        child: ReadableColumn(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              ScreenHeader(context.l10n.partyInvite, onBack: () => Navigator.of(context).maybePop()),
+              Expanded(
+                child: party.when(
+                  loading: () =>
+                      Center(child: CircularProgressIndicator(color: c.primary)),
+                  error: (e, _) => EmptyState(
+                      icon: Icons.error_outline, title: context.l10n.partyCouldntLoad, message: '$e'),
+                  data: (p) => _invite(context, p.name, p.joinCode),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _invite(BuildContext context, String name, String code) {
+    final c = BrickColors.of(context);
     final link = 'brickback://party/$code';
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.s24),
@@ -48,7 +53,7 @@ class PartyInviteScreen extends ConsumerWidget {
         Text(context.l10n.partyInviteTitle(name), textAlign: TextAlign.center, style: AppText.h1),
         const SizedBox(height: AppSpacing.s8),
         Text(context.l10n.partyInviteSubtitle,
-            textAlign: TextAlign.center, style: AppText.body.copyWith(color: AppColors.inkSoft)),
+            textAlign: TextAlign.center, style: AppText.body.copyWith(color: c.inkSoft)),
         const SizedBox(height: AppSpacing.s24),
         Center(
           child: AppCard(

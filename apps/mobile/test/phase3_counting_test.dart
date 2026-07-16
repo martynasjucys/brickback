@@ -62,7 +62,16 @@ Widget _harness(AppDatabase db, {String id = 'r1'}) {
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: RebuildScreen(rebuildSetId: id),
+      // Pin a phone-width MediaQuery so the counting screen takes its compact grid
+      // path (F3 makes tiles bigger — fewer columns — above the ~640px tablet
+      // breakpoint; the default 800px test surface would otherwise reflow a tapped
+      // tile off-screen). This test exercises phone counting logic.
+      home: Builder(
+        builder: (context) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(size: const Size(390, 844)),
+          child: RebuildScreen(rebuildSetId: id),
+        ),
+      ),
     ),
   );
 }

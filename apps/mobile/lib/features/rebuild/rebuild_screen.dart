@@ -13,6 +13,7 @@ import '../../core/sync/sync_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../auth/auth_repository.dart';
 import '../party/party_repository.dart';
 import 'bricklink.dart';
@@ -547,8 +548,13 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
       SliverPadding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
         sliver: SliverGrid(
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 176,
+          // Adaptive counting grid (F3): raise the tile ceiling on wide widths so
+          // the grid packs fewer, bigger, tappable tiles (phone ~3 cols; iPad
+          // portrait detail ~3 big, landscape more) instead of more tiny ones. Only
+          // the delegate is width-aware — the counting haptics/logic are untouched.
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent:
+                context.isWideLayout ? AppLayout.tileMaxRegular : AppLayout.tileMax,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
             childAspectRatio: 0.82,

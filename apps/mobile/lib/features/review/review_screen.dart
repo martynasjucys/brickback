@@ -12,6 +12,7 @@ import '../../core/sync/sync_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../rebuild/bricklink.dart';
 import '../rebuild/rebuild_models.dart';
 import '../rebuild/rebuild_repository.dart';
@@ -73,9 +74,10 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 
   Future<void> _markVerified(RebuildInventory inv) async {
+    final c = BrickColors.of(context);
     final result = await showModalBottomSheet<_VerifyResult>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
@@ -114,37 +116,41 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final async = ref.watch(inventoryProvider(widget.rebuildSetId));
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
-        child: async.when(
-          loading: () =>
-              const Center(child: CircularProgressIndicator(color: AppColors.primary)),
-          error: (e, _) => Column(
-            children: [
-              _header(null),
-              Expanded(
-                child: EmptyState(
-                    icon: Icons.error_outline, title: context.l10n.reviewCouldntLoad, message: '$e'),
-              ),
-            ],
-          ),
-          data: (inv) {
-            if (!_figInitialized) {
-              for (final m in inv.minifigs) {
-                _figHave[m.minifigItemId] = m.haveQty;
+        child: ReadableColumn(
+          child: async.when(
+            loading: () =>
+                Center(child: CircularProgressIndicator(color: c.primary)),
+            error: (e, _) => Column(
+              children: [
+                _header(null),
+                Expanded(
+                  child: EmptyState(
+                      icon: Icons.error_outline, title: context.l10n.reviewCouldntLoad, message: '$e'),
+                ),
+              ],
+            ),
+            data: (inv) {
+              if (!_figInitialized) {
+                for (final m in inv.minifigs) {
+                  _figHave[m.minifigItemId] = m.haveQty;
+                }
+                _figInitialized = true;
               }
-              _figInitialized = true;
-            }
-            return _content(inv);
-          },
+              return _content(inv);
+            },
+          ),
         ),
       ),
     );
   }
 
   Widget _header(RebuildInventory? inv) {
+    final c = BrickColors.of(context);
     final missing = inv?.missingParts ?? const <MissingPart>[];
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -153,9 +159,9 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
         children: [
           Pressable(
             onTap: () => Navigator.of(context).maybePop(),
-            child: const Padding(
-              padding: EdgeInsets.all(AppSpacing.s4),
-              child: Icon(Icons.arrow_back, color: AppColors.ink),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.s4),
+              child: Icon(Icons.arrow_back, color: c.ink),
             ),
           ),
           const Spacer(),
@@ -213,6 +219,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 
   Widget _summaryCard(RebuildInventory inv) {
+    final c = BrickColors.of(context);
     final missingTypes = inv.remainingPartTypes;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -237,7 +244,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
                         ? context.l10n.reviewAllPartsAccountedFor
                         : context.l10n.reviewTypesStillMissing(missingTypes),
                     style: AppText.caption.copyWith(
-                      color: inv.complete ? AppColors.success : AppColors.warning,
+                      color: inv.complete ? c.success : c.warning,
                     ),
                   ),
                 ],
@@ -250,6 +257,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
   }
 
   List<Widget> _minifigSection(RebuildInventory inv) {
+    final c = BrickColors.of(context);
     final found = _minifigsFound(inv);
     return [
       SliverToBoxAdapter(
@@ -263,7 +271,7 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
               Text('$found/${inv.minifigsNeeded}',
                   style: AppText.caption.copyWith(
                     color:
-                        _minifigsComplete(inv) ? AppColors.success : AppColors.muted,
+                        _minifigsComplete(inv) ? c.success : c.muted,
                   )),
             ],
           ),
@@ -284,46 +292,53 @@ class _ReviewScreenState extends ConsumerState<ReviewScreen> {
     ];
   }
 
-  Widget _missingHeader(int count) => SliverToBoxAdapter(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.s8),
-          child: Row(
-            children: [
-              Text(context.l10n.reviewMissingParts, style: AppText.label),
-              const SizedBox(width: AppSpacing.s8),
-              if (count > 0)
-                Text(context.l10n.reviewTypeCount(count),
-                    style: AppText.caption.copyWith(color: AppColors.muted)),
-            ],
-          ),
-        ),
-      );
-
-  Widget _notExportableFootnote(int n) => Padding(
+  Widget _missingHeader(int count) {
+    final c = BrickColors.of(context);
+    return SliverToBoxAdapter(
+      child: Padding(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen, AppSpacing.s12, AppSpacing.screen, 0),
+            AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.s8),
         child: Row(
           children: [
-            const Icon(Icons.info_outline, size: 16, color: AppColors.muted),
+            Text(context.l10n.reviewMissingParts, style: AppText.label),
             const SizedBox(width: AppSpacing.s8),
-            Expanded(
-              child: Text(
-                context.l10n.reviewNotExportableFootnote(n),
-                style: AppText.caption.copyWith(color: AppColors.muted),
-              ),
-            ),
+            if (count > 0)
+              Text(context.l10n.reviewTypeCount(count),
+                  style: AppText.caption.copyWith(color: c.muted)),
           ],
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _notExportableFootnote(int n) {
+    final c = BrickColors.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screen, AppSpacing.s12, AppSpacing.screen, 0),
+      child: Row(
+        children: [
+          Icon(Icons.info_outline, size: 16, color: c.muted),
+          const SizedBox(width: AppSpacing.s8),
+          Expanded(
+            child: Text(
+              context.l10n.reviewNotExportableFootnote(n),
+              style: AppText.caption.copyWith(color: c.muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _bottomBar(RebuildInventory inv) {
+    final c = BrickColors.of(context);
     return Container(
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.screen, AppSpacing.s12, AppSpacing.screen, AppSpacing.s12),
-      decoration: const BoxDecoration(
-        color: AppColors.card,
-        border: Border(top: BorderSide(color: AppColors.line)),
+      decoration: BoxDecoration(
+        color: c.card,
+        border: Border(top: BorderSide(color: c.line)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -366,6 +381,7 @@ class _MissingRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final sub = [
       part.colorName ?? context.l10n.reviewUnknownColor,
       if (part.partNum != null) part.partNum!,
@@ -394,7 +410,7 @@ class _MissingRow extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: _swatch,
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.line),
+                          border: Border.all(color: c.line),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.s4),
@@ -411,7 +427,7 @@ class _MissingRow extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.s8),
             Text(context.l10n.reviewNeedQty(part.needed),
-                style: AppText.label.copyWith(color: AppColors.warning)),
+                style: AppText.label.copyWith(color: c.warning)),
           ],
         ),
       ),
@@ -429,6 +445,7 @@ class _MinifigRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final complete = have >= fig.neededQty;
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -449,7 +466,7 @@ class _MinifigRow extends StatelessWidget {
                       ? context.l10n.reviewMinifigPresent(have, fig.neededQty)
                       : context.l10n.reviewNeededOne,
                   style: AppText.caption.copyWith(
-                    color: complete ? AppColors.success : AppColors.muted,
+                    color: complete ? c.success : c.muted,
                   ),
                 ),
               ],
@@ -466,7 +483,7 @@ class _MinifigRow extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s8),
                   child: Text('$have/${fig.neededQty}',
                       style: AppText.label.copyWith(
-                          color: complete ? AppColors.success : AppColors.ink)),
+                          color: complete ? c.success : c.ink)),
                 ),
                 _MiniStepBtn(
                     icon: Icons.add,
@@ -479,7 +496,7 @@ class _MinifigRow extends StatelessWidget {
               child: Icon(
                 complete ? Icons.check_circle_rounded : Icons.radio_button_unchecked,
                 size: 28,
-                color: complete ? AppColors.success : AppColors.muted,
+                color: complete ? c.success : c.muted,
               ),
             ),
         ],
@@ -494,6 +511,7 @@ class _MiniStepBtn extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final enabled = onTap != null;
     return Pressable(
       onTap: onTap,
@@ -502,11 +520,11 @@ class _MiniStepBtn extends StatelessWidget {
         height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.line),
+          border: Border.all(color: c.line),
         ),
-        child: Icon(icon, size: 18, color: enabled ? AppColors.ink : AppColors.faint),
+        child: Icon(icon, size: 18, color: enabled ? c.ink : c.faint),
       ),
     );
   }
@@ -517,20 +535,23 @@ class _CircleButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Pressable(
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: AppColors.card,
-            shape: BoxShape.circle,
-            border: Border.all(color: AppColors.line),
-          ),
-          child: Icon(icon, size: 20, color: AppColors.ink),
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Pressable(
+      onTap: onTap,
+      child: Container(
+        width: 40,
+        height: 40,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: c.card,
+          shape: BoxShape.circle,
+          border: Border.all(color: c.line),
         ),
-      );
+        child: Icon(icon, size: 20, color: c.ink),
+      ),
+    );
+  }
 }
 
 /// Result of the "Mark as verified" sheet — the user-toggled flags + notes. The
@@ -582,6 +603,7 @@ class _MarkVerifiedSheetState extends State<_MarkVerifiedSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final partsLine = widget.partsComplete
         ? context.l10n.reviewPctAllParts(widget.pct)
         : context.l10n.reviewPctOfParts(widget.pct);
@@ -605,7 +627,7 @@ class _MarkVerifiedSheetState extends State<_MarkVerifiedSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: AppSpacing.s16),
                 decoration: BoxDecoration(
-                    color: AppColors.line, borderRadius: BorderRadius.circular(2)),
+                    color: c.line, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Text(context.l10n.reviewMarkAsVerified, style: AppText.h2),
@@ -613,7 +635,7 @@ class _MarkVerifiedSheetState extends State<_MarkVerifiedSheet> {
             Text('$partsLine · $figLine', style: AppText.caption),
             const SizedBox(height: AppSpacing.s20),
             Text(context.l10n.reviewWhatElseInBox,
-                style: AppText.label.copyWith(color: AppColors.inkSoft)),
+                style: AppText.label.copyWith(color: c.inkSoft)),
             const SizedBox(height: AppSpacing.s8),
             _FlagToggle(
                 label: context.l10n.reviewBoxIncluded,
@@ -629,26 +651,26 @@ class _MarkVerifiedSheetState extends State<_MarkVerifiedSheet> {
                 onChanged: (v) => setState(() => _stickers = v)),
             const SizedBox(height: AppSpacing.s16),
             Text(context.l10n.reviewNotesOptional,
-                style: AppText.label.copyWith(color: AppColors.inkSoft)),
+                style: AppText.label.copyWith(color: c.inkSoft)),
             const SizedBox(height: AppSpacing.s8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
               decoration: BoxDecoration(
-                color: AppColors.canvas,
+                color: c.canvas,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.line),
+                border: Border.all(color: c.line),
               ),
               child: TextField(
                 controller: _notes,
                 style: AppText.body,
-                cursorColor: AppColors.primary,
+                cursorColor: c.primary,
                 maxLines: 3,
                 minLines: 2,
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
                   hintText: context.l10n.reviewNotesHint,
-                  hintStyle: AppText.body.copyWith(color: AppColors.faint),
+                  hintStyle: AppText.body.copyWith(color: c.faint),
                   contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
                 ),
               ),
@@ -672,6 +694,7 @@ class _FlagToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Pressable(
       onTap: () => onChanged(!value),
       child: Padding(
@@ -681,7 +704,7 @@ class _FlagToggle extends StatelessWidget {
             Icon(
               value ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
               size: 22,
-              color: value ? AppColors.primary : AppColors.muted,
+              color: value ? c.primary : c.muted,
             ),
             const SizedBox(width: AppSpacing.s12),
             Text(label, style: AppText.body),

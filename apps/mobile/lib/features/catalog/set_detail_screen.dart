@@ -7,6 +7,7 @@ import '../../core/sync/sync_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../rebuild/rebuild_repository.dart';
 import 'catalog_models.dart';
 import 'catalog_repository.dart';
@@ -20,18 +21,20 @@ class SetDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final detail = ref.watch(setDetailProvider(itemId));
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: ReadableColumn(
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             ScreenHeader(context.l10n.setHeader, onBack: () => Navigator.of(context).maybePop()),
             Expanded(
               child: detail.when(
                 loading: () =>
-                    const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    Center(child: CircularProgressIndicator(color: c.primary)),
                 error: (e, _) => EmptyState(
                   icon: Icons.error_outline,
                   title: context.l10n.setCouldntLoad,
@@ -41,6 +44,7 @@ class SetDetailScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -53,6 +57,7 @@ class _Detail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final set = detail.set;
     final meta = [
       set.setNum,
@@ -77,7 +82,7 @@ class _Detail extends ConsumerWidget {
         Text(meta, style: AppText.caption),
         const SizedBox(height: 2),
         Text(context.l10n.partsCount(set.numParts),
-            style: AppText.caption.copyWith(color: AppColors.inkSoft)),
+            style: AppText.caption.copyWith(color: c.inkSoft)),
         const SizedBox(height: AppSpacing.s16),
         Row(
           children: [
@@ -115,6 +120,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Expanded(
       child: AppCard(
         onTap: onTap,
@@ -131,7 +137,7 @@ class _StatCard extends StatelessWidget {
                       maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.caption),
                 ),
                 if (onTap != null)
-                  const Icon(Icons.chevron_right, size: 14, color: AppColors.muted),
+                  Icon(Icons.chevron_right, size: 14, color: c.muted),
               ],
             ),
           ],

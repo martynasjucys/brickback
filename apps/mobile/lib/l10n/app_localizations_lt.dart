@@ -12,6 +12,9 @@ class AppLocalizationsLt extends AppLocalizations {
   String get navRebuilds => 'Surinkimai';
 
   @override
+  String get navParty => 'Sesija';
+
+  @override
   String get navProfile => 'Profilis';
 
   @override

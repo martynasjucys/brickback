@@ -104,6 +104,12 @@ abstract class AppLocalizations {
   /// **'Rebuilds'**
   String get navRebuilds;
 
+  /// No description provided for @navParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Party'**
+  String get navParty;
+
   /// No description provided for @navProfile.
   ///
   /// In en, this message translates to:

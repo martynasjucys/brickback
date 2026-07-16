@@ -8,6 +8,7 @@ import '../../core/sync/sync_service.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
+import '../../widgets/readable_column.dart';
 import '../auth/auth_repository.dart';
 
 /// `/paywall` — the premium upsell. Shown when a free user hits the project cap
@@ -31,6 +32,7 @@ class PaywallScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final l = context.l10n;
     final benefits = [
       (l.benefitSyncTitle, l.benefitSyncBody),
@@ -39,9 +41,10 @@ class PaywallScreen extends ConsumerWidget {
       (l.benefitPartyTitle, l.benefitPartyBody),
     ];
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
-        child: ListView(
+        child: ReadableColumn(
+          child: ListView(
           children: [
             ScreenHeader(l.paywallTitle, onBack: () => Navigator.of(context).maybePop()),
             Padding(
@@ -53,7 +56,7 @@ class PaywallScreen extends ConsumerWidget {
                     children: [
                       Text(l.cloudSync, style: AppText.display),
                       const SizedBox(width: AppSpacing.s8),
-                      AppBadge(l.premium, color: AppColors.primary),
+                      AppBadge(l.premium, color: c.primary),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s8),
@@ -76,12 +79,12 @@ class PaywallScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.s12),
                   Text(
                     l.paywallCtaHint,
-                    style: AppText.caption.copyWith(color: AppColors.muted),
+                    style: AppText.caption.copyWith(color: c.muted),
                     textAlign: TextAlign.center,
                   ),
                   if (kDebugMode) ...[
                     const SizedBox(height: AppSpacing.s20),
-                    const Divider(color: AppColors.line),
+                    Divider(color: c.line),
                     const SizedBox(height: AppSpacing.s8),
                     _DebugPremiumToggle(),
                   ],
@@ -89,6 +92,7 @@ class PaywallScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );
@@ -102,11 +106,12 @@ class _Benefit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return AppCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline, size: 20, color: AppColors.success),
+          Icon(Icons.check_circle_outline, size: 20, color: c.success),
           const SizedBox(width: AppSpacing.s12),
           Expanded(
             child: Column(
@@ -128,11 +133,12 @@ class _Benefit extends StatelessWidget {
 class _DebugPremiumToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final forced = ref.watch(debugForcePremiumProvider);
     return Row(
       children: [
         Expanded(
-          child: Text('Debug: force premium', style: AppText.caption.copyWith(color: AppColors.muted)),
+          child: Text('Debug: force premium', style: AppText.caption.copyWith(color: c.muted)),
         ),
         Switch(
           value: forced,
