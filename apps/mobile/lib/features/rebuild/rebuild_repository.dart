@@ -49,7 +49,9 @@ class RebuildRepository {
             id: id,
             setItemId: setItemId,
             name: Value(s?.name ?? 'Set'),
-            theme: const Value.absent(),
+            // Capture the LEGO theme at add-time (catalog-derived, local, non-synced) so the Home
+            // theme filter includes freshly-added sets without waiting for a backfill.
+            theme: Value(s?.themeName),
             year: Value(s?.year),
             imageUrl: Value(s?.imageUrl),
             totalParts: Value(total),
@@ -275,9 +277,50 @@ class RebuildRepository {
           imageUrl: r.imageUrl,
           totalParts: r.totalParts,
           haveTotal: math.min(haveByRebuild[r.id] ?? 0, r.totalParts),
+          theme: r.theme,
           verifiedAt: r.verifiedAt,
         ),
     ];
+  }
+
+  /// Live Home list — re-derives [listSummaries] whenever a rebuild set or its parts change, so
+  /// progress updates in place (oracle: GRDB `ValueObservation`, RebuildRepository.swift:170-186).
+  Stream<List<RebuildSummary>> watchSummaries() async* {
+    yield await listSummaries();
+    final changes = _db.tableUpdates(
+      TableUpdateQuery.onAllTables([_db.rebuildSets, _db.rebuildParts]),
+    );
+    await for (final _ in changes) {
+      yield await listSummaries();
+    }
+  }
+
+  /// Best-effort: fill in `rebuild_sets.theme` for sets stored before theme was captured, or
+  /// pulled from the cloud (whose payload doesn't carry it). Resolves theme names from the catalog
+  /// for the distinct sets still missing one and writes them back. `theme` is a local,
+  /// catalog-derived column — not synced — so rows are NOT marked dirty. No-op when nothing is
+  /// missing; needs network (callers swallow errors so offline just defers it). Powers the Home
+  /// theme filter for existing rebuilds. Port of RebuildRepository.swift:201-217.
+  Future<void> backfillThemes() async {
+    final rows = await (_db.selectOnly(_db.rebuildSets, distinct: true)
+          ..where(_db.rebuildSets.theme.isNull() & _db.rebuildSets.deleted.equals(false))
+          ..addColumns([_db.rebuildSets.setItemId]))
+        .get();
+    final missing = [for (final r in rows) r.read(_db.rebuildSets.setItemId)!];
+    if (missing.isEmpty) return;
+    final sets = await _catalog.setsByIds(missing);
+    final themes = <int, String>{
+      for (final s in sets)
+        if (s.themeName != null) s.itemId: s.themeName!,
+    };
+    if (themes.isEmpty) return;
+    await _db.transaction(() async {
+      for (final entry in themes.entries) {
+        await (_db.update(_db.rebuildSets)
+              ..where((t) => t.setItemId.equals(entry.key) & t.theme.isNull()))
+            .write(RebuildSetsCompanion(theme: Value(entry.value)));
+      }
+    });
   }
 
   /// Count of active (non-deleted) rebuilds — the free-tier cap check.
@@ -518,8 +561,10 @@ final rebuildRepositoryProvider = Provider<RebuildRepository>(
   ),
 );
 
-final rebuildListProvider = FutureProvider.autoDispose<List<RebuildSummary>>(
-    (ref) => ref.read(rebuildRepositoryProvider).listSummaries());
+/// The Home list, kept live off Drift so progress updates in place while the list is on screen
+/// (P11) — no manual reload/invalidate needed after edits, adds, or removes.
+final rebuildListProvider = StreamProvider.autoDispose<List<RebuildSummary>>(
+    (ref) => ref.read(rebuildRepositoryProvider).watchSummaries());
 
 final inventoryProvider = FutureProvider.autoDispose.family<RebuildInventory, String>(
     (ref, rebuildSetId) => ref.read(rebuildRepositoryProvider).detail(rebuildSetId));

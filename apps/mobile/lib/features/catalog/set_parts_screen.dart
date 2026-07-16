@@ -17,6 +17,7 @@ class SetPartsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final parts = ref.watch(setPartsProvider(itemId));
     return Scaffold(
       body: SafeArea(
@@ -27,7 +28,7 @@ class SetPartsScreen extends ConsumerWidget {
             Expanded(
               child: parts.when(
                 loading: () =>
-                    const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    Center(child: CircularProgressIndicator(color: c.primary)),
                 error: (e, _) => EmptyState(
                   icon: Icons.error_outline,
                   title: context.l10n.partsCouldntLoad,
@@ -77,6 +78,7 @@ class _PartRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final sub = [
       part.colorName ?? context.l10n.colorUnknown,
       if (part.partNum != null) part.partNum!,
@@ -100,9 +102,9 @@ class _PartRow extends StatelessWidget {
                       width: 10,
                       height: 10,
                       decoration: BoxDecoration(
-                        color: swatchColor(part.colorRgb),
+                        color: swatchColor(part.colorRgb, c.faint),
                         shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.line),
+                        border: Border.all(color: c.line),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.s4),
@@ -124,10 +126,10 @@ class _PartRow extends StatelessWidget {
 }
 
 /// Parse a catalog `color_rgb` hex (e.g. `F2CD37`) into a swatch colour.
-Color swatchColor(String? rgb) {
+Color swatchColor(String? rgb, Color fallback) {
   try {
     return Color(int.parse('FF${rgb ?? '808080'}', radix: 16));
   } catch (_) {
-    return AppColors.faint;
+    return fallback;
   }
 }

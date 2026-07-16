@@ -5,6 +5,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -213,15 +214,10 @@ class VerificationReport extends StatelessWidget {
   final String setName;
   final String? imageUrl;
 
-  static const _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-  ];
-
-  String get _date {
-    final d = record.verifiedAt;
-    return '${d.day} ${_months[d.month - 1]} ${d.year}';
-  }
+  /// The certificate's verified-on date, localised to the active UI locale (e.g. "Jul 5, 2026"
+  /// in English, month names translated in Lithuanian). Matches the oracle's abbreviated style.
+  String _date(BuildContext context) =>
+      DateFormat.yMMMd(context.l10n.localeName).format(record.verifiedAt);
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +237,12 @@ class VerificationReport extends StatelessWidget {
         border: Border.all(color: AppColors.line),
       ),
       padding: const EdgeInsets.all(AppSpacing.s20),
-      child: Column(
+      // The certificate is an always-light printable surface (white card, captured to PNG/PDF), so
+      // pin its text to the fixed dark ink regardless of the app's light/dark theme — otherwise the
+      // now-theme-aware AppText would render light-on-white in dark mode.
+      child: DefaultTextStyle.merge(
+        style: const TextStyle(color: AppColors.ink),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -308,7 +309,7 @@ class VerificationReport extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(context.l10n.reportVerifiedDate(_date), style: AppText.caption),
+              Text(context.l10n.reportVerifiedDate(_date(context)), style: AppText.caption),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -322,6 +323,7 @@ class VerificationReport extends StatelessWidget {
             ],
           ),
         ],
+        ),
       ),
     );
   }

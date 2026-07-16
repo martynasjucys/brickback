@@ -3,6 +3,7 @@ import 'dart:math' as math;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -181,11 +182,11 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
 
   /// Persist a part's per-tap step (edited from the detail sheet). Device-local
   /// only, so it's written straight through — no debounce, no dirty/sync.
+  // The counting step is session-only, matching the oracle (RebuildViewModel.swift:26,60): it
+  // lives in memory and resets to 1 on reopen. We deliberately no longer persist it to `step_qty`
+  // (the column stays for schema compat, just unread/unwritten).
   void _setStepFor(ExpandedPart part, int step) {
     setState(() => _stepFor[part.key] = step);
-    ref
-        .read(rebuildRepositoryProvider)
-        .setPartStep(widget.rebuildSetId, part.partItemId, part.colorId, step);
   }
 
   /// Live-set an extra/spare part's "found" count, debounced to Drift. Mirrors
@@ -270,9 +271,10 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   }
 
   void _openDetail(ExpandedPart p) {
+    final c = BrickColors.of(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
@@ -288,21 +290,28 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   }
 
   void _openSettings(bool hasExtras) {
+    final c = BrickColors.of(context);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
       ),
-      builder: (_) => _SettingsSheet(hasExtras: hasExtras),
+      builder: (_) => _SettingsSheet(
+        hasExtras: hasExtras,
+        // "Remaining only" is a session-scoped screen filter; the sheet toggles it live.
+        remainingOnly: _remainingOnly,
+        onRemainingOnlyChanged: (v) => setState(() => _remainingOnly = v),
+      ),
     );
   }
 
   void _openSearch() {
+    final c = BrickColors.of(context);
     final parts = [...?_inv?.parts]..sort(_byColorThenName);
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.card,
+      backgroundColor: c.card,
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
@@ -322,14 +331,15 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final async = ref.watch(inventoryProvider(widget.rebuildSetId));
 
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
         child: async.when(
           loading: () =>
-              const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+              Center(child: CircularProgressIndicator(color: c.primary)),
           error: (e, _) => Column(
             children: [
               _BackBar(onBack: _onBack),
@@ -346,7 +356,8 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
               _inv = inv;
               for (final p in inv.parts) {
                 _have[p.key] = inv.have[p.key] ?? 0;
-                _stepFor[p.key] = inv.step[p.key] ?? 1;
+                // Step is session-only (oracle parity): don't seed it from the persisted
+                // snapshot — every reopen starts at the default step of 1.
               }
               for (final e in inv.extras) {
                 _extraHave[e.key] = inv.extraHave[e.key] ?? 0;
@@ -361,6 +372,7 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   }
 
   Widget _content(RebuildInventory inv) {
+    final c = BrickColors.of(context);
     final settings = ref.watch(rebuildSettingsProvider);
     final haveTotal = _haveTotal(inv);
     final total = inv.summary.totalParts;
@@ -385,27 +397,44 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
             children: [
               _BackButton(onTap: _onBack),
               const Spacer(),
-              _CircleButton(icon: Icons.flag_outlined, onTap: _onReview),
+              _CircleButton(
+                  icon: Icons.flag_outlined,
+                  semanticLabel: context.l10n.menuReview,
+                  onTap: _onReview),
               const SizedBox(width: AppSpacing.s8),
               if (_startingParty)
-                const SizedBox(
+                SizedBox(
                   width: 40,
                   height: 40,
                   child: Center(
                     child: SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                      child: CircularProgressIndicator(strokeWidth: 2, color: c.primary),
                     ),
                   ),
                 )
               else
-                _CircleButton(icon: Icons.groups_2_outlined, onTap: _onParty),
+                _CircleButton(
+                    icon: Icons.groups_2_outlined,
+                    semanticLabel: context.l10n.menuStartParty,
+                    onTap: _onParty),
               const SizedBox(width: AppSpacing.s8),
-              _CircleButton(icon: Icons.search_rounded, onTap: _openSearch),
+              // Jump to the set's catalog detail from counting (oracle RebuildView.swift:186-188).
+              _CircleButton(
+                  icon: Icons.info_outline_rounded,
+                  semanticLabel: context.l10n.menuSetDetails,
+                  onTap: () => context.push('/set/${inv.summary.setItemId}')),
               const SizedBox(width: AppSpacing.s8),
               _CircleButton(
-                  icon: Icons.tune_rounded, onTap: () => _openSettings(inv.hasExtras)),
+                  icon: Icons.search_rounded,
+                  semanticLabel: context.l10n.menuSearchParts,
+                  onTap: _openSearch),
+              const SizedBox(width: AppSpacing.s8),
+              _CircleButton(
+                  icon: Icons.tune_rounded,
+                  semanticLabel: context.l10n.countViewSettings,
+                  onTap: () => _openSettings(inv.hasExtras)),
             ],
           ),
         ),
@@ -432,32 +461,15 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
                         context.l10n.countHaveOfPartsTypes(
                             haveTotal, total, inv.parts.length),
                         style: AppText.caption),
-                    const SizedBox(height: AppSpacing.s8),
-                    Pressable(
-                      onTap: () => setState(() => _remainingOnly = !_remainingOnly),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            _remainingOnly
-                                ? Icons.check_box_rounded
-                                : Icons.check_box_outline_blank_rounded,
-                            size: 18,
-                            color: _remainingOnly ? AppColors.primary : AppColors.muted,
-                          ),
-                          const SizedBox(width: AppSpacing.s4),
-                          Text(context.l10n.countRemainingOnly,
-                              style: AppText.label.copyWith(color: AppColors.muted)),
-                        ],
-                      ),
-                    ),
+                    // "Remaining only" now lives in the view-settings sheet (oracle
+                    // RebuildSheets.swift:374), not as an inline header checkbox.
                   ],
                 ),
               ),
             ],
           ),
         ),
-        Container(height: 1, color: AppColors.line),
+        Container(height: 1, color: c.line),
         Expanded(
           child: inv.parts.isEmpty
               ? EmptyState(
@@ -503,6 +515,7 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
     void Function(ExpandedPart)? onLongPress,
     IconData? leadingIcon,
   }) {
+    final c = BrickColors.of(context);
     final tiles = g.parts.where((p) {
       if (_remainingOnly && (have[p.key] ?? 0) >= p.neededQty) return false;
       return true;
@@ -520,26 +533,26 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
                   width: 14,
                   height: 14,
                   decoration: BoxDecoration(
-                    color: _swatch(g.colorRgb),
+                    color: _swatch(g.colorRgb, c.faint),
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.line),
+                    border: Border.all(color: c.line),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.s8),
               ] else if (leadingIcon != null) ...[
-                Icon(leadingIcon, size: 16, color: AppColors.inkSoft),
+                Icon(leadingIcon, size: 16, color: c.inkSoft),
                 const SizedBox(width: AppSpacing.s8),
               ],
               Expanded(
                 child: Text(g.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppText.label.copyWith(color: AppColors.inkSoft)),
+                    style: AppText.label.copyWith(color: c.inkSoft)),
               ),
               const SizedBox(width: AppSpacing.s8),
               Text(context.l10n.countHaveOfNeeded(haveN, g.neededTotal),
                   style: AppText.caption.copyWith(
-                    color: haveN >= g.neededTotal ? AppColors.success : AppColors.muted,
+                    color: haveN >= g.neededTotal ? c.success : c.muted,
                   )),
             ],
           ),
@@ -673,11 +686,11 @@ class _PartGroup {
   }
 }
 
-Color _swatch(String? rgb) {
+Color _swatch(String? rgb, Color fallback) {
   try {
     return Color(int.parse('FF${rgb ?? '808080'}', radix: 16));
   } catch (_) {
-    return AppColors.faint;
+    return fallback;
   }
 }
 
@@ -685,13 +698,16 @@ class _BackButton extends StatelessWidget {
   const _BackButton({required this.onTap});
   final VoidCallback onTap;
   @override
-  Widget build(BuildContext context) => Pressable(
-        onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.all(AppSpacing.s4),
-          child: Icon(Icons.arrow_back, color: AppColors.ink),
-        ),
-      );
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.s4),
+        child: Icon(Icons.arrow_back, color: c.ink),
+      ),
+    );
+  }
 }
 
 class _BackBar extends StatelessWidget {
@@ -706,24 +722,32 @@ class _BackBar extends StatelessWidget {
 }
 
 class _CircleButton extends StatelessWidget {
-  const _CircleButton({required this.icon, required this.onTap});
+  const _CircleButton({required this.icon, required this.onTap, this.semanticLabel});
   final IconData icon;
   final VoidCallback onTap;
+  final String? semanticLabel;
   @override
-  Widget build(BuildContext context) => Pressable(
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Pressable(
         onTap: onTap,
         child: Container(
           width: 40,
           height: 40,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: AppColors.card,
+            color: c.card,
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.line),
+            border: Border.all(color: c.line),
           ),
-          child: Icon(icon, size: 20, color: AppColors.ink),
+          child: Icon(icon, size: 20, color: c.ink),
         ),
-      );
+      ),
+    );
+  }
 }
 
 class _StepChip extends StatelessWidget {
@@ -734,19 +758,20 @@ class _StepChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12, vertical: 6),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.card,
+          color: selected ? c.primary : c.card,
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: selected ? AppColors.primary : AppColors.line),
+          border: Border.all(color: selected ? c.primary : c.line),
         ),
         child: Text(
           context.l10n.countStepIncrement(value),
           style: AppText.label
-              .copyWith(color: selected ? AppColors.onPrimary : AppColors.muted),
+              .copyWith(color: selected ? c.onPrimary : c.muted),
         ),
       ),
     );
@@ -755,9 +780,22 @@ class _StepChip extends StatelessWidget {
 
 /// The counting screen's view settings — how the parts list is grouped, and
 /// whether the set's extra/spare parts are shown. Persisted globally.
-class _SettingsSheet extends ConsumerWidget {
-  const _SettingsSheet({required this.hasExtras});
+class _SettingsSheet extends ConsumerStatefulWidget {
+  const _SettingsSheet({
+    required this.hasExtras,
+    required this.remainingOnly,
+    required this.onRemainingOnlyChanged,
+  });
   final bool hasExtras;
+  final bool remainingOnly;
+  final ValueChanged<bool> onRemainingOnlyChanged;
+
+  @override
+  ConsumerState<_SettingsSheet> createState() => _SettingsSheetState();
+}
+
+class _SettingsSheetState extends ConsumerState<_SettingsSheet> {
+  late bool _remainingOnly = widget.remainingOnly;
 
   String _labelFor(BuildContext context, PartGrouping g) => switch (g) {
         PartGrouping.color => context.l10n.countGroupByColor,
@@ -767,7 +805,9 @@ class _SettingsSheet extends ConsumerWidget {
       };
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    final hasExtras = widget.hasExtras;
     final settings = ref.watch(rebuildSettingsProvider);
     final ctrl = ref.read(rebuildSettingsProvider.notifier);
     return SafeArea(
@@ -781,7 +821,7 @@ class _SettingsSheet extends ConsumerWidget {
             Text(context.l10n.countViewSettings, style: AppText.h2),
             const SizedBox(height: AppSpacing.s16),
             Text(context.l10n.countGroupBy,
-                style: AppText.label.copyWith(color: AppColors.muted)),
+                style: AppText.label.copyWith(color: c.muted)),
             const SizedBox(height: AppSpacing.s8),
             Wrap(
               spacing: AppSpacing.s8,
@@ -796,7 +836,31 @@ class _SettingsSheet extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.s20),
-            Container(height: 1, color: AppColors.line),
+            Container(height: 1, color: c.line),
+            const SizedBox(height: AppSpacing.s16),
+            // "Remaining only" — a session-scoped filter, above the extras toggle (oracle order).
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(context.l10n.countRemainingOnly, style: AppText.title),
+                      const SizedBox(height: 2),
+                      Text(context.l10n.countRemainingOnlyHint, style: AppText.caption),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.s8),
+                Switch(
+                  value: _remainingOnly,
+                  onChanged: (v) {
+                    setState(() => _remainingOnly = v);
+                    widget.onRemainingOnlyChanged(v);
+                  },
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.s16),
             Row(
               children: [
@@ -833,25 +897,26 @@ class _ChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Pressable(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.card,
+          color: selected ? c.primary : c.card,
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: Border.all(color: selected ? AppColors.primary : AppColors.line),
+          border: Border.all(color: selected ? c.primary : c.line),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             if (selected) ...[
-              const Icon(Icons.check, size: 15, color: AppColors.onPrimary),
+              Icon(Icons.check, size: 15, color: c.onPrimary),
               const SizedBox(width: 5),
             ],
             Text(label,
                 style: AppText.label
-                    .copyWith(color: selected ? AppColors.onPrimary : AppColors.ink)),
+                    .copyWith(color: selected ? c.onPrimary : c.ink)),
           ],
         ),
       ),
@@ -883,21 +948,32 @@ class _PartTileState extends State<_PartTile> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final p = widget.part;
     final have = widget.have;
     final complete = have >= p.neededQty;
     final started = have > 0 && !complete;
 
     final bg = complete
-        ? AppColors.success.withValues(alpha: 0.14)
+        ? c.success.withValues(alpha: 0.14)
         : started
-            ? AppColors.warning.withValues(alpha: 0.16)
-            : AppColors.card;
-    final border = complete ? AppColors.success : (started ? AppColors.warning : AppColors.line);
+            ? c.warning.withValues(alpha: 0.16)
+            : c.card;
+    final border = complete ? c.success : (started ? c.warning : c.line);
     final countColor =
-        complete ? AppColors.success : (started ? AppColors.warning : AppColors.muted);
+        complete ? c.success : (started ? c.warning : c.muted);
 
-    return GestureDetector(
+    // VoiceOver: collapse the tile into one control — "<name>, <colour>" · "<have> of <needed>
+    // [, complete]" · hint "adds one". Activate adds one; the detail sheet is a named action
+    // (long-press is impractical under a screen reader). Mirrors PartTile.swift:95-103.
+    final a11yLabel = (p.colorName != null && p.colorName!.isNotEmpty)
+        ? context.l10n.a11yNameColor(p.partName, p.colorName!)
+        : p.partName;
+    final a11yValue = complete
+        ? context.l10n.a11yCountComplete(have, p.neededQty)
+        : context.l10n.a11yCount(have, p.neededQty);
+
+    final Widget tile = GestureDetector(
       onTapDown: (_) => setState(() => _scale = 0.93),
       onTapUp: (_) => setState(() => _scale = 1),
       onTapCancel: () => setState(() => _scale = 1),
@@ -924,20 +1000,20 @@ class _PartTileState extends State<_PartTile> {
                   children: [
                     Positioned.fill(
                       child: p.imageUrl == null
-                          ? const Icon(Icons.image_outlined, color: AppColors.faint)
+                          ? Icon(Icons.image_outlined, color: c.faint)
                           : CachedNetworkImage(
                               imageUrl: p.imageUrl!,
                               fit: BoxFit.contain,
-                              errorWidget: (_, _, _) => const Icon(
+                              errorWidget: (_, _, _) => Icon(
                                   Icons.image_not_supported_outlined,
-                                  color: AppColors.faint),
+                                  color: c.faint),
                             ),
                     ),
                     if (complete)
-                      const Align(
+                      Align(
                         alignment: Alignment.topRight,
                         child: Icon(Icons.check_circle_rounded,
-                            size: 18, color: AppColors.success),
+                            size: 18, color: c.success),
                       ),
                   ],
                 ),
@@ -948,7 +1024,7 @@ class _PartTileState extends State<_PartTile> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.center,
-                style: AppText.caption.copyWith(fontSize: 11, height: 1.12, color: AppColors.ink),
+                style: AppText.caption.copyWith(fontSize: 11, height: 1.12, color: c.ink),
               ),
               if (p.partNum != null) ...[
                 const SizedBox(height: 1),
@@ -956,7 +1032,7 @@ class _PartTileState extends State<_PartTile> {
                   p.partNum!,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.caption.copyWith(fontSize: 10, color: AppColors.muted),
+                  style: AppText.caption.copyWith(fontSize: 10, color: c.muted),
                 ),
               ],
               const SizedBox(height: 2),
@@ -966,6 +1042,22 @@ class _PartTileState extends State<_PartTile> {
           ),
         ),
       ),
+    );
+
+    return Semantics(
+      container: true,
+      button: true,
+      selected: complete,
+      label: a11yLabel,
+      value: a11yValue,
+      hint: context.l10n.a11yTileAddHint,
+      onTap: widget.onTap,
+      // Extras tiles have no detail sheet, so they don't advertise a dead "Details" action.
+      customSemanticsActions: widget.onLongPress == null
+          ? null
+          : {CustomSemanticsAction(label: context.l10n.a11yDetails): widget.onLongPress!},
+      excludeSemantics: true,
+      child: tile,
     );
   }
 }
@@ -978,6 +1070,7 @@ class _StepBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final enabled = onTap != null;
     return Pressable(
       onTap: onTap,
@@ -986,11 +1079,11 @@ class _StepBtn extends StatelessWidget {
         height: 36,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.line),
+          border: Border.all(color: c.line),
         ),
-        child: Icon(icon, size: 20, color: enabled ? (color ?? AppColors.ink) : AppColors.faint),
+        child: Icon(icon, size: 20, color: enabled ? (color ?? c.ink) : c.faint),
       ),
     );
   }
@@ -1040,6 +1133,7 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final p = widget.part;
     final subtitle = [
       if (p.partNum != null) p.partNum!,
@@ -1060,7 +1154,7 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
                 height: 4,
                 margin: const EdgeInsets.only(bottom: AppSpacing.s16),
                 decoration: BoxDecoration(
-                    color: AppColors.line, borderRadius: BorderRadius.circular(2)),
+                    color: c.line, borderRadius: BorderRadius.circular(2)),
               ),
             ),
             Row(
@@ -1083,9 +1177,9 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
                             width: 12,
                             height: 12,
                             decoration: BoxDecoration(
-                              color: _swatch(p.colorRgb),
+                              color: _swatch(p.colorRgb, c.faint),
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.line),
+                              border: Border.all(color: c.line),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.s4),
@@ -1110,12 +1204,12 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
                     Text(context.l10n.countHaveOfNeededSpaced(_have, p.neededQty),
                         style: AppText.h1.copyWith(
                             color:
-                                _have >= p.neededQty ? AppColors.success : AppColors.ink)),
+                                _have >= p.neededQty ? c.success : c.ink)),
                     // Reassurance once the part is fully counted (oracle: L.allAccountedFor).
                     if (_have >= p.neededQty) ...[
                       const SizedBox(height: 2),
                       Text(context.l10n.countAllAccountedFor,
-                          style: AppText.caption.copyWith(color: AppColors.success)),
+                          style: AppText.caption.copyWith(color: c.success)),
                     ],
                   ],
                 ),
@@ -1127,7 +1221,7 @@ class _PartDetailSheetState extends State<_PartDetailSheet> {
                     const SizedBox(width: AppSpacing.s8),
                     _StepBtn(
                       icon: Icons.delete_outline_rounded,
-                      color: AppColors.danger,
+                      color: c.danger,
                       onTap: _have > 0 ? () => _set(0) : null,
                     ),
                   ],
@@ -1168,8 +1262,9 @@ class _DetailAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final enabled = onTap != null;
-    final color = enabled ? AppColors.info : AppColors.faint;
+    final color = enabled ? c.info : c.faint;
     return Pressable(
       onTap: onTap,
       child: Padding(
@@ -1226,6 +1321,7 @@ class _PartSearchSheetState extends State<_PartSearchSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final q = _q.trim().toLowerCase();
     final results = q.isEmpty
         ? widget.parts
@@ -1250,24 +1346,24 @@ class _PartSearchSheetState extends State<_PartSearchSheet> {
                     padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.s12, vertical: AppSpacing.s4),
                     decoration: BoxDecoration(
-                      color: AppColors.canvas,
+                      color: c.canvas,
                       borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.search, size: 20, color: AppColors.muted),
+                        Icon(Icons.search, size: 20, color: c.muted),
                         const SizedBox(width: AppSpacing.s8),
                         Expanded(
                           child: TextField(
                             controller: _ctrl,
                             focusNode: _focus,
                             style: AppText.body,
-                            cursorColor: AppColors.primary,
+                            cursorColor: c.primary,
                             decoration: InputDecoration(
                               isDense: true,
                               border: InputBorder.none,
                               hintText: context.l10n.countSearchHint,
-                              hintStyle: AppText.body.copyWith(color: AppColors.faint),
+                              hintStyle: AppText.body.copyWith(color: c.faint),
                               contentPadding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                             onChanged: (v) => setState(() => _q = v),
@@ -1283,13 +1379,13 @@ class _PartSearchSheetState extends State<_PartSearchSheet> {
                   child: Padding(
                     padding: const EdgeInsets.all(AppSpacing.s8),
                     child: Text(context.l10n.countDone,
-                        style: AppText.label.copyWith(color: AppColors.info)),
+                        style: AppText.label.copyWith(color: c.info)),
                   ),
                 ),
               ],
             ),
           ),
-          Container(height: 1, color: AppColors.line),
+          Container(height: 1, color: c.line),
           Expanded(
             child: results.isEmpty
                 ? EmptyState(
@@ -1335,15 +1431,24 @@ class _SearchRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final complete = have >= part.neededQty;
     final started = have > 0 && !complete;
     final countColor =
-        complete ? AppColors.success : (started ? AppColors.warning : AppColors.muted);
+        complete ? c.success : (started ? c.warning : c.muted);
     final sub = [
       part.colorName ?? context.l10n.countUnknownColor,
       if (part.partNum != null) part.partNum!,
     ].join(' · ');
-    return GestureDetector(
+    // VoiceOver: one control per row — same label/value/hint/detail-action as the tiles
+    // (RebuildSheets.swift:320-327).
+    final a11yLabel = (part.colorName != null && part.colorName!.isNotEmpty)
+        ? context.l10n.a11yNameColor(part.partName, part.colorName!)
+        : part.partName;
+    final a11yValue = complete
+        ? context.l10n.a11yCountComplete(have, part.neededQty)
+        : context.l10n.a11yCount(have, part.neededQty);
+    final Widget row = GestureDetector(
       onTap: onTap,
       onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
@@ -1367,9 +1472,9 @@ class _SearchRow extends StatelessWidget {
                         width: 10,
                         height: 10,
                         decoration: BoxDecoration(
-                          color: _swatch(part.colorRgb),
+                          color: _swatch(part.colorRgb, c.faint),
                           shape: BoxShape.circle,
-                          border: Border.all(color: AppColors.line),
+                          border: Border.all(color: c.line),
                         ),
                       ),
                       const SizedBox(width: AppSpacing.s4),
@@ -1390,6 +1495,21 @@ class _SearchRow extends StatelessWidget {
           ],
         ),
       ),
+    );
+
+    return Semantics(
+      container: true,
+      button: true,
+      selected: complete,
+      label: a11yLabel,
+      value: a11yValue,
+      hint: context.l10n.a11yTileAddHint,
+      onTap: onTap,
+      customSemanticsActions: {
+        CustomSemanticsAction(label: context.l10n.a11yDetails): onLongPress,
+      },
+      excludeSemantics: true,
+      child: row,
     );
   }
 }

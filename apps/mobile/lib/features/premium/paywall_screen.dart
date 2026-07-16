@@ -22,7 +22,7 @@ class PaywallScreen extends ConsumerWidget {
   void _startSync(BuildContext context, WidgetRef ref) {
     // Mark the next sign-in as a first-time enable so existing local work uploads.
     ref.read(syncControllerProvider).requestEnableSync();
-    final signedIn = ref.read(authRepositoryProvider).currentSession != null;
+    final signedIn = ref.read(authRepositoryProvider).isSignedIn;
     if (signedIn) {
       Navigator.of(context).maybePop();
     } else {
@@ -34,11 +34,12 @@ class PaywallScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final c = BrickColors.of(context);
     final l = context.l10n;
+    // Three benefits (oracle PaywallView.swift:13-17): the free-tier cap is gone (P13), so
+    // "Unlimited" is no longer an offering — Sync / Backup / Party.
     final benefits = [
       (l.benefitSyncTitle, l.benefitSyncBody),
-      (l.benefitUnlimitedTitle, l.benefitUnlimitedBody),
       (l.benefitBackupTitle, l.benefitBackupBody),
-      (l.benefitPartyTitle, l.benefitPartyBody),
+      (l.partyModeTitle, l.benefitPartyBody),
     ];
     return ColoredBox(
       color: c.canvas,
@@ -56,7 +57,7 @@ class PaywallScreen extends ConsumerWidget {
                     children: [
                       Text(l.cloudSync, style: AppText.display),
                       const SizedBox(width: AppSpacing.s8),
-                      AppBadge(l.premium, color: c.primary),
+                      AppBadge(l.premiumBadge, color: c.primary),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.s8),

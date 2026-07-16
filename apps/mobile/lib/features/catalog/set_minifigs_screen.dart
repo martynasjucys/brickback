@@ -16,6 +16,7 @@ class SetMinifigsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final c = BrickColors.of(context);
     final minifigs = ref.watch(setMinifigsProvider(itemId));
     return Scaffold(
       body: SafeArea(
@@ -26,7 +27,7 @@ class SetMinifigsScreen extends ConsumerWidget {
             Expanded(
               child: minifigs.when(
                 loading: () =>
-                    const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    Center(child: CircularProgressIndicator(color: c.primary)),
                 error: (e, _) => EmptyState(
                   icon: Icons.error_outline,
                   title: context.l10n.minifigsCouldntLoad,

@@ -13,22 +13,20 @@ import '../../widgets/readable_column.dart';
 /// phone and the sidebar on a tablet. A label or glyph drifting between the two is
 /// exactly the bug nobody notices.
 ///
-/// Note the phone bottom bar still shows only Rebuilds + Profile (F2's verified,
-/// pixel-locked shape); Party and Add-a-set reach their existing routes from the
-/// screens. The sidebar surfaces all four as first-class destinations.
+/// Rebuilds, Party and Profile are the three bottom-tab / `StatefulShellRoute`
+/// branches; Add-a-set is sidebar-only (it reaches the catalog search route).
 enum AppSection {
   rebuilds,
   party,
   profile,
   search;
 
-  /// The section root each destination selects/navigates to. Rebuilds and Profile
-  /// are the two `StatefulShellRoute` branches; Party routes to the existing join
-  /// entry as-is (no gating change — that is the deferred P1 item); Add-a-set opens
-  /// the catalog search.
+  /// The section root each destination selects/navigates to. Rebuilds, Party and
+  /// Profile are the three `StatefulShellRoute` branches; Party lands on its own
+  /// tab (join = guest, P1); Add-a-set opens the catalog search.
   String get location => switch (this) {
         AppSection.rebuilds => '/',
-        AppSection.party => '/party/join',
+        AppSection.party => '/party',
         AppSection.profile => '/profile',
         AppSection.search => '/search',
       };
@@ -246,16 +244,17 @@ class _SidebarRow extends StatelessWidget {
   }
 }
 
-/// The compact (phone) shell: the two-tab bottom bar owning Rebuilds + Profile.
-/// **Pixel-locked to F2** — the only F3 change is dropping the bar on wide widths,
-/// where the sidebar replaces it, and resolving colours through `BrickColors` so
-/// dark mode completes here too (light values are unchanged).
+/// The compact (phone) shell: the three-tab bottom bar owning Rebuilds + Party +
+/// Profile (P1 promotes Party to a first-class tab). Resolves colours through
+/// `BrickColors` so dark mode completes here too. On wide widths the bar is dropped
+/// and the sidebar replaces it.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
   final StatefulNavigationShell navigationShell;
 
   static const _tabs = [
     (icon: Icons.grid_view_outlined, activeIcon: Icons.grid_view),
+    (icon: Icons.groups_2_outlined, activeIcon: Icons.groups_2),
     (icon: Icons.person_outline, activeIcon: Icons.person),
   ];
 
@@ -267,7 +266,7 @@ class AppShell extends StatelessWidget {
       return Scaffold(body: navigationShell);
     }
 
-    final labels = [context.l10n.navRebuilds, context.l10n.navProfile];
+    final labels = [context.l10n.navRebuilds, context.l10n.navParty, context.l10n.navProfile];
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: Container(

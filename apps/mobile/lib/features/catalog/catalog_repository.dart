@@ -34,8 +34,29 @@ class CatalogRepository implements CatalogReader {
 
   static const _setCols = 'item_id, set_num, name, year, num_parts, rebrickable_img_url';
 
+  /// The set-detail read also pulls the lifecycle columns (dates + derived stage) the detail
+  /// screen surfaces; list/search don't need them, so they stay on the leaner [_setCols].
+  static const _setDetailCols =
+      '$_setCols, launch_date, exit_date, retiring_soon_date, lifecycle_status';
+
   // Strip characters that would break PostgREST or-filter / ilike patterns.
   String _sanitize(String q) => q.replaceAll(RegExp(r'[,()%*]'), ' ').trim();
+
+  /// Catalog `date` columns arrive as ISO "yyyy-MM-dd" strings; parse as UTC so the value is
+  /// stable regardless of device zone. Returns null for missing/blank/unparseable input.
+  static DateTime? _parseDate(Object? v) {
+    if (v is! String || v.isEmpty) return null;
+    return DateTime.tryParse('${v}T00:00:00Z');
+  }
+
+  /// Postgres `numeric` can serialize as a JSON number *or* a quoted string via PostgREST; coerce
+  /// either into a `double?`.
+  static double? _flexDouble(Object? v) {
+    if (v == null) return null;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
+  }
 
   /// Resolve item ids -> our R2/CDN image (item_images kind=webp), when mirrored.
   Future<Map<int, String>> _imageUrls(List<int> ids) async {
@@ -55,16 +76,38 @@ class CatalogRepository implements CatalogReader {
     return out;
   }
 
-  CatalogSet _toSet(Map<String, dynamic> r, Map<int, String> imgs) {
+  CatalogSet _toSet(Map<String, dynamic> r, Map<int, String> imgs, {String? themeName}) {
     final id = r['item_id'] as int;
     return CatalogSet(
       itemId: id,
-      setNum: r['set_num'] as String,
+      setNum: r['set_num'] as String? ?? '',
       name: r['name'] as String,
       year: r['year'] as int? ?? 0,
       numParts: r['num_parts'] as int? ?? 0,
       imageUrl: imgs[id] ?? r['rebrickable_img_url'] as String?,
+      themeName: themeName,
+      // Lifecycle columns are only selected by the set-detail read; null everywhere else.
+      lifecycle: SetLifecycle.fromRaw(r['lifecycle_status'] as String?),
+      launchDate: _parseDate(r['launch_date']),
+      exitDate: _parseDate(r['exit_date']),
+      retiringSoonDate: _parseDate(r['retiring_soon_date']),
     );
+  }
+
+  /// Resolve set item ids → theme name (`items.theme_id → themes.name`, same join as
+  /// [setDetail]). Sets with no theme are omitted. Batched; empty in → empty out.
+  Future<Map<int, String>> _themeNames(List<int> ids) async {
+    final out = <int, String>{};
+    if (ids.isEmpty) return out;
+    final rows = await catalogClient.from('items').select('id, themes(name)').inFilter('id', ids);
+    for (final r in rows.cast<Map<String, dynamic>>()) {
+      final theme = r['themes'];
+      if (theme is Map) {
+        final name = theme['name'] as String?;
+        if (name != null && name.isNotEmpty) out[r['id'] as int] = name;
+      }
+    }
+    return out;
   }
 
   /// Catalog search over sets by name or number. Buildable sets only
@@ -101,8 +144,10 @@ class CatalogRepository implements CatalogReader {
     if (ids.isEmpty) return [];
     final rows = await catalogClient.from('sets').select(_setCols).inFilter('item_id', ids);
     final list = rows.cast<Map<String, dynamic>>();
-    final imgs = await _imageUrls([for (final r in list) r['item_id'] as int]);
-    return [for (final r in list) _toSet(r, imgs)];
+    final all = [for (final r in list) r['item_id'] as int];
+    final imgs = await _imageUrls(all);
+    final themes = await _themeNames(all);
+    return [for (final r in list) _toSet(r, imgs, themeName: themes[r['item_id'] as int])];
   }
 
   /// Latest (highest-version) inventory id for a set, or null if the catalog has
@@ -194,10 +239,17 @@ class CatalogRepository implements CatalogReader {
     ];
   }
 
-  /// Set detail: set row + theme name + minifig count (sum of figure quantities).
+  /// Set detail: set row (incl. lifecycle) + theme name + minifig count (sum of figure
+  /// quantities) + latest market value. A missing set surfaces a friendly [CatalogSetNotFound]
+  /// rather than a raw PostgREST error.
   Future<SetDetail> setDetail(int setItemId) async {
-    final setRow =
-        await catalogClient.from('sets').select(_setCols).eq('item_id', setItemId).single();
+    final setRow = await catalogClient
+        .from('sets')
+        .select(_setDetailCols)
+        .eq('item_id', setItemId)
+        .limit(1)
+        .maybeSingle();
+    if (setRow == null) throw CatalogSetNotFound(setItemId);
     final imgs = await _imageUrls([setItemId]);
     final set = _toSet(setRow.cast<String, dynamic>(), imgs);
 
@@ -216,8 +268,50 @@ class CatalogRepository implements CatalogReader {
     final figs = await setMinifigs(setItemId);
     final minifigCount = figs.fold<int>(0, (a, m) => a + m.quantity);
 
-    return SetDetail(set: set, themeName: themeName, minifigCount: minifigCount);
+    // Market value is supplementary — a missing/erroring price table must not fail the screen.
+    final price = await _setPrice(setItemId);
+
+    return SetDetail(set: set, themeName: themeName, minifigCount: minifigCount, price: price);
   }
+
+  /// Latest cached BrickLink "sold" value (new = `N`, used = `U`). Rows with no recent sales
+  /// (`total_quantity == 0`) carry no signal and are skipped. Returns `null` when neither side
+  /// has a price. Non-throwing: any failure resolves to `null` so the detail still loads.
+  Future<SetPrice?> _setPrice(int setItemId) async {
+    try {
+      final rows = await catalogClient
+          .from('bricklink_price_guides')
+          .select('new_or_used, qty_avg_price, avg_price, total_quantity, currency_code')
+          .eq('item_id', setItemId)
+          .eq('guide_type', 'sold');
+      double? newValue;
+      double? used;
+      var currency = 'EUR';
+      for (final r in rows.cast<Map<String, dynamic>>()) {
+        if ((r['total_quantity'] as int? ?? 0) <= 0) continue;
+        final value = _flexDouble(r['qty_avg_price']) ?? _flexDouble(r['avg_price']);
+        final code = r['currency_code'] as String?;
+        if (code != null && code.isNotEmpty) currency = code;
+        if (r['new_or_used'] == 'N') {
+          newValue = value;
+        } else if (r['new_or_used'] == 'U') {
+          used = value;
+        }
+      }
+      final price = SetPrice(newValue: newValue, used: used, currency: currency);
+      return price.hasAny ? price : null;
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
+/// Errors surfaced by the read-only catalog path.
+class CatalogSetNotFound implements Exception {
+  const CatalogSetNotFound(this.itemId);
+  final int itemId;
+  @override
+  String toString() => 'Set #$itemId not found in the catalog.';
 }
 
 final catalogRepositoryProvider =

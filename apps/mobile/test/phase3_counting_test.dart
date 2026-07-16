@@ -113,20 +113,26 @@ void main() {
     await tester.pump();
     expect(find.textContaining('2 of 5 parts'), findsOneWidget);
 
-    // "Remaining only" hides the completed part; still-needed ones remain.
-    await tester.tap(find.text('Remaining only'));
-    await tester.pump();
+    // "Remaining only" now lives in the view-settings sheet (P27): open it, flip the toggle,
+    // dismiss, and the completed part is hidden while still-needed ones remain.
+    await tester.tap(find.byIcon(Icons.tune_rounded));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Switch).first); // first switch = Remaining only
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(195, 20)); // dismiss the sheet via its scrim
+    await tester.pumpAndSettle();
     expect(find.text('Brick 2x4'), findsNothing);
     expect(find.text('Plate 1x1'), findsOneWidget);
 
-    // Debounced have-write (~350 ms) lands in Drift; the per-part step was
-    // persisted the moment it was chosen.
+    // Debounced have-write (~350 ms) lands in Drift. The per-part step is session-only now
+    // (P25) — it is deliberately no longer persisted to `step_qty`.
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pumpAndSettle();
     final inv = await RebuildRepository(CatalogRepository('http://cdn.test'), db).detail('r1');
     expect(inv.have['10:1'], 2);
     expect(inv.haveTotal, 2);
-    expect(inv.step['10:1'], 5);
+    // The chosen step of 5 was NOT persisted (P25): the row carries only the schema default of 1.
+    expect(inv.step['10:1'], 1);
   });
 
   testWidgets('reopening restores counts from the snapshot', (tester) async {

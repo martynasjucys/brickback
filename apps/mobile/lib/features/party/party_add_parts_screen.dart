@@ -70,9 +70,10 @@ class _PartyAddPartsScreenState extends ConsumerState<PartyAddPartsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final parts = ref.watch(partyPartsProvider(widget.partyId));
     return ColoredBox(
-      color: AppColors.canvas,
+      color: c.canvas,
       child: SafeArea(
         child: Column(
           children: [
@@ -80,7 +81,7 @@ class _PartyAddPartsScreenState extends ConsumerState<PartyAddPartsScreen> {
             Expanded(
               child: parts.when(
                 loading: () =>
-                    const Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                    Center(child: CircularProgressIndicator(color: c.primary)),
                 error: (e, _) => EmptyState(
                     icon: Icons.error_outline, title: context.l10n.partyCouldntLoad, message: '$e'),
                 data: (list) {
@@ -130,21 +131,22 @@ class _PartRow extends StatelessWidget {
   final int pending;
   final void Function(int) onBump;
 
-  Color get _swatch {
+  Color _swatchColor(Color fallback) {
     final rgb = part.colorRgb;
-    if (rgb == null) return AppColors.faint;
+    if (rgb == null) return fallback;
     try {
       return Color(int.parse('FF$rgb', radix: 16));
     } catch (_) {
-      return AppColors.faint;
+      return fallback;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen, vertical: AppSpacing.s8),
-      color: pending > 0 ? AppColors.success.withValues(alpha: 0.06) : null,
+      color: pending > 0 ? c.success.withValues(alpha: 0.06) : null,
       child: Row(
         children: [
           SetThumb(imageUrl: part.imageUrl, size: 48),
@@ -160,9 +162,9 @@ class _PartRow extends StatelessWidget {
                     width: 12,
                     height: 12,
                     decoration: BoxDecoration(
-                      color: _swatch,
+                      color: _swatchColor(c.faint),
                       shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.line),
+                      border: Border.all(color: c.line),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.s4),
@@ -195,6 +197,7 @@ class _StepBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return Pressable(
       onTap: onTap,
       child: Container(
@@ -202,11 +205,11 @@ class _StepBtn extends StatelessWidget {
         height: 36,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: AppColors.card,
+          color: c.card,
           shape: BoxShape.circle,
-          border: Border.all(color: AppColors.line),
+          border: Border.all(color: c.line),
         ),
-        child: Icon(icon, size: 20, color: onTap != null ? AppColors.ink : AppColors.muted),
+        child: Icon(icon, size: 20, color: onTap != null ? c.ink : c.muted),
       ),
     );
   }

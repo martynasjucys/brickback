@@ -118,6 +118,7 @@ class RebuildSummary {
     required this.imageUrl,
     required this.totalParts,
     required this.haveTotal,
+    this.theme,
     this.verifiedAt,
   });
 
@@ -127,6 +128,7 @@ class RebuildSummary {
   final String? imageUrl;
   final int totalParts;
   final int haveTotal; // capped sum of have (<= totalParts)
+  final String? theme; // local, catalog-derived LEGO theme (non-synced); drives the Home filter
   final DateTime? verifiedAt; // set once a verification is recorded (Phase 4)
 
   double get progress => totalParts == 0 ? 0 : (haveTotal / totalParts).clamp(0, 1);

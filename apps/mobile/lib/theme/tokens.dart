@@ -184,7 +184,11 @@ class AppDepth {
 /// visual note that can't be reproduced without a bundled font (see F2-results).
 class AppText {
   AppText._();
-  static const _base = TextStyle(color: AppColors.ink, height: 1.25);
+  // No baked colour: the styles inherit the ambient `DefaultTextStyle`, which the Material theme
+  // sets to the brightness-correct `BrickColors.ink` (`textTheme.apply(bodyColor: …)` in
+  // `_buildTheme`). Baking a fixed light ink here made every un-overridden `Text` render dark-on-
+  // dark in dark mode. Call sites that want a specific tone still `.copyWith(color: c.inkSoft)` etc.
+  static const _base = TextStyle(height: 1.25);
 
   static final display = _base.copyWith(fontSize: 30, fontWeight: FontWeight.w800);
   static final h1 = _base.copyWith(fontSize: 25, fontWeight: FontWeight.w700);
@@ -192,6 +196,5 @@ class AppText {
   static final title = _base.copyWith(fontSize: 16, fontWeight: FontWeight.w600);
   static final body = _base.copyWith(fontSize: 15, fontWeight: FontWeight.w400);
   static final label = _base.copyWith(fontSize: 13, fontWeight: FontWeight.w700);
-  static final caption =
-      _base.copyWith(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.inkSoft);
+  static final caption = _base.copyWith(fontSize: 12, fontWeight: FontWeight.w500);
 }

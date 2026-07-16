@@ -40,6 +40,10 @@ dependencies:
   crypto: ^3.0.7                 # sha256(url) → content-addressed filename
   connectivity_plus: ^7.3.0      # online/offline transitions → sync + prefetch resume
 
+  # Auth (F5 P9): native Sign in with Apple — App Store review requires the native button +
+  # identity-token exchange when social login ships. Nonce hashing reuses `crypto` above.
+  sign_in_with_apple: ^7.0.1
+
   # External links (BrickLink deep link from the part detail sheet)
   url_launcher: ^6.3.2
 

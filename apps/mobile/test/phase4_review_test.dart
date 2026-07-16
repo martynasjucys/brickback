@@ -271,7 +271,8 @@ void main() {
       expect(find.text('Box included'), findsOneWidget);
       expect(find.text('Minifigures included'), findsOneWidget);
       expect(find.textContaining('mint condition'), findsOneWidget);
-      expect(find.textContaining('Verified 8 Jul 2026'), findsOneWidget);
+      // Localised via intl DateFormat.yMMMd (oracle's abbreviated style), en → "Jul 8, 2026".
+      expect(find.textContaining('Verified Jul 8, 2026'), findsOneWidget);
       expect(find.text('Verified with BrickBack'), findsOneWidget);
     });
   });

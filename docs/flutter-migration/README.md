@@ -90,7 +90,7 @@ Claude-Code-driven estimates (hours/days), not hand-coding weeks.
 | **F2** | [F2-design-system.md](F2-design-system.md) · [results](F2-results.md) | Branded design tokens + primitives ported from `Tokens.swift`; dark mode, motion, haptics parity | **✅ Done (2026-07-16)** |
 | **F3** | [F3-adaptive-layout.md](F3-adaptive-layout.md) · [results](F3-results.md) | **The marquee.** iPad master-detail + tab-on-compact shell, readable-width clamp, adaptive counting grid, landscape | **✅ Done (2026-07-16)** |
 | **F4** | [F4-offline-images.md](F4-offline-images.md) · [results](F4-results.md) | Durable, deduplicated, pin-aware on-device image store; prefetch-on-add; reconnect resume | **✅ Done (2026-07-16)** |
-| **F5** | [F5-reconciliation-and-polish.md](F5-reconciliation-and-polish.md) | Burn down the F1 backlog (lifecycle stage, price guide, locale auto-detect, report month names, …); accessibility + i18n parity | Planned |
+| **F5** | [F5-reconciliation-and-polish.md](F5-reconciliation-and-polish.md) · [results](F5-results.md) | Burn down the F1 backlog (lifecycle stage, price guide, locale auto-detect, report month names, party-join-as-guest, native Apple sign-in, …); accessibility + i18n + dark-mode parity | **✅ Done (2026-07-16)** — all 30 port items closed; analyze clean, 48 tests; sim-verified. Swift retirement (F5 task 6) awaits user parity sign-off. |
 
 **Critical path to parity:** F0 → F1 → (F2 ∥ F3 ∥ F4 can run in parallel once F0/F1 land) → F5.
 F2's tokens should land early so screens touched later inherit the branded look immediately

@@ -20,6 +20,7 @@ class PartyAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final seed = member.displayName ?? member.userId;
     final initial = (member.displayName?.trim().isNotEmpty ?? false)
         ? member.displayName!.trim()[0].toUpperCase()
@@ -34,14 +35,14 @@ class PartyAvatar extends StatelessWidget {
         shape: BoxShape.circle,
         // A host is ringed in ink; members in the canvas colour so they read flat.
         border: Border.all(
-          color: member.isHost ? AppColors.ink : AppColors.card,
+          color: member.isHost ? c.ink : c.card,
           width: 2,
         ),
       ),
       child: Text(
         initial,
         style: TextStyle(
-          color: AppColors.onPrimary,
+          color: c.onPrimary,
           fontWeight: FontWeight.w700,
           fontSize: size * 0.42,
           height: 1.0,
@@ -60,6 +61,7 @@ class AvatarStack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     final shown = members.take(max).toList();
     final overflow = members.length - shown.length;
     final overlap = size * 0.35;
@@ -80,13 +82,13 @@ class AvatarStack extends StatelessWidget {
                 height: size,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: AppColors.faint,
+                  color: c.faint,
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.card, width: 2),
+                  border: Border.all(color: c.card, width: 2),
                 ),
                 child: Text('+$overflow',
                     style: TextStyle(
-                        color: AppColors.inkSoft,
+                        color: c.inkSoft,
                         fontWeight: FontWeight.w700,
                         fontSize: size * 0.34)),
               ),

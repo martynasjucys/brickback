@@ -1,11 +1,16 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
+import '../../core/display_name.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/primitives.dart';
 import '../../widgets/readable_column.dart';
+import '../auth/auth_repository.dart';
 import 'party_repository.dart';
 
 /// `/party/join` — resolve a short code to a party and enter it. Joining is by
@@ -36,13 +41,40 @@ class _PartyJoinScreenState extends ConsumerState<PartyJoinScreen> {
       _error = null;
     });
     try {
+      // Joining needs neither premium nor a real account — just *some* session for the
+      // authenticated join_party RPC. Mint a transparent guest session if signed out, carrying the
+      // chosen display name so the roster shows it (not "Builder").
+      await ref
+          .read(authRepositoryProvider)
+          .ensureGuestSession(displayName: ref.read(displayNameProvider));
       final party = await ref.read(partyRepositoryProvider).joinParty(code);
       if (mounted) context.pushReplacement('/party/${party.id}');
-    } catch (_) {
-      if (mounted) setState(() => _error = context.l10n.partyJoinError);
+    } catch (e) {
+      if (mounted) setState(() => _error = _messageFor(context, e));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  /// Only a genuine "no such code" may blame the code — the `join_party` RPC raises SQLSTATE
+  /// P0001 for that. Guest sign-in, connectivity and decode failures reach here too; telling
+  /// someone to check a code that was right sends them in circles, so each gets the message that
+  /// names the thing they can actually act on (oracle PartyJoinView.swift:80-86).
+  String _messageFor(BuildContext context, Object e) {
+    if (e is PostgrestException && e.code == 'P0001') return context.l10n.partyJoinError;
+    if (_isOffline(e)) return context.l10n.partyJoinOffline;
+    return context.l10n.partyJoinFailed;
+  }
+
+  bool _isOffline(Object e) {
+    if (e is SocketException) return true;
+    final s = e.toString().toLowerCase();
+    return s.contains('socketexception') ||
+        s.contains('failed host lookup') ||
+        s.contains('network is unreachable') ||
+        s.contains('connection refused') ||
+        s.contains('connection closed') ||
+        s.contains('clientexception');
   }
 
   @override

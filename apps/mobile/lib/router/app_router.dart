@@ -18,6 +18,7 @@ import '../features/review/verification_report.dart';
 import '../features/auth/sign_in_screen.dart';
 import '../features/premium/paywall_screen.dart';
 import '../features/party/party_screen.dart';
+import '../features/party/party_landing_screen.dart';
 import '../features/party/party_join_screen.dart';
 import '../features/party/party_invite_screen.dart';
 import '../features/party/party_add_parts_screen.dart';
@@ -52,7 +53,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     // Local-first: no auth guard. Only bounce away from /sign-in once a session
     // exists (the OAuth round-trip returns here).
     redirect: (context, state) {
-      if (state.matchedLocation == '/sign-in' && userClient.auth.currentSession != null) {
+      // Only bounce away from /sign-in once a *real* account exists — a transparent guest
+      // (anonymous) session must not block someone who came here to actually sign in.
+      final user = userClient.auth.currentUser;
+      if (state.matchedLocation == '/sign-in' && user != null && user.isAnonymous != true) {
         return '/';
       }
       return null;
@@ -66,9 +70,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           StatefulShellRoute.indexedStack(
             builder: (context, state, shell) => AppShell(navigationShell: shell),
+            // Branch order == bottom-tab order: Rebuilds (0), Party (1), Profile (2).
             branches: [
               StatefulShellBranch(routes: [
                 GoRoute(path: '/', builder: (_, _) => const HomeScreen()),
+              ]),
+              StatefulShellBranch(routes: [
+                GoRoute(path: '/party', builder: (_, _) => const PartyLandingScreen()),
               ]),
               StatefulShellBranch(routes: [
                 GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),

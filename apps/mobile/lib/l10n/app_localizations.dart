@@ -149,13 +149,13 @@ abstract class AppLocalizations {
   /// No description provided for @homeEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No sets yet'**
+  /// **'No rebuilds yet'**
   String get homeEmptyTitle;
 
   /// No description provided for @homeEmptyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Add one to start sorting your pile.'**
+  /// **'Search a set to start counting its parts back into place.'**
   String get homeEmptyMessage;
 
   /// No description provided for @continueRebuilding.
@@ -163,6 +163,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue rebuilding'**
   String get continueRebuilding;
+
+  /// No description provided for @continueBuilding.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue building'**
+  String get continueBuilding;
+
+  /// No description provided for @allSets.
+  ///
+  /// In en, this message translates to:
+  /// **'All sets'**
+  String get allSets;
+
+  /// No description provided for @partsHaveTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'{have} / {total} parts'**
+  String partsHaveTotal(int have, int total);
+
+  /// No description provided for @homeNoMatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No matching sets'**
+  String get homeNoMatchTitle;
+
+  /// No description provided for @homeNoMatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'None of your added sets match the current filter.'**
+  String get homeNoMatchMessage;
+
+  /// No description provided for @filter.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter'**
+  String get filter;
+
+  /// No description provided for @filterSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter sets'**
+  String get filterSets;
+
+  /// No description provided for @filterSetsActive.
+  ///
+  /// In en, this message translates to:
+  /// **'{count,plural, one{Filter sets, {count} active} other{Filter sets, {count} active}}'**
+  String filterSetsActive(int count);
+
+  /// No description provided for @clearFilter.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filter'**
+  String get clearFilter;
+
+  /// No description provided for @clearAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get clearAll;
+
+  /// No description provided for @statusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get statusLabel;
+
+  /// No description provided for @filterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get filterAll;
+
+  /// No description provided for @filterIncomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Incomplete'**
+  String get filterIncomplete;
+
+  /// No description provided for @filterComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete'**
+  String get filterComplete;
+
+  /// No description provided for @themeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get themeLabel;
+
+  /// No description provided for @themeFilterHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sets to filter them by LEGO theme.'**
+  String get themeFilterHint;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
+
+  /// No description provided for @close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get close;
 
   /// No description provided for @remove.
   ///
@@ -199,6 +307,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Profile'**
   String get profileTitle;
+
+  /// No description provided for @statSetsBuilt.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets built'**
+  String get statSetsBuilt;
+
+  /// No description provided for @statPartsCollected.
+  ///
+  /// In en, this message translates to:
+  /// **'Parts collected'**
+  String get statPartsCollected;
+
+  /// No description provided for @nameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get nameLabel;
+
+  /// No description provided for @notSignedIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Not signed in'**
+  String get notSignedIn;
+
+  /// No description provided for @profileSignInPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to unlock premium cloud sync and party mode. Everything else works offline.'**
+  String get profileSignInPrompt;
+
+  /// No description provided for @nameEditorTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get nameEditorTitle;
+
+  /// No description provided for @nameEditorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown to others in party mode.'**
+  String get nameEditorSubtitle;
+
+  /// No description provided for @nameEditorHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get nameEditorHint;
+
+  /// No description provided for @shuffleName.
+  ///
+  /// In en, this message translates to:
+  /// **'Shuffle name'**
+  String get shuffleName;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get appearance;
+
+  /// No description provided for @themeSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get themeSystem;
+
+  /// No description provided for @themeLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get themeLight;
+
+  /// No description provided for @themeDark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get themeDark;
 
   /// No description provided for @guest.
   ///
@@ -302,6 +494,12 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get language;
 
+  /// No description provided for @languageSystem.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get languageSystem;
+
   /// No description provided for @languageEnglish.
   ///
   /// In en, this message translates to:
@@ -392,6 +590,78 @@ abstract class AppLocalizations {
   /// **'Adds a local copy you can sort offline. Add the same set again for a second physical copy.'**
   String get startSortingHint;
 
+  /// No description provided for @lifecycleUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get lifecycleUpcoming;
+
+  /// No description provided for @lifecycleAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get lifecycleAvailable;
+
+  /// No description provided for @lifecycleRetiringSoon.
+  ///
+  /// In en, this message translates to:
+  /// **'Retiring soon'**
+  String get lifecycleRetiringSoon;
+
+  /// No description provided for @lifecycleRetired.
+  ///
+  /// In en, this message translates to:
+  /// **'Retired'**
+  String get lifecycleRetired;
+
+  /// No description provided for @availabilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get availabilityTitle;
+
+  /// No description provided for @dateReleases.
+  ///
+  /// In en, this message translates to:
+  /// **'Releases'**
+  String get dateReleases;
+
+  /// No description provided for @dateReleased.
+  ///
+  /// In en, this message translates to:
+  /// **'Released'**
+  String get dateReleased;
+
+  /// No description provided for @dateRetired.
+  ///
+  /// In en, this message translates to:
+  /// **'Retired'**
+  String get dateRetired;
+
+  /// No description provided for @dateRetiring.
+  ///
+  /// In en, this message translates to:
+  /// **'Retiring'**
+  String get dateRetiring;
+
+  /// No description provided for @valueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Value'**
+  String get valueTitle;
+
+  /// No description provided for @valueNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get valueNew;
+
+  /// No description provided for @valueUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get valueUsed;
+
   /// No description provided for @partsCouldntLoad.
   ///
   /// In en, this message translates to:
@@ -452,64 +722,52 @@ abstract class AppLocalizations {
   /// **'BrickBack Premium'**
   String get paywallTitle;
 
+  /// No description provided for @premiumBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'PREMIUM'**
+  String get premiumBadge;
+
   /// No description provided for @paywallHeadline.
   ///
   /// In en, this message translates to:
-  /// **'Save unlimited projects and sync across devices. The free tier keeps working on this device, forever.'**
+  /// **'Keep every rebuild in sync and backed up. Everything you\'ve sorted so far comes with you.'**
   String get paywallHeadline;
 
   /// No description provided for @benefitSyncTitle.
   ///
   /// In en, this message translates to:
-  /// **'Sync across devices'**
+  /// **'Cloud sync'**
   String get benefitSyncTitle;
 
   /// No description provided for @benefitSyncBody.
   ///
   /// In en, this message translates to:
-  /// **'Pick up a rebuild on your phone and finish on your tablet.'**
+  /// **'Your rebuilds follow you to every device, always up to date.'**
   String get benefitSyncBody;
-
-  /// No description provided for @benefitUnlimitedTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Unlimited projects'**
-  String get benefitUnlimitedTitle;
-
-  /// No description provided for @benefitUnlimitedBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Track as many sets as you want at once.'**
-  String get benefitUnlimitedBody;
 
   /// No description provided for @benefitBackupTitle.
   ///
   /// In en, this message translates to:
-  /// **'Never lose your work'**
+  /// **'Safe backup'**
   String get benefitBackupTitle;
 
   /// No description provided for @benefitBackupBody.
   ///
   /// In en, this message translates to:
-  /// **'Your counts are backed up to your account.'**
+  /// **'Never lose your progress if you lose your phone.'**
   String get benefitBackupBody;
-
-  /// No description provided for @benefitPartyTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Party mode (soon)'**
-  String get benefitPartyTitle;
 
   /// No description provided for @benefitPartyBody.
   ///
   /// In en, this message translates to:
-  /// **'Sort a big set together in real time.'**
+  /// **'Sort a big set together with friends in real time.'**
   String get benefitPartyBody;
 
   /// No description provided for @paywallCtaHint.
   ///
   /// In en, this message translates to:
-  /// **'Subscription billing arrives soon. Sign in now to reserve sync for your account.'**
+  /// **'You\'ll sign in first — your local rebuilds upload automatically.'**
   String get paywallCtaHint;
 
   /// No description provided for @signInTitle.
@@ -521,13 +779,13 @@ abstract class AppLocalizations {
   /// No description provided for @signInHeadline.
   ///
   /// In en, this message translates to:
-  /// **'Turn on Cloud Sync'**
+  /// **'Sync across your devices'**
   String get signInHeadline;
 
   /// No description provided for @signInSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Sign in to sync your rebuilds across devices and unlock unlimited projects. Your local piles stay on this device either way.'**
+  /// **'Sign in to unlock premium cloud sync and party mode. Everything else works offline — you can skip this.'**
   String get signInSubtitle;
 
   /// No description provided for @continueWithApple.
@@ -575,7 +833,7 @@ abstract class AppLocalizations {
   /// No description provided for @signInFooter.
   ///
   /// In en, this message translates to:
-  /// **'By continuing you agree to sync your rebuild data to your BrickBack account. No account is required to use the app.'**
+  /// **'We only use your account to sync your rebuilds. No spam.'**
   String get signInFooter;
 
   /// No description provided for @couldntAddSet.
@@ -607,6 +865,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remaining only'**
   String get countRemainingOnly;
+
+  /// No description provided for @countRemainingOnlyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide the parts you\'ve already counted in full — show only what\'s left to find.'**
+  String get countRemainingOnlyHint;
+
+  /// No description provided for @menuReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Review & verify'**
+  String get menuReview;
+
+  /// No description provided for @menuStartParty.
+  ///
+  /// In en, this message translates to:
+  /// **'Start party'**
+  String get menuStartParty;
+
+  /// No description provided for @menuSearchParts.
+  ///
+  /// In en, this message translates to:
+  /// **'Search parts'**
+  String get menuSearchParts;
+
+  /// No description provided for @menuSetDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Set details'**
+  String get menuSetDetails;
+
+  /// No description provided for @a11yTileAddHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Adds one'**
+  String get a11yTileAddHint;
+
+  /// No description provided for @a11yDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get a11yDetails;
+
+  /// No description provided for @a11yNameColor.
+  ///
+  /// In en, this message translates to:
+  /// **'{name}, {color}'**
+  String a11yNameColor(String name, String color);
+
+  /// No description provided for @a11yCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{have} of {needed}'**
+  String a11yCount(int have, int needed);
+
+  /// No description provided for @a11yCountComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'{have} of {needed}, complete'**
+  String a11yCountComplete(int have, int needed);
 
   /// No description provided for @countStep.
   ///
@@ -1111,6 +1429,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t find that party. Check the code.'**
   String get partyJoinError;
+
+  /// No description provided for @partyJoinOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Check your connection and try again.'**
+  String get partyJoinOffline;
+
+  /// No description provided for @partyJoinFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join that party. Try again.'**
+  String get partyJoinFailed;
+
+  /// No description provided for @partyHostNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosting a party is Premium — start one from a rebuild\'s counting screen.'**
+  String get partyHostNote;
+
+  /// No description provided for @partyAppearAs.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll appear as {name}'**
+  String partyAppearAs(String name);
 
   /// No description provided for @partyFallbackName.
   ///

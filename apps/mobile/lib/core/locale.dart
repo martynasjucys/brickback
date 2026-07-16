@@ -7,37 +7,69 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
   throw UnimplementedError('sharedPreferencesProvider must be overridden in main()');
 });
 
-/// App languages. English is the default; Lithuanian is user-selectable.
+/// App languages the UI can resolve to. English is the source; Lithuanian is fully translated.
 const supportedLanguageCodes = ['en', 'lt'];
 
-/// The active UI locale. Defaults to English; the user's choice persists across
-/// launches. Read by [BrickBackApp] to drive `MaterialApp.locale`.
-class LocaleController extends Notifier<Locale> {
+/// The three language choices surfaced in Profile → Language. `system` follows the device locale
+/// (the first-launch default — auto-detect); `en` / `lt` force one. Mirrors Swift `AppLanguage`.
+enum AppLanguage {
+  system,
+  en,
+  lt;
+
+  /// The choice a persisted [Locale] represents (null Locale ⇒ System).
+  static AppLanguage fromLocale(Locale? locale) => switch (locale?.languageCode) {
+        'en' => AppLanguage.en,
+        'lt' => AppLanguage.lt,
+        _ => AppLanguage.system,
+      };
+}
+
+/// The active UI override, or `null` to follow the device locale. On first launch (no stored
+/// choice) it is `null`, so `MaterialApp.locale = null` lets `basicLocaleListResolution` pick the
+/// best of `[en, lt]` for the device — a Lithuanian device comes up Lithuanian with no manual
+/// switch. The user's explicit choice persists across launches; "System" clears it. Mirrors the
+/// Swift `LocaleController` (adds the first-launch auto-detect the Flutter app had deferred).
+class LocaleController extends Notifier<Locale?> {
   static const _prefsKey = 'app_locale';
 
   @override
-  Locale build() {
-    // Degrade to English (no persistence) when prefs aren't injected — e.g. in
-    // widget/integration tests that pump the app without overriding the provider.
+  Locale? build() {
+    // Follow the device (no persistence) when prefs aren't injected — e.g. in widget/integration
+    // tests that pump the app without overriding the provider.
     try {
       return _localeFor(ref.read(sharedPreferencesProvider).getString(_prefsKey));
     } catch (_) {
-      return const Locale('en');
+      return null;
     }
   }
 
-  Future<void> setLanguage(String code) async {
-    state = _localeFor(code);
+  /// Set the language by [AppLanguage]. "System" clears the stored choice (null Locale ⇒ device
+  /// auto-detect); `en` / `lt` persist.
+  Future<void> setLanguage(AppLanguage lang) async {
+    state = switch (lang) {
+      AppLanguage.system => null,
+      AppLanguage.en => const Locale('en'),
+      AppLanguage.lt => const Locale('lt'),
+    };
     try {
-      await ref.read(sharedPreferencesProvider).setString(_prefsKey, state.languageCode);
+      final prefs = ref.read(sharedPreferencesProvider);
+      if (state == null) {
+        await prefs.remove(_prefsKey);
+      } else {
+        await prefs.setString(_prefsKey, state!.languageCode);
+      }
     } catch (_) {
       // No persistence available (tests); the in-memory switch still applies.
     }
   }
 
-  static Locale _localeFor(String? code) =>
-      code == 'lt' ? const Locale('lt') : const Locale('en');
+  static Locale? _localeFor(String? code) => switch (code) {
+        'en' => const Locale('en'),
+        'lt' => const Locale('lt'),
+        _ => null, // 'system' / absent / unknown → follow the device
+      };
 }
 
 final localeControllerProvider =
-    NotifierProvider<LocaleController, Locale>(LocaleController.new);
+    NotifierProvider<LocaleController, Locale?>(LocaleController.new);

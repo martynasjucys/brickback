@@ -326,7 +326,12 @@ class SyncController {
   final bool Function()? _isSignedIn;
 
   bool get _signedIn => (_isSignedIn ?? _defaultSignedIn)();
-  static bool _defaultSignedIn() => userClient.auth.currentSession != null;
+  // A transparent guest (anonymous) session does NOT count as signed in — only a real account
+  // unlocks cloud sync.
+  static bool _defaultSignedIn() {
+    final user = userClient.auth.currentUser;
+    return user != null && user.isAnonymous != true;
+  }
   bool get _enabled => _signedIn && _ref.read(isPremiumProvider);
 
   SyncService _sync() => _service ??= SyncService(

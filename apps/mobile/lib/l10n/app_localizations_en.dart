@@ -33,13 +33,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get couldntLoad => 'Couldn\'t load';
 
   @override
-  String get homeEmptyTitle => 'No sets yet';
+  String get homeEmptyTitle => 'No rebuilds yet';
 
   @override
-  String get homeEmptyMessage => 'Add one to start sorting your pile.';
+  String get homeEmptyMessage =>
+      'Search a set to start counting its parts back into place.';
 
   @override
   String get continueRebuilding => 'Continue rebuilding';
+
+  @override
+  String get continueBuilding => 'Continue building';
+
+  @override
+  String get allSets => 'All sets';
+
+  @override
+  String partsHaveTotal(int have, int total) {
+    return '$have / $total parts';
+  }
+
+  @override
+  String get homeNoMatchTitle => 'No matching sets';
+
+  @override
+  String get homeNoMatchMessage =>
+      'None of your added sets match the current filter.';
+
+  @override
+  String get filter => 'Filter';
+
+  @override
+  String get filterSets => 'Filter sets';
+
+  @override
+  String filterSetsActive(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filter sets, $count active',
+      one: 'Filter sets, $count active',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearFilter => 'Clear filter';
+
+  @override
+  String get clearAll => 'Clear all';
+
+  @override
+  String get statusLabel => 'Status';
+
+  @override
+  String get filterAll => 'All';
+
+  @override
+  String get filterIncomplete => 'Incomplete';
+
+  @override
+  String get filterComplete => 'Complete';
+
+  @override
+  String get themeLabel => 'Theme';
+
+  @override
+  String get themeFilterHint => 'Add sets to filter them by LEGO theme.';
+
+  @override
+  String get done => 'Done';
+
+  @override
+  String get close => 'Close';
 
   @override
   String get remove => 'Remove';
@@ -70,6 +136,49 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileTitle => 'Profile';
+
+  @override
+  String get statSetsBuilt => 'Sets built';
+
+  @override
+  String get statPartsCollected => 'Parts collected';
+
+  @override
+  String get nameLabel => 'Name';
+
+  @override
+  String get notSignedIn => 'Not signed in';
+
+  @override
+  String get profileSignInPrompt =>
+      'Sign in to unlock premium cloud sync and party mode. Everything else works offline.';
+
+  @override
+  String get nameEditorTitle => 'Your name';
+
+  @override
+  String get nameEditorSubtitle => 'Shown to others in party mode.';
+
+  @override
+  String get nameEditorHint => 'Enter a name';
+
+  @override
+  String get shuffleName => 'Shuffle name';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get appearance => 'Appearance';
+
+  @override
+  String get themeSystem => 'System';
+
+  @override
+  String get themeLight => 'Light';
+
+  @override
+  String get themeDark => 'Dark';
 
   @override
   String get guest => 'Guest';
@@ -124,6 +233,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get language => 'Language';
+
+  @override
+  String get languageSystem => 'System';
 
   @override
   String get languageEnglish => 'English';
@@ -182,6 +294,42 @@ class AppLocalizationsEn extends AppLocalizations {
       'Adds a local copy you can sort offline. Add the same set again for a second physical copy.';
 
   @override
+  String get lifecycleUpcoming => 'Coming soon';
+
+  @override
+  String get lifecycleAvailable => 'Available';
+
+  @override
+  String get lifecycleRetiringSoon => 'Retiring soon';
+
+  @override
+  String get lifecycleRetired => 'Retired';
+
+  @override
+  String get availabilityTitle => 'Availability';
+
+  @override
+  String get dateReleases => 'Releases';
+
+  @override
+  String get dateReleased => 'Released';
+
+  @override
+  String get dateRetired => 'Retired';
+
+  @override
+  String get dateRetiring => 'Retiring';
+
+  @override
+  String get valueTitle => 'Value';
+
+  @override
+  String get valueNew => 'New';
+
+  @override
+  String get valueUsed => 'Used';
+
+  @override
   String get partsCouldntLoad => 'Couldn\'t load parts';
 
   @override
@@ -222,47 +370,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paywallTitle => 'BrickBack Premium';
 
   @override
-  String get paywallHeadline =>
-      'Save unlimited projects and sync across devices. The free tier keeps working on this device, forever.';
+  String get premiumBadge => 'PREMIUM';
 
   @override
-  String get benefitSyncTitle => 'Sync across devices';
+  String get paywallHeadline =>
+      'Keep every rebuild in sync and backed up. Everything you\'ve sorted so far comes with you.';
+
+  @override
+  String get benefitSyncTitle => 'Cloud sync';
 
   @override
   String get benefitSyncBody =>
-      'Pick up a rebuild on your phone and finish on your tablet.';
+      'Your rebuilds follow you to every device, always up to date.';
 
   @override
-  String get benefitUnlimitedTitle => 'Unlimited projects';
+  String get benefitBackupTitle => 'Safe backup';
 
   @override
-  String get benefitUnlimitedBody => 'Track as many sets as you want at once.';
+  String get benefitBackupBody =>
+      'Never lose your progress if you lose your phone.';
 
   @override
-  String get benefitBackupTitle => 'Never lose your work';
-
-  @override
-  String get benefitBackupBody => 'Your counts are backed up to your account.';
-
-  @override
-  String get benefitPartyTitle => 'Party mode (soon)';
-
-  @override
-  String get benefitPartyBody => 'Sort a big set together in real time.';
+  String get benefitPartyBody =>
+      'Sort a big set together with friends in real time.';
 
   @override
   String get paywallCtaHint =>
-      'Subscription billing arrives soon. Sign in now to reserve sync for your account.';
+      'You\'ll sign in first — your local rebuilds upload automatically.';
 
   @override
   String get signInTitle => 'Sign in';
 
   @override
-  String get signInHeadline => 'Turn on Cloud Sync';
+  String get signInHeadline => 'Sync across your devices';
 
   @override
   String get signInSubtitle =>
-      'Sign in to sync your rebuilds across devices and unlock unlimited projects. Your local piles stay on this device either way.';
+      'Sign in to unlock premium cloud sync and party mode. Everything else works offline — you can skip this.';
 
   @override
   String get continueWithApple => 'Continue with Apple';
@@ -287,7 +431,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get signInFooter =>
-      'By continuing you agree to sync your rebuild data to your BrickBack account. No account is required to use the app.';
+      'We only use your account to sync your rebuilds. No spam.';
 
   @override
   String couldntAddSet(String error) {
@@ -307,6 +451,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get countRemainingOnly => 'Remaining only';
+
+  @override
+  String get countRemainingOnlyHint =>
+      'Hide the parts you\'ve already counted in full — show only what\'s left to find.';
+
+  @override
+  String get menuReview => 'Review & verify';
+
+  @override
+  String get menuStartParty => 'Start party';
+
+  @override
+  String get menuSearchParts => 'Search parts';
+
+  @override
+  String get menuSetDetails => 'Set details';
+
+  @override
+  String get a11yTileAddHint => 'Adds one';
+
+  @override
+  String get a11yDetails => 'Details';
+
+  @override
+  String a11yNameColor(String name, String color) {
+    return '$name, $color';
+  }
+
+  @override
+  String a11yCount(int have, int needed) {
+    return '$have of $needed';
+  }
+
+  @override
+  String a11yCountComplete(int have, int needed) {
+    return '$have of $needed, complete';
+  }
 
   @override
   String get countStep => 'Step';
@@ -613,6 +794,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get partyJoinError => 'Couldn\'t find that party. Check the code.';
+
+  @override
+  String get partyJoinOffline =>
+      'You\'re offline. Check your connection and try again.';
+
+  @override
+  String get partyJoinFailed => 'Couldn\'t join that party. Try again.';
+
+  @override
+  String get partyHostNote =>
+      'Hosting a party is Premium — start one from a rebuild\'s counting screen.';
+
+  @override
+  String partyAppearAs(String name) {
+    return 'You\'ll appear as $name';
+  }
 
   @override
   String get partyFallbackName => 'Sort party';

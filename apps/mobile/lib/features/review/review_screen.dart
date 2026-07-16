@@ -371,11 +371,11 @@ class _MissingRow extends StatelessWidget {
   final MissingPart part;
   final VoidCallback onTap;
 
-  Color get _swatch {
+  Color _swatchColor(Color fallback) {
     try {
       return Color(int.parse('FF${part.colorRgb ?? '808080'}', radix: 16));
     } catch (_) {
-      return AppColors.faint;
+      return fallback;
     }
   }
 
@@ -408,7 +408,7 @@ class _MissingRow extends StatelessWidget {
                         width: 12,
                         height: 12,
                         decoration: BoxDecoration(
-                          color: _swatch,
+                          color: _swatchColor(c.faint),
                           shape: BoxShape.circle,
                           border: Border.all(color: c.line),
                         ),

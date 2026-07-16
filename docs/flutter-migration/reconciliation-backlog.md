@@ -1,5 +1,13 @@
 # Reconciliation backlog (F1 output)
 
+> **F5 status (2026-07-16): all 30 `port` items (P1–P30) closed.** Every ranked item below is
+> implemented in Flutter against its Swift reference — including the S/M/L features (lifecycle,
+> price, Home theme filter, display-name generator, native Apple sign-in, party-join-as-guest with
+> a dedicated Party tab), the copy/i18n drift, the locale "System"/auto-detect mechanism, and the
+> VoiceOver semantics. `flutter analyze` clean, unit suite green (48). Two P9 follow-ups are
+> config, not client code: the iOS "Sign in with Apple" capability + the Supabase Apple provider.
+> Details per cluster in [F5-results.md](F5-results.md).
+
 > Produced by **F1 — Parity diff** (2026-07-16). A systematic Swift↔Flutter behavioural diff across
 > all nine areas of Phases 1–6. The Swift app (`apps/ios`) is the acceptance oracle; the Flutter app
 > (`apps/mobile`) froze on 2026-07-11. Every difference below is tagged **port** / **already-present**

@@ -33,14 +33,81 @@ class AppLocalizationsLt extends AppLocalizations {
   String get couldntLoad => 'Nepavyko įkelti';
 
   @override
-  String get homeEmptyTitle => 'Kol kas nėra rinkinių';
+  String get homeEmptyTitle => 'Kol kas nėra surinkimų';
 
   @override
   String get homeEmptyMessage =>
-      'Pridėkite rinkinį ir pradėkite rūšiuoti krūvą.';
+      'Ieškokite rinkinio ir pradėkite skaičiuoti jo dalis.';
 
   @override
   String get continueRebuilding => 'Tęsti surinkimą';
+
+  @override
+  String get continueBuilding => 'Tęsti surinkimą';
+
+  @override
+  String get allSets => 'Visi rinkiniai';
+
+  @override
+  String partsHaveTotal(int have, int total) {
+    return '$have / $total dalys';
+  }
+
+  @override
+  String get homeNoMatchTitle => 'Nėra tinkamų rinkinių';
+
+  @override
+  String get homeNoMatchMessage =>
+      'Nė vienas pridėtas rinkinys neatitinka filtro.';
+
+  @override
+  String get filter => 'Filtras';
+
+  @override
+  String get filterSets => 'Filtruoti rinkinius';
+
+  @override
+  String filterSetsActive(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Filtruoti rinkinius, $count aktyvių',
+      few: 'Filtruoti rinkinius, $count aktyvūs',
+      one: 'Filtruoti rinkinius, $count aktyvus',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get clearFilter => 'Išvalyti filtrą';
+
+  @override
+  String get clearAll => 'Išvalyti viską';
+
+  @override
+  String get statusLabel => 'Būsena';
+
+  @override
+  String get filterAll => 'Visi';
+
+  @override
+  String get filterIncomplete => 'Nebaigti';
+
+  @override
+  String get filterComplete => 'Baigti';
+
+  @override
+  String get themeLabel => 'Tema';
+
+  @override
+  String get themeFilterHint =>
+      'Pridėkite rinkinių, kad galėtumėte filtruoti pagal LEGO temą.';
+
+  @override
+  String get done => 'Atlikta';
+
+  @override
+  String get close => 'Uždaryti';
 
   @override
   String get remove => 'Šalinti';
@@ -72,6 +139,49 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get profileTitle => 'Profilis';
+
+  @override
+  String get statSetsBuilt => 'Surinkti rinkiniai';
+
+  @override
+  String get statPartsCollected => 'Surinktos detalės';
+
+  @override
+  String get nameLabel => 'Vardas';
+
+  @override
+  String get notSignedIn => 'Neprisijungta';
+
+  @override
+  String get profileSignInPrompt =>
+      'Prisijunkite, kad atrakintumėte premium sinchronizavimą ir bendrą režimą. Visa kita veikia neprisijungus.';
+
+  @override
+  String get nameEditorTitle => 'Jūsų vardas';
+
+  @override
+  String get nameEditorSubtitle => 'Rodomas kitiems bendrame režime.';
+
+  @override
+  String get nameEditorHint => 'Įveskite vardą';
+
+  @override
+  String get shuffleName => 'Generuoti kitą vardą';
+
+  @override
+  String get save => 'Išsaugoti';
+
+  @override
+  String get appearance => 'Išvaizda';
+
+  @override
+  String get themeSystem => 'Sistemos';
+
+  @override
+  String get themeLight => 'Šviesi';
+
+  @override
+  String get themeDark => 'Tamsi';
 
   @override
   String get guest => 'Svečias';
@@ -126,6 +236,9 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get language => 'Kalba';
+
+  @override
+  String get languageSystem => 'Sistemos';
 
   @override
   String get languageEnglish => 'English';
@@ -186,6 +299,42 @@ class AppLocalizationsLt extends AppLocalizations {
       'Prideda vietinę kopiją, kurią galite rūšiuoti neprisijungę. Pridėkite tą patį rinkinį dar kartą antrai fizinei kopijai.';
 
   @override
+  String get lifecycleUpcoming => 'Netrukus pasirodys';
+
+  @override
+  String get lifecycleAvailable => 'Parduodama';
+
+  @override
+  String get lifecycleRetiringSoon => 'Netrukus išparduodama';
+
+  @override
+  String get lifecycleRetired => 'Nebegaminama';
+
+  @override
+  String get availabilityTitle => 'Prieinamumas';
+
+  @override
+  String get dateReleases => 'Pasirodys';
+
+  @override
+  String get dateReleased => 'Išleista';
+
+  @override
+  String get dateRetired => 'Nebegaminama';
+
+  @override
+  String get dateRetiring => 'Išparduodama';
+
+  @override
+  String get valueTitle => 'Vertė';
+
+  @override
+  String get valueNew => 'Naujas';
+
+  @override
+  String get valueUsed => 'Naudotas';
+
+  @override
   String get partsCouldntLoad => 'Nepavyko įkelti dalių';
 
   @override
@@ -227,50 +376,43 @@ class AppLocalizationsLt extends AppLocalizations {
   String get paywallTitle => 'BrickBack Premium';
 
   @override
-  String get paywallHeadline =>
-      'Išsaugokite neribotą projektų skaičių ir sinchronizuokite tarp įrenginių. Nemokama versija visada veiks šiame įrenginyje.';
+  String get premiumBadge => 'PREMIUM';
 
   @override
-  String get benefitSyncTitle => 'Sinchronizavimas tarp įrenginių';
+  String get paywallHeadline =>
+      'Visi surinkimai sinchronizuojami ir saugomi. Viskas, ką iki šiol surūšiavote, keliauja kartu.';
+
+  @override
+  String get benefitSyncTitle => 'Sinchronizavimas debesyje';
 
   @override
   String get benefitSyncBody =>
-      'Pradėkite surinkimą telefone ir užbaikite planšetėje.';
+      'Surinkimai keliauja į kiekvieną įrenginį ir visada atnaujinti.';
 
   @override
-  String get benefitUnlimitedTitle => 'Neriboti projektai';
-
-  @override
-  String get benefitUnlimitedBody =>
-      'Sekite tiek rinkinių, kiek norite, vienu metu.';
-
-  @override
-  String get benefitBackupTitle => 'Niekada neprarasite savo darbo';
+  String get benefitBackupTitle => 'Saugi atsarginė kopija';
 
   @override
   String get benefitBackupBody =>
-      'Jūsų suskaičiuoti kiekiai saugomi paskyroje.';
-
-  @override
-  String get benefitPartyTitle => 'Bendras režimas (netrukus)';
+      'Neprarasite progreso, net jei pamesite telefoną.';
 
   @override
   String get benefitPartyBody =>
-      'Kartu rūšiuokite didelį rinkinį realiu laiku.';
+      'Rūšiuokite didelį rinkinį kartu su draugais realiu laiku.';
 
   @override
   String get paywallCtaHint =>
-      'Prenumeratos apmokėjimas netrukus. Prisijunkite dabar, kad rezervuotumėte sinchronizavimą savo paskyrai.';
+      'Pirmiausia prisijungsite — vietiniai surinkimai įkeliami automatiškai.';
 
   @override
   String get signInTitle => 'Prisijungimas';
 
   @override
-  String get signInHeadline => 'Įjungti sinchronizavimą debesyje';
+  String get signInHeadline => 'Sinchronizuokite tarp įrenginių';
 
   @override
   String get signInSubtitle =>
-      'Prisijunkite, kad sinchronizuotumėte surinkimus tarp įrenginių ir atrakintumėte neribotus projektus. Jūsų vietinės krūvos bet kuriuo atveju lieka šiame įrenginyje.';
+      'Prisijunkite, kad atrakintumėte premium sinchronizavimą ir bendrą režimą. Visa kita veikia neprisijungus — galite praleisti.';
 
   @override
   String get continueWithApple => 'Tęsti su Apple';
@@ -296,7 +438,7 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get signInFooter =>
-      'Tęsdami sutinkate sinchronizuoti savo surinkimų duomenis su BrickBack paskyra. Paskyra nebūtina norint naudotis programa.';
+      'Paskyrą naudojame tik jūsų surinkimams sinchronizuoti. Jokio šlamšto.';
 
   @override
   String couldntAddSet(String error) {
@@ -316,6 +458,43 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get countRemainingOnly => 'Tik likusios';
+
+  @override
+  String get countRemainingOnlyHint =>
+      'Slėpti pilnai suskaičiuotas dalis — rodyti tik tai, ką dar reikia rasti.';
+
+  @override
+  String get menuReview => 'Peržiūra ir tikrinimas';
+
+  @override
+  String get menuStartParty => 'Pradėti sesiją';
+
+  @override
+  String get menuSearchParts => 'Ieškoti dalių';
+
+  @override
+  String get menuSetDetails => 'Rinkinio informacija';
+
+  @override
+  String get a11yTileAddHint => 'Prideda vieną';
+
+  @override
+  String get a11yDetails => 'Detalės';
+
+  @override
+  String a11yNameColor(String name, String color) {
+    return '$name, $color';
+  }
+
+  @override
+  String a11yCount(int have, int needed) {
+    return '$have iš $needed';
+  }
+
+  @override
+  String a11yCountComplete(int have, int needed) {
+    return '$have iš $needed, baigta';
+  }
 
   @override
   String get countStep => 'Žingsnis';
@@ -625,6 +804,23 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get partyJoinError => 'Tokia sesija nerasta. Patikrinkite kodą.';
+
+  @override
+  String get partyJoinOffline =>
+      'Nesate prisijungę prie interneto. Patikrinkite ryšį ir bandykite dar kartą.';
+
+  @override
+  String get partyJoinFailed =>
+      'Nepavyko prisijungti prie sesijos. Bandykite dar kartą.';
+
+  @override
+  String get partyHostNote =>
+      'Sesijos surengimas yra Premium funkcija — pradėkite ją iš surinkimo skaičiavimo ekrano.';
+
+  @override
+  String partyAppearAs(String name) {
+    return 'Kiti jus matys kaip $name';
+  }
 
   @override
   String get partyFallbackName => 'Bendras rūšiavimas';
