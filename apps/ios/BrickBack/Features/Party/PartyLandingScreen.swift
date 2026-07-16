@@ -51,6 +51,7 @@ struct PartyLandingScreen: View {
             .padding(.horizontal, AppSpacing.screen)
             .padding(.top, AppSpacing.s24)
             .padding(.bottom, AppSpacing.s40)
+            .readableColumn()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)

@@ -210,6 +210,7 @@ private struct Detail: View {
             }
             .padding(.horizontal, AppSpacing.screen)
             .padding(.bottom, AppSpacing.s24)
+            .readableColumn()
         }
     }
 }

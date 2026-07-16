@@ -77,6 +77,7 @@ struct CatalogSearchResults: View {
                     .padding(.horizontal, AppSpacing.screen)
                     .padding(.top, AppSpacing.s12)
                     .padding(.bottom, AppSpacing.s24)
+                    .readableColumn()
                 }
             }
         }

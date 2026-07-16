@@ -9,6 +9,7 @@ import BrickBackKit
 struct RebuildView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var widthClass
     let rebuildSetId: String
 
     @State private var vm: RebuildViewModel?
@@ -22,6 +23,11 @@ struct RebuildView: View {
     @State private var partyError: String?
 
     private var grouping: PartGrouping { PartGrouping(rawValue: groupingRaw) ?? .color }
+
+    /// Tile-width bounds for the counting grid, widened on iPad so the tiles grow into fewer, more
+    /// tappable columns instead of the grid packing ~7 phone-sized ones (see `AppLayout.tileMin`).
+    private var tileMin: CGFloat { widthClass == .regular ? AppLayout.tileMinRegular : AppLayout.tileMin }
+    private var tileMax: CGFloat { widthClass == .regular ? AppLayout.tileMaxRegular : AppLayout.tileMax }
 
     var body: some View {
         ZStack {
@@ -250,7 +256,7 @@ struct RebuildView: View {
             }
             .padding(.top, AppSpacing.s16)
 
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 100, maximum: 176), spacing: 12)], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: tileMin, maximum: tileMax), spacing: 12)], spacing: 12) {
                 ForEach(tiles) { p in
                     PartTile(
                         part: p,

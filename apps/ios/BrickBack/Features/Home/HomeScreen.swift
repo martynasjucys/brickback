@@ -180,6 +180,10 @@ private struct RebuildList: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .environment(\.defaultMinListRowHeight, 1)
+        // Centre the list in a wide iPad column like the other roots, so its cards don't stretch to
+        // ~1560pt in landscape while Profile/search sit at a readable width. Swipe-to-remove keeps
+        // working — it acts on rows *within* the clamped list, which is now the whole list.
+        .readableColumn()
     }
 }
 

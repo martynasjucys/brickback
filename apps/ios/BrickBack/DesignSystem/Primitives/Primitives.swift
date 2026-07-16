@@ -311,6 +311,19 @@ extension View {
             // and go dark-on-brand — in light mode that reads as a bug, in dark it disappears.
             .toolbarColorScheme(.dark, for: .navigationBar)
     }
+
+    /// Cap a scrolling content column at a comfortable reading width and centre it in whatever space
+    /// is left. Apply to the *inner* column (after its `.padding(.horizontal, screen)`), inside the
+    /// `ScrollView`, so the canvas still fills edge-to-edge and only the content is reined in.
+    ///
+    /// Why (S10 step 5): the iPad is BrickBack's primary device and its detail column runs wide —
+    /// ~860pt in landscape, wider still on the big models — so a full-width settings row put its
+    /// value half a screen from its label. iPhone content never reaches `readableWidth`, so this is
+    /// a no-op there; it earns its keep only where the column is actually too wide.
+    func readableColumn(_ maxWidth: CGFloat = AppLayout.readableWidth) -> some View {
+        frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity) // centre the capped column in the wider container
+    }
 }
 
 // MARK: - EmptyState
@@ -349,6 +362,9 @@ struct EmptyState<Action: View>: View {
             }
         }
         .padding(AppSpacing.s32)
+        // Keep the title/message from stretching into one long line on a wide iPad column; this is
+        // narrower than a form column because it's centred prose, not label-value rows.
+        .frame(maxWidth: 420)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
