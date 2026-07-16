@@ -287,46 +287,29 @@ struct WrapLayout: Layout {
     }
 }
 
-// MARK: - BrandHeader
+// MARK: - Brand bar
 
-/// A raised "brick plate" header field — a gradient face over a darker bottom lip that bleeds into
-/// the status bar and curves off at the bottom, matching the Home tab's blue wordmark panel and the
-/// counting screen's green plate. The tab roots pass their own hue (Party = indigo, Profile =
-/// orange) and lay arbitrary content over it. Only the plate bleeds up behind the status bar; the
-/// content stays within the safe area.
-struct BrandHeader<Content: View>: View {
-    let face: Color
-    let deep: Color
-    let edge: Color
-    @ViewBuilder var content: () -> Content
-
-    init(face: Color, deep: Color, edge: Color, @ViewBuilder content: @escaping () -> Content) {
-        self.face = face
-        self.deep = deep
-        self.edge = edge
-        self.content = content
-    }
-
-    var body: some View {
-        content()
-            .padding(.horizontal, AppSpacing.screen)
-            .padding(.top, AppSpacing.s8)
-            .padding(.bottom, AppSpacing.s20)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(field)
-    }
-
-    private var field: some View {
-        let shape = UnevenRoundedRectangle(bottomLeadingRadius: AppRadius.xl,
-                                           bottomTrailingRadius: AppRadius.xl, style: .continuous)
-        return ZStack(alignment: .top) {
-            shape.fill(edge)
-            LinearGradient(colors: [face, deep], startPoint: .top, endPoint: .bottom)
-                .clipShape(shape)
-                .padding(.bottom, AppDepth.brick + 1)
-        }
-        .ignoresSafeArea(edges: .top)
-        .shadow(color: AppColors.shadow.opacity(0.14), radius: 10, y: 4)
+extension View {
+    /// Paint a screen's **native** navigation bar in its section's brand hue, with white title and
+    /// glyphs. Each section keeps the colour it has had since S7 — Rebuilds blue, counting green,
+    /// Party indigo, Profile orange — so the identity survives; only the mechanics are native now.
+    ///
+    /// This replaces `BrandHeader`, the raised "brick plate" that used to bleed up behind the status
+    /// bar and curve off below it (S10 step 4). The plate was an iPhone-shaped idea: it assumed a
+    /// full-width screen it could span, and on iPad it became a coloured slab with the tab bar
+    /// sitting on top of it. A tinted bar is the same identity expressed in a container the system
+    /// already lays out correctly at every width — and, on the sidebar shell, it's what carries the
+    /// toggle that shows and hides the sidebar.
+    ///
+    /// Applies to `.navigationBar` only: the tab bar stays neutral, since a section owns its screen
+    /// but not the shell around it.
+    func brandBar(_ hue: Color) -> some View {
+        self
+            .toolbarBackground(hue, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            // White title + glyphs. Without this they resolve against the *page's* colour scheme
+            // and go dark-on-brand — in light mode that reads as a bug, in dark it disappears.
+            .toolbarColorScheme(.dark, for: .navigationBar)
     }
 }
 

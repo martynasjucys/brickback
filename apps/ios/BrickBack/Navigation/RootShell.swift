@@ -72,11 +72,10 @@ struct RootShell: View {
 private struct SplitShell: View {
     @Environment(AppEnvironment.self) private var env
 
-    /// Starts open; the user can still collapse it. That is safe, but only by luck of who owns a
-    /// nav bar: the system puts the toggle in the *detail* column's bar, which Party and Profile
-    /// hide to draw their own brand plate — so those two can't collapse the sidebar in the first
-    /// place, and the sections that can (Home, Add a set) keep a bar to bring it back. Re-check
-    /// this in step 4: giving every section a native bar also gives every section a toggle.
+    /// Starts open; the user can collapse it and get it back. The system puts the toggle in the
+    /// *detail* column's nav bar, so this only works while every section has one — which, since
+    /// step 4 retired the brand plates in favour of tinted native bars, they all do. A section that
+    /// hides its bar would be a room with no door out.
     @State private var columns = NavigationSplitViewVisibility.all
 
     var body: some View {
@@ -104,7 +103,7 @@ private struct SplitShell: View {
     @ViewBuilder private var detail: some View {
         switch env.selectedSection {
         case .rebuilds:
-            SectionStack(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
+            SectionStack(router: env.homeRouter) { HomeScreen() }
         case .party:
             SectionStack(router: env.partyRouter) { PartyLandingScreen() }
         case .profile:
@@ -156,7 +155,7 @@ private struct TabShell: View {
         @Bindable var env = env
         TabView(selection: $env.selectedSection) {
             Tab(AppSection.rebuilds.title, systemImage: AppSection.rebuilds.icon, value: .rebuilds) {
-                SectionStack(router: env.homeRouter, rootBarHidden: false) { HomeScreen() }
+                SectionStack(router: env.homeRouter) { HomeScreen() }
             }
 
             // Joining a party is open to everyone (premium gates hosting only), so it earns a
@@ -234,22 +233,17 @@ private struct SearchStack: View {
 /// *container* around it, never the navigation inside.
 private struct SectionStack<Root: View>: View {
     @Bindable var router: Router
-    /// Whether the root screen hides the native nav bar (it draws its own custom header). Set false
-    /// for Home, which keeps the native bar (transparent) so it can host native toolbar buttons over
-    /// the brand plate. Pushed destinations always show it.
-    var rootBarHidden: Bool = true
     @ViewBuilder var root: () -> Root
 
     var body: some View {
         NavigationStack(path: $router.path) {
             root()
-                .navigationBarHidden(rootBarHidden)
                 .navigationDestination(for: Route.self) { route in
-                    // Every pushed destination rides the native bar, and they must keep agreeing:
-                    // toggling nav-bar visibility *between pushes* in one stack corrupts the
-                    // returning screen's header (a SwiftUI glitch that cost a live bug report). A
-                    // stack's ROOT may still differ — Party and Profile hide it and draw their own
-                    // brand plate — because only pushed neighbours have to match.
+                    // Every screen on these stacks rides the native bar, and they must keep
+                    // agreeing: toggling nav-bar visibility *between pushes* in one stack corrupts
+                    // the returning screen's header (a SwiftUI glitch that cost a live bug report).
+                    // Since S10 step 4 nothing hides it — the roots that used to, to draw a brand
+                    // plate, now tint the real bar instead — so this is a guard, not a correction.
                     RouteView(route: route)
                         .navigationBarHidden(false)
                 }

@@ -1,9 +1,9 @@
 import SwiftUI
 import BrickBackKit
 
-/// Profile tab — account & premium state (S5). An orange branded header shows the page title plus
-/// two lifetime stats (sets built + parts collected). Below: guest vs signed-in card, a Free/Premium
-/// badge, the party display name, and the sync/appearance/language rows. Port of `profile_screen.dart`.
+/// Profile — account & premium state (S5). An orange native nav bar titles the page; below it a
+/// stats card (sets built + parts collected), the guest vs signed-in card with a Free/Premium badge,
+/// the party display name, and the appearance/language rows. Port of `profile_screen.dart`.
 struct ProfileScreen: View {
     @Environment(AppEnvironment.self) private var env
     @State private var showNameEditor = false
@@ -17,19 +17,10 @@ struct ProfileScreen: View {
     private var partsCollected: Int { summaries.reduce(0) { $0 + $1.haveTotal } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            BrandHeader(face: AppColors.profile, deep: AppColors.profileDeep, edge: AppColors.profileEdge) {
-                VStack(alignment: .leading, spacing: AppSpacing.s12) {
-                    Text(L.navProfile).font(AppText.display).foregroundStyle(.white)
-                    HStack(spacing: AppSpacing.s32) {
-                        HeaderStat(value: setsBuilt.formatted(), label: L.statSetsBuilt)
-                        HeaderStat(value: partsCollected.formatted(), label: L.statPartsCollected)
-                    }
-                }
-            }
+        ScrollView {
+            VStack(spacing: AppSpacing.s12) {
+                    StatsCard(setsBuilt: setsBuilt, partsCollected: partsCollected)
 
-            ScrollView {
-                VStack(spacing: AppSpacing.s12) {
                     AccountCard()
 
                     SettingsRow(icon: "person.text.rectangle", title: L.nameLabel, value: env.displayName.name) {
@@ -49,32 +40,54 @@ struct ProfileScreen: View {
                         env.profileRouter.push(.language)
                     }
 
-                    AboutFooter()
-                }
-                .padding(.horizontal, AppSpacing.screen)
-                .padding(.top, AppSpacing.s24)
-                .padding(.bottom, AppSpacing.s40)
+                AboutFooter()
             }
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s24)
+            .padding(.bottom, AppSpacing.s40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.navProfile)
+        .navigationBarTitleDisplayMode(.inline)
+        .brandBar(AppColors.profile)
         .task {
-            // Live stats for the header — the stream keeps delivering as rebuilds change.
+            // Live stats — the stream keeps delivering as rebuilds change.
             for await list in env.services.rebuild.observeSummaries() { summaries = list }
         }
         .sheet(isPresented: $showNameEditor) { NameEditorSheet() }
     }
 }
 
-/// One number + label pair on the orange header (e.g. "12 / Sets built").
-private struct HeaderStat: View {
-    let value: String
-    let label: String
+/// The two lifetime stats. They rode the orange brand plate until S10 step 4 retired it; a card is
+/// where they landed, because they are *content* — the plate was the only thing holding them, and
+/// dropping the plate would otherwise have dropped them too.
+private struct StatsCard: View {
+    let setsBuilt: Int
+    let partsCollected: Int
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(value).font(AppText.h1).foregroundStyle(.white)
-            Text(label).font(AppText.label).foregroundStyle(.white.opacity(0.9))
+        AppCard {
+            HStack(spacing: AppSpacing.s32) {
+                Stat(value: setsBuilt.formatted(), label: L.statSetsBuilt)
+                Stat(value: partsCollected.formatted(), label: L.statPartsCollected)
+            }
+        }
+    }
+
+    /// One number + label pair (e.g. "12 / Sets built"). Ink on the card, where it used to be white
+    /// on orange.
+    private struct Stat: View {
+        let value: String
+        let label: String
+
+        var body: some View {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(value).font(AppText.h1).foregroundStyle(AppColors.ink)
+                Text(label).font(AppText.label).foregroundStyle(AppColors.inkSoft)
+            }
+            // One element, so VoiceOver reads "12, Sets built" instead of two orphan fragments.
+            .accessibilityElement(children: .combine)
         }
     }
 }

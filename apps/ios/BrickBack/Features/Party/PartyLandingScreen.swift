@@ -13,52 +13,49 @@ struct PartyLandingScreen: View {
     private var router: Router { activeRouter ?? env.partyRouter }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            BrandHeader(face: AppColors.party, deep: AppColors.partyDeep, edge: AppColors.partyEdge) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(env.displayName.name)
-                        .font(AppText.label)
-                        .foregroundStyle(.white.opacity(0.85))
-                    Text(L.partyModeTitle)
-                        .font(AppText.display)
-                        .foregroundStyle(.white)
-                }
-            }
-
-            ScrollView {
-                VStack(spacing: AppSpacing.s12) {
-                    AppCard {
-                        VStack(alignment: .leading, spacing: AppSpacing.s4) {
-                            HStack(spacing: AppSpacing.s8) {
-                                Image(systemName: "person.2.fill").font(.system(size: 18)).foregroundStyle(AppColors.ink)
-                                Text(L.partyJoinTitle).font(AppText.title).foregroundStyle(AppColors.ink)
-                            }
-                            Text(L.partyModeBody)
-                                .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                            AppButton(L.partyJoinCta, icon: "arrow.right.to.line", expand: true) {
-                                router.push(.partyJoin)
-                            }
-                            .padding(.top, AppSpacing.s8)
+        ScrollView {
+            VStack(spacing: AppSpacing.s12) {
+                AppCard {
+                    VStack(alignment: .leading, spacing: AppSpacing.s4) {
+                        HStack(spacing: AppSpacing.s8) {
+                            Image(systemName: "person.2.fill").font(.system(size: 18)).foregroundStyle(AppColors.ink)
+                            Text(L.partyJoinTitle).font(AppText.title).foregroundStyle(AppColors.ink)
                         }
-                    }
-
-                    // Hosting is the premium half of party mode and is launched from a rebuild — so
-                    // here it's an informational note, not a CTA.
-                    AppCard {
-                        HStack(alignment: .top, spacing: AppSpacing.s8) {
-                            Image(systemName: "star.circle.fill").font(.system(size: 18)).foregroundStyle(AppColors.inkSoft)
-                            Text(L.partyHostNote)
-                                .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(L.partyModeBody)
+                            .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                        AppButton(L.partyJoinCta, icon: "arrow.right.to.line", expand: true) {
+                            router.push(.partyJoin)
                         }
+                        .padding(.top, AppSpacing.s8)
+                        // The display name rode the brand plate until S10 step 4. It belongs here:
+                        // it is who the rest of the party sees, so it reads as a fact about the
+                        // join rather than a label floating over a header. Editing it is Profile →
+                        // Name, which is also where the name row already lives.
+                        Text(L.partyAppearAs(env.displayName.name))
+                            .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                            .padding(.top, AppSpacing.s4)
                     }
                 }
-                .padding(.horizontal, AppSpacing.screen)
-                .padding(.top, AppSpacing.s24)
-                .padding(.bottom, AppSpacing.s40)
+
+                // Hosting is the premium half of party mode and is launched from a rebuild — so
+                // here it's an informational note, not a CTA.
+                AppCard {
+                    HStack(alignment: .top, spacing: AppSpacing.s8) {
+                        Image(systemName: "star.circle.fill").font(.system(size: 18)).foregroundStyle(AppColors.inkSoft)
+                        Text(L.partyHostNote)
+                            .font(AppText.caption).foregroundStyle(AppColors.inkSoft)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
             }
+            .padding(.horizontal, AppSpacing.screen)
+            .padding(.top, AppSpacing.s24)
+            .padding(.bottom, AppSpacing.s40)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(AppColors.canvas)
+        .navigationTitle(L.partyModeTitle)
+        .navigationBarTitleDisplayMode(.inline)
+        .brandBar(AppColors.party)
     }
 }

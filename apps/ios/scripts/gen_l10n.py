@@ -199,6 +199,10 @@ plain("partyModeBody", "Sort bricks together in real time — join by code.",
 plain("partyJoinTitle", "Join a party", "Prisijungti prie sesijos")
 plain("partyTabSubtitle", "Join a friend's sort — or host your own.",
       "Prisijunkite prie draugo rūšiavimo arba surenkite savo.")
+# S10: the display name lost its home when the Party brand plate went. It belongs with joining
+# anyway — it's who the others in the party will see. Editing it stays in Profile → Name.
+fmt("partyAppearAs", "_ name: String", "You'll appear as \\(name)",
+    "You'll appear as %@", "Kiti jus matys kaip %@")
 plain("partyHostNote",
       "Hosting a party is Premium — start one from a rebuild's counting screen.",
       "Sesijos surengimas yra Premium funkcija — pradėkite ją iš surinkimo skaičiavimo ekrano.")

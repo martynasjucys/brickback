@@ -141,6 +141,9 @@ enum L {
     static var partyModeBody: String { s("partyModeBody") }
     static var partyJoinTitle: String { s("partyJoinTitle") }
     static var partyTabSubtitle: String { s("partyTabSubtitle") }
+    static func partyAppearAs(_ name: String) -> String {
+        String(localized: "partyAppearAs", defaultValue: "You'll appear as \(name)", bundle: I18n.bundle, locale: I18n.locale)
+    }
     static var partyHostNote: String { s("partyHostNote") }
     static var countNoInventoryTitle: String { s("countNoInventoryTitle") }
     static var countNoInventoryMessage: String { s("countNoInventoryMessage") }
