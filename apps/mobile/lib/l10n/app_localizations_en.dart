@@ -469,6 +469,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuSetDetails => 'Set details';
 
   @override
+  String get menuMore => 'More';
+
+  @override
+  String get back => 'Back';
+
+  @override
   String get a11yTileAddHint => 'Adds one';
 
   @override

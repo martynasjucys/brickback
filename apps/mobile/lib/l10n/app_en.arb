@@ -155,6 +155,8 @@
   "menuStartParty": "Start party",
   "menuSearchParts": "Search parts",
   "menuSetDetails": "Set details",
+  "menuMore": "More",
+  "back": "Back",
   "a11yTileAddHint": "Adds one",
   "a11yDetails": "Details",
   "a11yNameColor": "{name}, {color}",

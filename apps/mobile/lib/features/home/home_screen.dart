@@ -156,23 +156,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   Widget _header(BuildContext context, {required List<String> themes}) {
+    // "Add a set" now lives in the floating bottom nav (a separated FAB), so the
+    // header keeps only the filter control.
     return ScreenHeader(
       context.l10n.homeTitle,
       subtitle: context.l10n.homeSubtitle,
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _FilterButton(
-            count: _filter.badgeCount,
-            onTap: () => _openFilter(themes),
-          ),
-          const SizedBox(width: AppSpacing.s8),
-          AppButton(
-            context.l10n.addSet,
-            icon: Icons.add,
-            onPressed: () => context.push('/search'),
-          ),
-        ],
+      trailing: _FilterButton(
+        count: _filter.badgeCount,
+        onTap: () => _openFilter(themes),
       ),
     );
   }

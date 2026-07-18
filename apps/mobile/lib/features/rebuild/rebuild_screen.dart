@@ -306,6 +306,25 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
     );
   }
 
+  /// The overflow actions folded out of the top toolbar: review, start party, and
+  /// jump to the set's catalog detail.
+  void _openMoreActions(RebuildInventory inv) {
+    final c = BrickColors.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: c.canvas,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      ),
+      builder: (_) => _MoreActionsSheet(
+        onReview: _onReview,
+        onParty: _onParty,
+        // Jump to the set's catalog detail (oracle RebuildView.swift:186-188).
+        onDetails: () => context.push('/set/${inv.summary.setItemId}'),
+      ),
+    );
+  }
+
   void _openSearch() {
     final c = BrickColors.of(context);
     final parts = [...?_inv?.parts]..sort(_byColorThenName);
@@ -372,7 +391,6 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
   }
 
   Widget _content(RebuildInventory inv) {
-    final c = BrickColors.of(context);
     final settings = ref.watch(rebuildSettingsProvider);
     final haveTotal = _haveTotal(inv);
     final total = inv.summary.totalParts;
@@ -389,87 +407,45 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Header: back + in-set search
+        // Top actions only: back (left) + an organized pill cluster (right). The set's
+        // progress + title moved to the docked HUD at the bottom — on the counting
+        // screen the bottom shows progress in place of navigation.
         Padding(
           padding: const EdgeInsets.fromLTRB(
               AppSpacing.screen, AppSpacing.s8, AppSpacing.screen, AppSpacing.s8),
           child: Row(
             children: [
-              _BackButton(onTap: _onBack),
+              _CircleButton(
+                  icon: Icons.arrow_back,
+                  semanticLabel: context.l10n.back,
+                  onTap: _onBack),
               const Spacer(),
-              _CircleButton(
-                  icon: Icons.flag_outlined,
-                  semanticLabel: context.l10n.menuReview,
-                  onTap: _onReview),
-              const SizedBox(width: AppSpacing.s8),
-              if (_startingParty)
-                SizedBox(
-                  width: 40,
-                  height: 40,
-                  child: Center(
-                    child: SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: c.primary),
-                    ),
-                  ),
-                )
-              else
-                _CircleButton(
-                    icon: Icons.groups_2_outlined,
-                    semanticLabel: context.l10n.menuStartParty,
-                    onTap: _onParty),
-              const SizedBox(width: AppSpacing.s8),
-              // Jump to the set's catalog detail from counting (oracle RebuildView.swift:186-188).
-              _CircleButton(
-                  icon: Icons.info_outline_rounded,
-                  semanticLabel: context.l10n.menuSetDetails,
-                  onTap: () => context.push('/set/${inv.summary.setItemId}')),
-              const SizedBox(width: AppSpacing.s8),
-              _CircleButton(
-                  icon: Icons.search_rounded,
-                  semanticLabel: context.l10n.menuSearchParts,
-                  onTap: _openSearch),
-              const SizedBox(width: AppSpacing.s8),
-              _CircleButton(
-                  icon: Icons.tune_rounded,
-                  semanticLabel: context.l10n.countViewSettings,
-                  onTap: () => _openSettings(inv.hasExtras)),
-            ],
-          ),
-        ),
-        // Progress + title + "remaining only"
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.screen, 0, AppSpacing.screen, AppSpacing.s12),
-          child: Row(
-            children: [
-              ProgressRing(
-                value: total == 0 ? 0 : haveTotal / total,
-                size: 72,
-                stroke: 8,
-              ),
-              const SizedBox(width: AppSpacing.s16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(inv.summary.name,
-                        maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.h1),
-                    const SizedBox(height: 2),
-                    Text(
-                        context.l10n.countHaveOfPartsTypes(
-                            haveTotal, total, inv.parts.length),
-                        style: AppText.caption),
-                    // "Remaining only" now lives in the view-settings sheet (oracle
-                    // RebuildSheets.swift:374), not as an inline header checkbox.
-                  ],
-                ),
+              // Search + settings stay inline; the rest fold into a "more" sheet so
+              // the toolbar reads as one tidy control instead of five loose glyphs.
+              _ActionPill(
+                children: [
+                  _PillIcon(
+                      icon: Icons.search_rounded,
+                      semanticLabel: context.l10n.menuSearchParts,
+                      onTap: _openSearch),
+                  const _PillDivider(),
+                  _PillIcon(
+                      icon: Icons.tune_rounded,
+                      semanticLabel: context.l10n.countViewSettings,
+                      onTap: () => _openSettings(inv.hasExtras)),
+                  const _PillDivider(),
+                  if (_startingParty)
+                    const _PillSpinner()
+                  else
+                    _PillIcon(
+                        icon: Icons.more_horiz_rounded,
+                        semanticLabel: context.l10n.menuMore,
+                        onTap: () => _openMoreActions(inv)),
+                ],
               ),
             ],
           ),
         ),
-        Container(height: 1, color: c.line),
         Expanded(
           child: inv.parts.isEmpty
               ? EmptyState(
@@ -500,6 +476,13 @@ class _RebuildScreenState extends ConsumerState<RebuildScreen>
                         const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.s40)),
                       ],
                     ),
+        ),
+        // The docked progress HUD — set title + progress + count, in the bottom slot.
+        _ProgressHud(
+          name: inv.summary.name,
+          have: haveTotal,
+          total: total,
+          partTypes: inv.parts.length,
         ),
       ],
     );
@@ -744,6 +727,209 @@ class _CircleButton extends StatelessWidget {
             border: Border.all(color: c.line),
           ),
           child: Icon(icon, size: 20, color: c.ink),
+        ),
+      ),
+    );
+  }
+}
+
+/// The top-right toolbar cluster — one raised brick pill holding icon segments,
+/// so the actions read as a single organized control.
+class _ActionPill extends StatelessWidget {
+  const _ActionPill({required this.children});
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return BrickSurface(
+      fill: c.card,
+      edge: c.cardEdge,
+      radius: AppRadius.pill,
+      depth: AppDepth.tile,
+      stroke: c.line,
+      child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    );
+  }
+}
+
+/// One icon segment inside an [_ActionPill].
+class _PillIcon extends StatelessWidget {
+  const _PillIcon({required this.icon, required this.onTap, this.semanticLabel});
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? semanticLabel;
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: Pressable(
+        onTap: onTap,
+        child: SizedBox(
+          width: 46,
+          height: 44,
+          child: Center(child: Icon(icon, size: 20, color: c.ink)),
+        ),
+      ),
+    );
+  }
+}
+
+/// A hairline between [_ActionPill] segments.
+class _PillDivider extends StatelessWidget {
+  const _PillDivider();
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Container(width: 1, height: 22, color: c.line);
+  }
+}
+
+/// The party segment's busy state — a spinner sized to a pill segment.
+class _PillSpinner extends StatelessWidget {
+  const _PillSpinner();
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return SizedBox(
+      width: 46,
+      height: 44,
+      child: Center(
+        child: SizedBox(
+          width: 18,
+          height: 18,
+          child: CircularProgressIndicator(strokeWidth: 2, color: c.primary),
+        ),
+      ),
+    );
+  }
+}
+
+/// The docked bottom HUD: set title, a progress bar, and the have/total count. Shown
+/// in the bottom slot of the counting screen in place of navigation.
+class _ProgressHud extends StatelessWidget {
+  const _ProgressHud({
+    required this.name,
+    required this.have,
+    required this.total,
+    required this.partTypes,
+  });
+  final String name;
+  final int have;
+  final int total;
+  final int partTypes;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    final pct = total == 0 ? 0.0 : have / total;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screen, AppSpacing.s8, AppSpacing.screen, AppSpacing.s12),
+      child: BrickSurface(
+        fill: c.card,
+        edge: c.cardEdge,
+        radius: AppRadius.lg,
+        depth: AppDepth.brick,
+        stroke: c.line,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.s16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(name,
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: AppText.h2),
+                  ),
+                  const SizedBox(width: AppSpacing.s12),
+                  Text('${(pct * 100).round()}%',
+                      style: AppText.title
+                          .copyWith(color: pct >= 1.0 ? c.success : c.info)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.s12),
+              AppProgressBar(value: pct, height: 10),
+              const SizedBox(height: AppSpacing.s8),
+              Text(context.l10n.countHaveOfPartsTypes(have, total, partTypes),
+                  style: AppText.caption.copyWith(color: c.inkSoft)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The overflow sheet: review, start party, set details.
+class _MoreActionsSheet extends StatelessWidget {
+  const _MoreActionsSheet({
+    required this.onReview,
+    required this.onParty,
+    required this.onDetails,
+  });
+  final VoidCallback onReview;
+  final VoidCallback onParty;
+  final VoidCallback onDetails;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _MoreRow(
+                icon: Icons.flag_outlined,
+                label: context.l10n.menuReview,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onReview();
+                }),
+            _MoreRow(
+                icon: Icons.groups_2_outlined,
+                label: context.l10n.menuStartParty,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onParty();
+                }),
+            _MoreRow(
+                icon: Icons.info_outline_rounded,
+                label: context.l10n.menuSetDetails,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  onDetails();
+                }),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreRow extends StatelessWidget {
+  const _MoreRow({required this.icon, required this.label, required this.onTap});
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Pressable(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.screen, vertical: AppSpacing.s16),
+        child: Row(
+          children: [
+            Icon(icon, size: 22, color: c.ink),
+            const SizedBox(width: AppSpacing.s16),
+            Text(label, style: AppText.body),
+          ],
         ),
       ),
     );

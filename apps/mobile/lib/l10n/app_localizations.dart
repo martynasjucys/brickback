@@ -896,6 +896,18 @@ abstract class AppLocalizations {
   /// **'Set details'**
   String get menuSetDetails;
 
+  /// No description provided for @menuMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get menuMore;
+
+  /// No description provided for @back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get back;
+
   /// No description provided for @a11yTileAddHint.
   ///
   /// In en, this message translates to:

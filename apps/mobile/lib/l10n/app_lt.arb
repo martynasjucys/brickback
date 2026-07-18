@@ -147,6 +147,8 @@
   "menuStartParty": "Pradėti sesiją",
   "menuSearchParts": "Ieškoti dalių",
   "menuSetDetails": "Rinkinio informacija",
+  "menuMore": "Daugiau",
+  "back": "Atgal",
   "a11yTileAddHint": "Prideda vieną",
   "a11yDetails": "Detalės",
   "a11yNameColor": "{name}, {color}",

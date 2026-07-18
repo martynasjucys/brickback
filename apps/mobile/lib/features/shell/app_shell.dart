@@ -244,52 +244,123 @@ class _SidebarRow extends StatelessWidget {
   }
 }
 
-/// The compact (phone) shell: the three-tab bottom bar owning Rebuilds + Party +
-/// Profile (P1 promotes Party to a first-class tab). Resolves colours through
-/// `BrickColors` so dark mode completes here too. On wide widths the bar is dropped
-/// and the sidebar replaces it.
+/// The compact (phone) shell: a **floating** bottom cluster (not a docked bar) owning
+/// Rebuilds + Party + Profile (P1 promotes Party to a first-class tab). The three tabs
+/// are grouped in one raised brick pill; "add a set" is broken out as a separate red
+/// FAB. Resolves colours through `BrickColors` so dark mode completes here too. On wide
+/// widths the cluster is dropped and the sidebar replaces it.
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
   final StatefulNavigationShell navigationShell;
 
-  static const _tabs = [
-    (icon: Icons.grid_view_outlined, activeIcon: Icons.grid_view),
-    (icon: Icons.groups_2_outlined, activeIcon: Icons.groups_2),
-    (icon: Icons.person_outline, activeIcon: Icons.person),
-  ];
+  @override
+  Widget build(BuildContext context) {
+    // Wide: no floating cluster — the sidebar (from [AdaptiveShell]) drives navigation.
+    if (context.isWideLayout) {
+      return Scaffold(body: navigationShell);
+    }
+    // The cluster sits in the `bottomNavigationBar` slot: the Scaffold measures it and
+    // insets the body above it (no manual padding constant), while its transparent
+    // gutter over the cream canvas is what makes it read as floating.
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: _FloatingNav(navigationShell: navigationShell),
+    );
+  }
+}
+
+/// The floating bottom cluster: a grouped-tabs pill + a separated add-a-set FAB.
+class _FloatingNav extends StatelessWidget {
+  const _FloatingNav({required this.navigationShell});
+  final StatefulNavigationShell navigationShell;
+
+  /// Order == the `StatefulShellRoute` branches: Rebuilds (0), Party (1), Profile (2).
+  static const _tabs = [AppSection.rebuilds, AppSection.party, AppSection.profile];
 
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    // Wide: no bottom bar — the sidebar (from [AdaptiveShell]) drives navigation.
-    if (context.isWideLayout) {
-      return Scaffold(body: navigationShell);
-    }
-
-    final labels = [context.l10n.navRebuilds, context.l10n.navParty, context.l10n.navProfile];
-    return Scaffold(
-      body: navigationShell,
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: c.card,
-          border: Border(top: BorderSide(color: c.line)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: Row(
-            children: [
-              for (var i = 0; i < _tabs.length; i++)
-                Expanded(
-                  child: _TabButton(
-                    tab: _tabs[i],
-                    label: labels[i],
-                    selected: navigationShell.currentIndex == i,
-                    onTap: () => navigationShell.goBranch(
-                      i,
-                      initialLocation: i == navigationShell.currentIndex,
-                    ),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.s16, AppSpacing.s12, AppSpacing.s16, AppSpacing.s12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // The three main tabs, grouped in one raised brick pill.
+            Flexible(
+              child: BrickSurface(
+                fill: c.card,
+                edge: c.cardEdge,
+                radius: AppRadius.pill,
+                depth: AppDepth.brick,
+                stroke: c.line,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < _tabs.length; i++)
+                        _NavTab(
+                          section: _tabs[i],
+                          selected: navigationShell.currentIndex == i,
+                          onTap: () => navigationShell.goBranch(
+                            i,
+                            initialLocation: i == navigationShell.currentIndex,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.s12),
+            // "Add a set" — separated, the one red brick in the cluster.
+            _AddFab(onTap: () => context.push(AppSection.search.location)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One tab inside the grouped pill. The active tab expands into a labelled filled
+/// slot; the rest stay icon-only so the pill + FAB fit a narrow phone.
+class _NavTab extends StatelessWidget {
+  const _NavTab({required this.section, required this.selected, required this.onTap});
+  final AppSection section;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    final fg = selected ? c.ink : c.muted;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: section.label(context),
+      child: Pressable(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: Motion.pressDuration,
+          curve: Motion.pressCurve,
+          height: 44,
+          padding: EdgeInsets.symmetric(
+              horizontal: selected ? AppSpacing.s16 : AppSpacing.s12),
+          decoration: BoxDecoration(
+            color: selected ? c.faint : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(section.icon, size: 22, color: fg),
+              if (selected) ...[
+                const SizedBox(width: AppSpacing.s8),
+                Text(section.label(context), style: AppText.label.copyWith(color: fg)),
+              ],
             ],
           ),
         ),
@@ -298,30 +369,29 @@ class AppShell extends StatelessWidget {
   }
 }
 
-class _TabButton extends StatelessWidget {
-  const _TabButton(
-      {required this.tab, required this.label, required this.selected, required this.onTap});
-  final ({IconData icon, IconData activeIcon}) tab;
-  final String label;
-  final bool selected;
+/// The separated "add a set" action — the cluster's one LEGO-red brick.
+class _AddFab extends StatelessWidget {
+  const _AddFab({required this.onTap});
   final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    final color = selected ? c.ink : c.muted;
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(selected ? tab.activeIcon : tab.icon, size: 22, color: color),
-            const SizedBox(height: 3),
-            Text(label,
-                style: AppText.caption.copyWith(
-                    color: color, fontWeight: selected ? FontWeight.w700 : FontWeight.w500)),
-          ],
+    return Semantics(
+      button: true,
+      label: AppSection.search.label(context),
+      child: Pressable(
+        onTap: onTap,
+        child: BrickSurface(
+          fill: c.primary,
+          edge: c.primaryEdge,
+          radius: AppRadius.pill,
+          depth: AppDepth.tile,
+          child: SizedBox(
+            width: 56,
+            height: 56,
+            child: Center(child: Icon(Icons.add_rounded, size: 28, color: c.onPrimary)),
+          ),
         ),
       ),
     );

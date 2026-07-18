@@ -476,6 +476,12 @@ class AppLocalizationsLt extends AppLocalizations {
   String get menuSetDetails => 'Rinkinio informacija';
 
   @override
+  String get menuMore => 'Daugiau';
+
+  @override
+  String get back => 'Atgal';
+
+  @override
   String get a11yTileAddHint => 'Prideda vieną';
 
   @override
