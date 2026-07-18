@@ -6,14 +6,13 @@ import '../theme/tokens.dart';
 /// px is the natural tablet threshold and mirrors the Swift `.regular`/`.compact`
 /// intent: an iPhone (portrait-locked) never reaches it, an iPad full-screen (820 in
 /// portrait, 1180 in landscape) always clears it, and an iPad squeezed into a narrow
-/// Split View correctly falls back to the compact shell. Used by the adaptive shell
-/// (sidebar vs. bottom-tabs) and the counting grid (bigger tiles on wide widths).
+/// Split View correctly falls back to the compact width. Used by the readable-column
+/// clamp and the counting grid (bigger tiles on wide widths).
 const double kWideLayoutBreakpoint = 640;
 
 extension AdaptiveLayout on BuildContext {
-  /// True at tablet / regular widths. Drives the sidebar shell and the raised
-  /// counting-grid tile floor. Read off `MediaQuery` so it tracks orientation and
-  /// iPad multitasking live.
+  /// True at tablet / regular widths. Drives the raised counting-grid tile floor.
+  /// Read off `MediaQuery` so it tracks orientation and iPad multitasking live.
   bool get isWideLayout =>
       MediaQuery.sizeOf(this).width >= kWideLayoutBreakpoint;
 }

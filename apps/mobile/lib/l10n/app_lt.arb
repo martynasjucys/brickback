@@ -290,5 +290,18 @@
   "partyCancel": "Atšaukti",
   "partyEndedToast": "Sesija užbaigta",
   "partyStatusEnded": "Užbaigta",
-  "partyStatusPaused": "Pristabdyta"
+  "partyStatusPaused": "Pristabdyta",
+
+  "showSetsPrefix": "Rodyti",
+  "showSetsSuffix": "rinkinius",
+  "sectionAccount": "Paskyra",
+  "sectionMore": "Daugiau",
+  "piecesLabel": "Detalės",
+  "yearLabel": "Metai",
+  "setLabel": "Rinkinys",
+  "alreadyInCollection": "Jau jūsų kolekcijoje",
+  "addedToCollection": "Pridėta į kolekciją",
+  "searchJoinPartyPrompt": "Prisijungiate prie sesijos?",
+  "enterPinCode": "Įveskite PIN kodą",
+  "partyDiscoverSets": "Atraskite rinkinius"
 }

@@ -1657,6 +1657,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Paused'**
   String get partyStatusPaused;
+
+  /// No description provided for @showSetsPrefix.
+  ///
+  /// In en, this message translates to:
+  /// **'Show'**
+  String get showSetsPrefix;
+
+  /// No description provided for @showSetsSuffix.
+  ///
+  /// In en, this message translates to:
+  /// **'sets'**
+  String get showSetsSuffix;
+
+  /// No description provided for @sectionAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get sectionAccount;
+
+  /// No description provided for @sectionMore.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get sectionMore;
+
+  /// No description provided for @piecesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pieces'**
+  String get piecesLabel;
+
+  /// No description provided for @yearLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
+  String get yearLabel;
+
+  /// No description provided for @setLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get setLabel;
+
+  /// No description provided for @alreadyInCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Already in your collection'**
+  String get alreadyInCollection;
+
+  /// No description provided for @addedToCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to your collection'**
+  String get addedToCollection;
+
+  /// No description provided for @searchJoinPartyPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining a build party?'**
+  String get searchJoinPartyPrompt;
+
+  /// No description provided for @enterPinCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter PIN code'**
+  String get enterPinCode;
+
+  /// No description provided for @partyDiscoverSets.
+  ///
+  /// In en, this message translates to:
+  /// **'Discover sets'**
+  String get partyDiscoverSets;
 }
 
 class _AppLocalizationsDelegate

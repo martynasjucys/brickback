@@ -958,4 +958,40 @@ class AppLocalizationsLt extends AppLocalizations {
 
   @override
   String get partyStatusPaused => 'Pristabdyta';
+
+  @override
+  String get showSetsPrefix => 'Rodyti';
+
+  @override
+  String get showSetsSuffix => 'rinkinius';
+
+  @override
+  String get sectionAccount => 'Paskyra';
+
+  @override
+  String get sectionMore => 'Daugiau';
+
+  @override
+  String get piecesLabel => 'Detalės';
+
+  @override
+  String get yearLabel => 'Metai';
+
+  @override
+  String get setLabel => 'Rinkinys';
+
+  @override
+  String get alreadyInCollection => 'Jau jūsų kolekcijoje';
+
+  @override
+  String get addedToCollection => 'Pridėta į kolekciją';
+
+  @override
+  String get searchJoinPartyPrompt => 'Prisijungiate prie sesijos?';
+
+  @override
+  String get enterPinCode => 'Įveskite PIN kodą';
+
+  @override
+  String get partyDiscoverSets => 'Atraskite rinkinius';
 }

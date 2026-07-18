@@ -312,5 +312,18 @@
   "partyCancel": "Cancel",
   "partyEndedToast": "Party ended",
   "partyStatusEnded": "Ended",
-  "partyStatusPaused": "Paused"
+  "partyStatusPaused": "Paused",
+
+  "showSetsPrefix": "Show",
+  "showSetsSuffix": "sets",
+  "sectionAccount": "Account",
+  "sectionMore": "More",
+  "piecesLabel": "Pieces",
+  "yearLabel": "Year",
+  "setLabel": "Set",
+  "alreadyInCollection": "Already in your collection",
+  "addedToCollection": "Added to your collection",
+  "searchJoinPartyPrompt": "Joining a build party?",
+  "enterPinCode": "Enter PIN code",
+  "partyDiscoverSets": "Discover sets"
 }

@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
@@ -13,8 +14,9 @@ import '../../widgets/readable_column.dart';
 import '../auth/auth_repository.dart';
 import 'party_repository.dart';
 
-/// `/party/join` — resolve a short code to a party and enter it. Joining is by
-/// code (the `join_party` RPC); the invite QR encodes the same code.
+/// `/party/join` — resolve a short code to a party and enter it. A purple entry
+/// screen: a big prompt and a styled code field. Joining mints a transparent
+/// guest session if signed out.
 class PartyJoinScreen extends ConsumerStatefulWidget {
   const PartyJoinScreen({super.key});
 
@@ -41,9 +43,6 @@ class _PartyJoinScreenState extends ConsumerState<PartyJoinScreen> {
       _error = null;
     });
     try {
-      // Joining needs neither premium nor a real account — just *some* session for the
-      // authenticated join_party RPC. Mint a transparent guest session if signed out, carrying the
-      // chosen display name so the roster shows it (not "Builder").
       await ref
           .read(authRepositoryProvider)
           .ensureGuestSession(displayName: ref.read(displayNameProvider));
@@ -56,10 +55,6 @@ class _PartyJoinScreenState extends ConsumerState<PartyJoinScreen> {
     }
   }
 
-  /// Only a genuine "no such code" may blame the code — the `join_party` RPC raises SQLSTATE
-  /// P0001 for that. Guest sign-in, connectivity and decode failures reach here too; telling
-  /// someone to check a code that was right sends them in circles, so each gets the message that
-  /// names the thing they can actually act on (oracle PartyJoinView.swift:80-86).
   String _messageFor(BuildContext context, Object e) {
     if (e is PostgrestException && e.code == 'P0001') return context.l10n.partyJoinError;
     if (_isOffline(e)) return context.l10n.partyJoinOffline;
@@ -80,53 +75,96 @@ class _PartyJoinScreenState extends ConsumerState<PartyJoinScreen> {
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    return ColoredBox(
-      color: c.canvas,
-      child: SafeArea(
+    final topPad = MediaQuery.paddingOf(context).top;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [c.partyDeep, c.party],
+          ),
+        ),
         child: ReadableColumn(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: ListView(
+            padding: EdgeInsets.only(
+                top: topPad + AppSpacing.s8, bottom: MediaQuery.viewInsetsOf(context).bottom + AppSpacing.s24),
             children: [
-              ScreenHeader(context.l10n.partyJoinTitle, onBack: () => Navigator.of(context).maybePop()),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: SquircleButton(
+                    icon: Icons.arrow_back_rounded,
+                    fill: c.party,
+                    edge: c.partyEdge,
+                    fg: Colors.white,
+                    onTap: () => Navigator.of(context).maybePop(),
+                    semanticLabel: MaterialLocalizations.of(context).backButtonTooltip,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.s40),
+              const _JoinHero(),
+              const SizedBox(height: AppSpacing.s32),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Text(context.l10n.partyJoinTitle,
+                        style: AppText.display.copyWith(color: Colors.white, fontSize: 32),
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: AppSpacing.s8),
                     Text(context.l10n.partyJoinSubtitle,
-                        style: AppText.body.copyWith(color: c.inkSoft)),
-                    const SizedBox(height: AppSpacing.s20),
+                        style: AppText.body.copyWith(color: Colors.white.withValues(alpha: 0.8)),
+                        textAlign: TextAlign.center),
+                    const SizedBox(height: AppSpacing.s32),
+                    // The code field.
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.s16, vertical: AppSpacing.s8),
+                          horizontal: AppSpacing.s20, vertical: AppSpacing.s16),
                       decoration: BoxDecoration(
-                        color: c.card,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(color: c.line),
+                        color: c.partyDeep,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
                       ),
                       child: TextField(
                         controller: _controller,
                         autofocus: true,
+                        textAlign: TextAlign.center,
                         textCapitalization: TextCapitalization.characters,
                         textInputAction: TextInputAction.go,
                         onSubmitted: (_) => _join(),
-                        style: AppText.h1.copyWith(letterSpacing: 4),
-                        cursorColor: c.primary,
-                        decoration: const InputDecoration(
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 6),
+                        cursorColor: Colors.white,
+                        decoration: InputDecoration(
                           border: InputBorder.none,
                           isDense: true,
                           hintText: 'A1B2C3D4',
+                          hintStyle: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.35),
+                              fontSize: 28,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 6),
                         ),
                       ),
                     ),
                     if (_error != null) ...[
-                      const SizedBox(height: AppSpacing.s8),
-                      Text(_error!, style: AppText.caption.copyWith(color: c.danger)),
+                      const SizedBox(height: AppSpacing.s12),
+                      Text(_error!,
+                          style: AppText.caption.copyWith(color: Colors.white),
+                          textAlign: TextAlign.center),
                     ],
-                    const SizedBox(height: AppSpacing.s20),
+                    const SizedBox(height: AppSpacing.s24),
                     AppButton(
                       context.l10n.partyJoinCta,
-                      icon: Icons.login,
+                      variant: AppButtonVariant.hero,
                       expand: true,
                       loading: _loading,
                       onPressed: _loading ? null : _join,
@@ -138,6 +176,17 @@ class _PartyJoinScreenState extends ConsumerState<PartyJoinScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Two minifig discs — a light party-illustration placeholder.
+class _JoinHero extends StatelessWidget {
+  const _JoinHero();
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Icon(Icons.groups_2_rounded, size: 96, color: Colors.white.withValues(alpha: 0.9)),
     );
   }
 }

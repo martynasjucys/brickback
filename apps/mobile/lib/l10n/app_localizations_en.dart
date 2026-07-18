@@ -947,4 +947,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get partyStatusPaused => 'Paused';
+
+  @override
+  String get showSetsPrefix => 'Show';
+
+  @override
+  String get showSetsSuffix => 'sets';
+
+  @override
+  String get sectionAccount => 'Account';
+
+  @override
+  String get sectionMore => 'More';
+
+  @override
+  String get piecesLabel => 'Pieces';
+
+  @override
+  String get yearLabel => 'Year';
+
+  @override
+  String get setLabel => 'Set';
+
+  @override
+  String get alreadyInCollection => 'Already in your collection';
+
+  @override
+  String get addedToCollection => 'Added to your collection';
+
+  @override
+  String get searchJoinPartyPrompt => 'Joining a build party?';
+
+  @override
+  String get enterPinCode => 'Enter PIN code';
+
+  @override
+  String get partyDiscoverSets => 'Discover sets';
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -18,39 +19,32 @@ import '../rebuild/rebuild_models.dart';
 import '../rebuild/rebuild_repository.dart';
 
 /// Profile / Settings tab. The sign-in + premium-sync hub. Local-first: signed
-/// out is a fully valid state (Guest), sign-in only adds cross-device sync.
+/// out is a fully valid state (Guest).
 ///
-/// Layout (redesign): a centered **avatar hero** (name + status), a row of circular
-/// **quick actions** (Account / Premium / Appearance), the lifetime **stats**, and a
-/// grouped **settings** list of tappable rows (sync, name, appearance, language,
-/// design gallery) whose editors open as bottom sheets.
+/// Layout (clone): a **collapsing blue hero header** (avatar + name + lifetime
+/// stats) that shrinks smoothly as the settings list scrolls under it, then
+/// grouped **Account / Appearance / Language / More** sections of white rows whose
+/// editors open as bottom sheets.
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SafeArea(
+    final topPad = MediaQuery.paddingOf(context).top;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.light,
       child: ReadableColumn(
-        child: ListView(
-          padding: const EdgeInsets.only(bottom: AppSpacing.s24),
-          children: [
-            const SizedBox(height: AppSpacing.s8),
-            const _ProfileHero(),
-            const SizedBox(height: AppSpacing.s24),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _StatsRow(),
-                  const SizedBox(height: AppSpacing.s20),
-                  const _QuickActions(),
-                  const SizedBox(height: AppSpacing.s24),
-                  const _SettingsList(),
-                  const _AboutFooter(),
-                ],
+        child: CustomScrollView(
+          slivers: [
+            SliverPersistentHeader(
+              pinned: true,
+              delegate: CollapsingHeaderDelegate(
+                minExtent: topPad + 126,
+                maxExtent: topPad + 240,
+                builder: (context, t) => _ProfileHeader(t: t, topPad: topPad),
               ),
             ),
+            const SliverToBoxAdapter(child: _SettingsSections()),
           ],
         ),
       ),
@@ -58,74 +52,71 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
-// ── Hero ─────────────────────────────────────────────────────────────────────
+// ── Collapsing header ────────────────────────────────────────────────────────
 
-/// The centered identity block: avatar, display name, and a status line. A pencil
-/// button (top-right) opens the name editor.
-class _ProfileHero extends ConsumerWidget {
-  const _ProfileHero();
+class _ProfileHeader extends ConsumerWidget {
+  const _ProfileHeader({required this.t, required this.topPad});
+
+  /// Collapse progress: 0 = fully expanded, 1 = collapsed.
+  final double t;
+  final double topPad;
+
+  double _lerp(double a, double b) => a + (b - a) * t;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final c = BrickColors.of(context);
-    // Rebuild on any auth change (sign-in / sign-out / token refresh).
     ref.watch(authStateProvider);
-    final auth = ref.read(authRepositoryProvider);
-    final user = auth.currentUser;
-    // A transparent guest (anonymous) session reads as signed-OUT here.
-    final signedIn = auth.isSignedIn;
-    final isPremium = ref.watch(isPremiumProvider);
     final name = ref.watch(displayNameProvider);
-    final status = signedIn ? (user?.email ?? context.l10n.signedIn) : context.l10n.guest;
+    final summaries = ref.watch(rebuildListProvider).asData?.value ?? const <RebuildSummary>[];
+    final setsBuilt = summaries.where((s) => s.complete || s.verified).length;
+    final partsCollected = summaries.fold<int>(0, (a, s) => a + s.haveTotal);
+    final nf = NumberFormat.decimalPattern(context.l10n.localeName);
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-      child: Stack(
+    final avatarSize = _lerp(88, 40);
+    final nameSize = _lerp(24, 17);
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [c.brandDeep, c.brand],
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
+        boxShadow: [
+          BoxShadow(color: c.shadow.withValues(alpha: 0.18), blurRadius: 18, offset: const Offset(0, 6)),
+        ],
+      ),
+      padding: EdgeInsets.only(top: topPad + _lerp(16, 8), bottom: _lerp(20, 12)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: double.infinity,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                _ProfileAvatar(signedIn: signedIn),
-                const SizedBox(height: AppSpacing.s16),
-                Text(
-                  name,
-                  style: AppText.h1.copyWith(color: c.ink),
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.s8),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(
-                      child: Text(
-                        status,
-                        style: AppText.caption.copyWith(color: c.inkSoft),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.s8),
-                    AppBadge(
-                      isPremium ? context.l10n.premium : context.l10n.free,
-                      color: isPremium ? c.primary : null,
-                    ),
-                  ],
-                ),
-              ],
+          _Avatar(size: avatarSize),
+          SizedBox(height: _lerp(12, 6)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s24),
+            child: Text(
+              name,
+              style: TextStyle(
+                fontSize: nameSize,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                letterSpacing: -0.3,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: _RoundButton(
-              icon: Icons.edit_outlined,
-              semanticLabel: context.l10n.nameEditorTitle,
-              onTap: () => _showSheet(context, const _NameEditorSheet()),
-            ),
+          SizedBox(height: _lerp(10, 4)),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _HeaderStat(icon: Icons.inventory_2_rounded, value: nf.format(setsBuilt)),
+              const SizedBox(width: AppSpacing.s24),
+              _HeaderStat(icon: Icons.widgets_rounded, value: nf.format(partsCollected)),
+            ],
           ),
         ],
       ),
@@ -133,182 +124,52 @@ class _ProfileHero extends ConsumerWidget {
   }
 }
 
-/// The avatar. **Placeholder** for the future user-generated LEGO-style face —
-/// swap the child here when that ships; nothing else needs to change.
-class _ProfileAvatar extends StatelessWidget {
-  const _ProfileAvatar({required this.signedIn});
-  final bool signedIn;
-
-  static const double size = 96;
-
+class _HeaderStat extends StatelessWidget {
+  const _HeaderStat({required this.icon, required this.value});
+  final IconData icon;
+  final String value;
   @override
   Widget build(BuildContext context) {
-    final c = BrickColors.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: Colors.white.withValues(alpha: 0.9)),
+        const SizedBox(width: 6),
+        Text(value,
+            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Colors.white)),
+      ],
+    );
+  }
+}
+
+/// The avatar. **Placeholder** for the future user-generated LEGO-style face.
+class _Avatar extends ConsumerWidget {
+  const _Avatar({required this.size});
+  final double size;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final signedIn = ref.read(authRepositoryProvider).isSignedIn;
     return Container(
       width: size,
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: c.brand.withValues(alpha: 0.16),
+        color: Colors.white.withValues(alpha: 0.16),
         shape: BoxShape.circle,
-        border: Border.all(color: c.line),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
       ),
-      child: Text(signedIn ? '🙂' : '🧑', style: TextStyle(fontSize: size * 0.42)),
+      child: Text(signedIn ? '🙂' : '🧑', style: TextStyle(fontSize: size * 0.5)),
     );
   }
 }
 
-// ── Stats ────────────────────────────────────────────────────────────────────
+// ── Settings sections ─────────────────────────────────────────────────────────
 
-/// Two lifetime stats: sets finished/verified, and every part counted back into
-/// place across all rebuilds. Reads the same live summaries stream Home uses.
-class _StatsRow extends ConsumerWidget {
-  const _StatsRow();
+class _SettingsSections extends ConsumerWidget {
+  const _SettingsSections();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaries = ref.watch(rebuildListProvider).asData?.value ?? const <RebuildSummary>[];
-    final setsBuilt = summaries.where((s) => s.complete || s.verified).length;
-    final partsCollected = summaries.fold<int>(0, (a, s) => a + s.haveTotal);
-    final nf = NumberFormat.decimalPattern(context.l10n.localeName);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _Stat(value: nf.format(setsBuilt), label: context.l10n.statSetsBuilt),
-        const SizedBox(width: AppSpacing.s40),
-        _Stat(value: nf.format(partsCollected), label: context.l10n.statPartsCollected),
-      ],
-    );
-  }
-}
-
-class _Stat extends StatelessWidget {
-  const _Stat({required this.value, required this.label});
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = BrickColors.of(context);
-    // One semantics node so a screen reader reads "12, Sets built", not two orphan fragments.
-    return Semantics(
-      container: true,
-      label: '$value, $label',
-      child: ExcludeSemantics(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(value, style: AppText.h1.copyWith(color: c.ink)),
-            const SizedBox(height: 1),
-            Text(label, style: AppText.label.copyWith(color: c.inkSoft)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ── Quick actions ─────────────────────────────────────────────────────────────
-
-/// A row of three circular shortcuts: Account (sign in/out), Premium (paywall),
-/// and Appearance (cycles the theme mode). Mirrors the reference's action cluster.
-class _QuickActions extends ConsumerWidget {
-  const _QuickActions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = BrickColors.of(context);
-    ref.watch(authStateProvider);
-    final auth = ref.read(authRepositoryProvider);
-    final signedIn = auth.isSignedIn;
-    final isPremium = ref.watch(isPremiumProvider);
-    final themeMode = ref.watch(themeControllerProvider);
-    return Row(
-      children: [
-        Expanded(
-          child: _ProfileAction(
-            icon: signedIn ? Icons.logout : Icons.login,
-            label: signedIn ? context.l10n.signOut : context.l10n.signInTitle,
-            onTap: signedIn
-                ? () => ref.read(authRepositoryProvider).signOut()
-                : () => context.push('/sign-in'),
-          ),
-        ),
-        Expanded(
-          child: _ProfileAction(
-            icon: isPremium ? Icons.workspace_premium : Icons.workspace_premium_outlined,
-            label: isPremium ? context.l10n.premium : context.l10n.seePremium,
-            tint: c.primary,
-            onTap: () => context.push('/paywall'),
-          ),
-        ),
-        Expanded(
-          child: _ProfileAction(
-            icon: _themeIcon(themeMode),
-            label: context.l10n.appearance,
-            onTap: () =>
-                ref.read(themeControllerProvider.notifier).setTheme(_nextTheme(themeMode)),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _ProfileAction extends StatelessWidget {
-  const _ProfileAction({required this.icon, required this.label, required this.onTap, this.tint});
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-  final Color? tint;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = BrickColors.of(context);
-    return Semantics(
-      button: true,
-      label: label,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Pressable(
-            onTap: onTap,
-            child: BrickSurface(
-              fill: c.card,
-              edge: c.cardEdge,
-              radius: AppRadius.pill,
-              depth: AppDepth.tile,
-              stroke: c.line,
-              child: SizedBox(
-                width: 60,
-                height: 60,
-                child: Center(child: Icon(icon, size: 24, color: tint ?? c.ink)),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.s8),
-          Text(
-            label,
-            style: AppText.caption.copyWith(color: c.inkSoft),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Settings list ─────────────────────────────────────────────────────────────
-
-/// The grouped settings card: tappable rows (leading icon, title, trailing value +
-/// chevron), each opening its editor as a bottom sheet.
-class _SettingsList extends ConsumerWidget {
-  const _SettingsList();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final c = BrickColors.of(context);
     ref.watch(authStateProvider);
     final auth = ref.read(authRepositoryProvider);
     final signedIn = auth.isSignedIn;
@@ -317,116 +178,135 @@ class _SettingsList extends ConsumerWidget {
     final themeMode = ref.watch(themeControllerProvider);
     final lang = AppLanguage.fromLocale(ref.watch(localeControllerProvider));
 
-    final rows = <Widget>[
-      _SettingRow(
-        icon: Icons.cloud_sync_outlined,
-        label: context.l10n.cloudSync,
-        value: signedIn ? (isPremium ? context.l10n.premium : context.l10n.free) : null,
-        onTap: () => _showSheet(context, const _SyncSheet()),
-      ),
-      _SettingRow(
-        icon: Icons.badge_outlined,
-        label: context.l10n.nameLabel,
-        value: name,
-        onTap: () => _showSheet(context, const _NameEditorSheet()),
-      ),
-      _SettingRow(
-        icon: Icons.brightness_6_outlined,
-        label: context.l10n.appearance,
-        value: _themeLabel(context, themeMode),
-        onTap: () => _showSheet(context, const _AppearancePickerSheet()),
-      ),
-      _SettingRow(
-        icon: Icons.language,
-        label: context.l10n.language,
-        value: _langLabel(context, lang),
-        onTap: () => _showSheet(context, const _LanguagePickerSheet()),
-      ),
-      _SettingRow(
-        icon: Icons.widgets_outlined,
-        label: context.l10n.designGallery,
-        onTap: () => context.push('/design'),
-      ),
-    ];
-
-    return AppCard(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16, vertical: AppSpacing.s4),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.s24, AppSpacing.screen,
+          AppSpacing.s24 + MediaQuery.paddingOf(context).bottom),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var i = 0; i < rows.length; i++) ...[
-            if (i > 0) Divider(height: 1, thickness: 1, color: c.line, indent: 32),
-            rows[i],
-          ],
+          // Account
+          SectionTitle(context.l10n.sectionAccount),
+          const SizedBox(height: AppSpacing.s16),
+          _ProfileRow(
+            title: context.l10n.cloudSync,
+            subtitle: signedIn
+                ? (isPremium ? context.l10n.premium : context.l10n.free)
+                : context.l10n.guest,
+            trailing: _Trailing.chevron,
+            onTap: () => _showSheet(context, const _SyncSheet()),
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          _ProfileRow(
+            title: context.l10n.nameLabel,
+            subtitle: name,
+            trailing: _Trailing.chevron,
+            onTap: () => _showSheet(context, const _NameEditorSheet()),
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          _ProfileRow(
+            title: isPremium ? context.l10n.premium : context.l10n.seePremium,
+            trailing: _Trailing.external,
+            onTap: () => context.push('/paywall'),
+          ),
+          const SizedBox(height: AppSpacing.s12),
+          if (signedIn)
+            _ProfileRow(
+              title: context.l10n.signOut,
+              trailing: _Trailing.logout,
+              onTap: () => ref.read(authRepositoryProvider).signOut(),
+            )
+          else
+            _ProfileRow(
+              title: context.l10n.signInTitle,
+              trailing: _Trailing.chevron,
+              onTap: () => context.push('/sign-in'),
+            ),
+
+          const SizedBox(height: AppSpacing.s32),
+          // Appearance
+          SectionTitle(context.l10n.appearance),
+          const SizedBox(height: AppSpacing.s16),
+          _ProfileRow(
+            title: _themeLabel(context, themeMode),
+            trailing: _Trailing.chevron,
+            onTap: () => _showSheet(context, const _AppearancePickerSheet()),
+          ),
+
+          const SizedBox(height: AppSpacing.s32),
+          // Language
+          SectionTitle(context.l10n.language),
+          const SizedBox(height: AppSpacing.s16),
+          _ProfileRow(
+            title: _langLabel(context, lang),
+            trailing: _Trailing.chevron,
+            onTap: () => _showSheet(context, const _LanguagePickerSheet()),
+          ),
+
+          const SizedBox(height: AppSpacing.s32),
+          // More
+          SectionTitle(context.l10n.sectionMore),
+          const SizedBox(height: AppSpacing.s16),
+          _ProfileRow(
+            title: context.l10n.designGallery,
+            trailing: _Trailing.chevron,
+            onTap: () => context.push('/design'),
+          ),
+
+          const SizedBox(height: AppSpacing.s32),
+          const _AboutFooter(),
         ],
       ),
     );
   }
 }
 
-class _SettingRow extends StatelessWidget {
-  const _SettingRow({required this.icon, required this.label, this.value, this.onTap});
-  final IconData icon;
-  final String label;
-  final String? value;
+enum _Trailing { chevron, external, logout }
+
+class _ProfileRow extends StatelessWidget {
+  const _ProfileRow({required this.title, this.subtitle, required this.trailing, this.onTap});
+  final String title;
+  final String? subtitle;
+  final _Trailing trailing;
   final VoidCallback? onTap;
 
+  IconData get _icon => switch (trailing) {
+        _Trailing.chevron => Icons.chevron_right_rounded,
+        _Trailing.external => Icons.open_in_new_rounded,
+        _Trailing.logout => Icons.logout_rounded,
+      };
+
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    return Pressable(
+    return SoftCard(
       onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
-        child: Row(
-          children: [
-            Icon(icon, size: 20, color: c.inkSoft),
-            const SizedBox(width: AppSpacing.s12),
-            Expanded(child: Text(label, style: AppText.body)),
-            if (value != null)
-              Flexible(
-                child: Text(
-                  value!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.end,
-                  style: AppText.caption.copyWith(color: c.muted),
-                ),
-              ),
-            const SizedBox(width: AppSpacing.s4),
-            Icon(Icons.chevron_right, size: 16, color: c.muted),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// A small circular icon button (the hero's edit pencil).
-class _RoundButton extends StatelessWidget {
-  const _RoundButton({required this.icon, required this.onTap, this.semanticLabel});
-  final IconData icon;
-  final VoidCallback onTap;
-  final String? semanticLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = BrickColors.of(context);
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: Pressable(
-        onTap: onTap,
-        child: Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: c.card,
-            shape: BoxShape.circle,
-            border: Border.all(color: c.line),
+      padding: const EdgeInsets.fromLTRB(AppSpacing.s20, AppSpacing.s16, AppSpacing.s12, AppSpacing.s16),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: AppText.title.copyWith(color: c.ink, fontWeight: FontWeight.w700)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.caption.copyWith(color: c.inkSoft)),
+                ],
+              ],
+            ),
           ),
-          child: Icon(icon, size: 20, color: c.ink),
-        ),
+          const SizedBox(width: AppSpacing.s8),
+          Container(
+            width: 40,
+            height: 40,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: c.faint, shape: BoxShape.circle),
+            child: Icon(_icon, size: 22, color: c.ink),
+          ),
+        ],
       ),
     );
   }
@@ -438,12 +318,6 @@ IconData _themeIcon(ThemeMode m) => switch (m) {
       ThemeMode.system => Icons.brightness_auto_outlined,
       ThemeMode.light => Icons.light_mode_outlined,
       ThemeMode.dark => Icons.dark_mode_outlined,
-    };
-
-ThemeMode _nextTheme(ThemeMode m) => switch (m) {
-      ThemeMode.system => ThemeMode.light,
-      ThemeMode.light => ThemeMode.dark,
-      ThemeMode.dark => ThemeMode.system,
     };
 
 String _themeLabel(BuildContext context, ThemeMode m) => switch (m) {
@@ -458,7 +332,6 @@ String _langLabel(BuildContext context, AppLanguage l) => switch (l) {
       AppLanguage.lt => context.l10n.languageLithuanian,
     };
 
-/// Present [child] as a branded bottom sheet (cream surface, rounded top).
 Future<void> _showSheet(BuildContext context, Widget child) {
   final c = BrickColors.of(context);
   return showModalBottomSheet<void>(
@@ -466,13 +339,12 @@ Future<void> _showSheet(BuildContext context, Widget child) {
     isScrollControlled: true,
     backgroundColor: c.canvas,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.lg)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
     ),
     builder: (_) => child,
   );
 }
 
-/// Shared bottom-sheet chrome: a title + a vertical stack of option chips.
 class _PickerSheet extends StatelessWidget {
   const _PickerSheet({required this.title, required this.children});
   final String title;
@@ -480,16 +352,17 @@ class _PickerSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen, AppSpacing.s20, AppSpacing.screen, AppSpacing.s20),
+            AppSpacing.s24, AppSpacing.s24, AppSpacing.s24, AppSpacing.s24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(title, style: AppText.title),
-            const SizedBox(height: AppSpacing.s16),
+            Text(title, style: AppText.h1.copyWith(color: c.ink), textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.s20),
             ...children,
           ],
         ),
@@ -498,8 +371,6 @@ class _PickerSheet extends StatelessWidget {
   }
 }
 
-/// Appearance picker — System (default) / Light / Dark. Drives [themeControllerProvider],
-/// which the app root hands to `MaterialApp.themeMode`.
 class _AppearancePickerSheet extends ConsumerWidget {
   const _AppearancePickerSheet();
 
@@ -516,9 +387,10 @@ class _AppearancePickerSheet extends ConsumerWidget {
       title: context.l10n.appearance,
       children: [
         for (final (i, opt) in options.indexed) ...[
-          if (i > 0) const SizedBox(height: AppSpacing.s8),
-          _LangOption(
+          if (i > 0) const SizedBox(height: AppSpacing.s12),
+          _OptionRow(
             label: opt.$2,
+            icon: _themeIcon(opt.$1),
             selected: current == opt.$1,
             onTap: () {
               ctrl.setTheme(opt.$1);
@@ -531,7 +403,6 @@ class _AppearancePickerSheet extends ConsumerWidget {
   }
 }
 
-/// Language switcher — System / English / Lietuvių. Persists across launches.
 class _LanguagePickerSheet extends ConsumerWidget {
   const _LanguagePickerSheet();
 
@@ -548,9 +419,10 @@ class _LanguagePickerSheet extends ConsumerWidget {
       title: context.l10n.language,
       children: [
         for (final (i, opt) in options.indexed) ...[
-          if (i > 0) const SizedBox(height: AppSpacing.s8),
-          _LangOption(
+          if (i > 0) const SizedBox(height: AppSpacing.s12),
+          _OptionRow(
             label: opt.$2,
+            icon: Icons.translate_rounded,
             selected: current == opt.$1,
             onTap: () {
               ctrl.setLanguage(opt.$1);
@@ -563,11 +435,12 @@ class _LanguagePickerSheet extends ConsumerWidget {
   }
 }
 
-class _LangOption extends StatelessWidget {
-  const _LangOption({required this.label, required this.selected, required this.onTap});
+class _OptionRow extends StatelessWidget {
+  const _OptionRow({required this.label, required this.selected, required this.onTap, this.icon});
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -575,24 +448,29 @@ class _LangOption extends StatelessWidget {
     return Pressable(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.s12),
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16, vertical: AppSpacing.s16),
         decoration: BoxDecoration(
-          color: selected ? c.primary : c.card,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: selected ? c.primary : c.line),
+          color: c.card,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: selected ? c.accentEdge : c.line, width: selected ? 2 : 1),
         ),
         child: Row(
-          mainAxisSize: MainAxisSize.min,
           children: [
-            if (selected) ...[
-              Icon(Icons.check, size: 16, color: c.onPrimary),
-              const SizedBox(width: 6),
+            if (icon != null) ...[
+              Icon(icon, size: 20, color: c.ink),
+              const SizedBox(width: AppSpacing.s12),
             ],
-            Text(
-              label,
-              style: AppText.label.copyWith(color: selected ? c.onPrimary : c.ink),
+            Expanded(
+              child: Text(label, style: AppText.title.copyWith(color: c.ink)),
             ),
+            if (selected)
+              Container(
+                width: 24,
+                height: 24,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: c.accent, shape: BoxShape.circle),
+                child: Icon(Icons.check_rounded, size: 16, color: c.onAccent),
+              ),
           ],
         ),
       ),
@@ -602,8 +480,6 @@ class _LangOption extends StatelessWidget {
 
 // ── Cloud sync ────────────────────────────────────────────────────────────────
 
-/// The cloud-sync sheet: sign-in / premium / sign-out controls, resolved live off
-/// the auth + entitlement state.
 class _SyncSheet extends ConsumerWidget {
   const _SyncSheet();
 
@@ -615,8 +491,8 @@ class _SyncSheet extends ConsumerWidget {
     final isPremium = ref.watch(isPremiumProvider);
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.s20, AppSpacing.screen,
-            AppSpacing.s20 + MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.fromLTRB(AppSpacing.s24, AppSpacing.s24, AppSpacing.s24,
+            AppSpacing.s24 + MediaQuery.of(context).viewInsets.bottom),
         child: _SyncCard(signedIn: signedIn, isPremium: isPremium),
       ),
     );
@@ -630,64 +506,64 @@ class _SyncCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(context.l10n.cloudSync, style: AppText.title),
-          const SizedBox(height: 4),
-          Text(
-            signedIn
-                ? (isPremium ? context.l10n.syncBodyPremium : context.l10n.syncBodySignedInFree)
-                : context.l10n.syncBodySignedOut,
-            style: AppText.caption,
+    final c = BrickColors.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(context.l10n.cloudSync, style: AppText.h1.copyWith(color: c.ink), textAlign: TextAlign.center),
+        const SizedBox(height: AppSpacing.s8),
+        Text(
+          signedIn
+              ? (isPremium ? context.l10n.syncBodyPremium : context.l10n.syncBodySignedInFree)
+              : context.l10n.syncBodySignedOut,
+          style: AppText.body.copyWith(color: c.inkSoft),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.s20),
+        if (!signedIn) ...[
+          AppButton(
+            context.l10n.turnOnCloudSync,
+            icon: Icons.cloud_sync_outlined,
+            expand: true,
+            onPressed: () {
+              ref.read(syncControllerProvider).requestEnableSync();
+              context.push('/paywall');
+            },
           ),
           const SizedBox(height: AppSpacing.s12),
-          if (!signedIn) ...[
+          AppButton(
+            context.l10n.signInTitle,
+            icon: Icons.login,
+            variant: AppButtonVariant.secondary,
+            expand: true,
+            onPressed: () => context.push('/sign-in'),
+          ),
+        ] else ...[
+          if (!isPremium) ...[
             AppButton(
-              context.l10n.turnOnCloudSync,
-              icon: Icons.cloud_sync_outlined,
-              onPressed: () {
-                ref.read(syncControllerProvider).requestEnableSync();
-                context.push('/paywall');
-              },
+              context.l10n.seePremium,
+              icon: Icons.workspace_premium_outlined,
+              expand: true,
+              onPressed: () => context.push('/paywall'),
             ),
-            const SizedBox(height: AppSpacing.s8),
-            // P18: a user who just wants to sign in shouldn't be routed through the paywall.
-            AppButton(
-              context.l10n.signInTitle,
-              icon: Icons.login,
-              variant: AppButtonVariant.secondary,
-              onPressed: () => context.push('/sign-in'),
-            ),
-          ] else ...[
-            // No manual "Sync now": cloud sync runs automatically for premium users (on edit,
-            // sign-in, app open) and pull-to-refresh on Home covers a manual pull (P17).
-            if (!isPremium)
-              AppButton(
-                context.l10n.seePremium,
-                icon: Icons.workspace_premium_outlined,
-                variant: AppButtonVariant.secondary,
-                onPressed: () => context.push('/paywall'),
-              ),
-            if (!isPremium) const SizedBox(height: AppSpacing.s8),
-            AppButton(
-              context.l10n.signOut,
-              variant: AppButtonVariant.ghost,
-              icon: Icons.logout,
-              onPressed: () => ref.read(authRepositoryProvider).signOut(),
-            ),
+            const SizedBox(height: AppSpacing.s12),
           ],
+          AppButton(
+            context.l10n.signOut,
+            variant: AppButtonVariant.ghost,
+            icon: Icons.logout,
+            expand: true,
+            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+          ),
         ],
-      ),
+      ],
     );
   }
 }
 
 // ── Name editor ───────────────────────────────────────────────────────────────
 
-/// The party display name — shown to others in party mode. A shuffle button drops
-/// in a fresh brick-themed random name.
 class _NameEditorSheet extends ConsumerStatefulWidget {
   const _NameEditorSheet();
 
@@ -715,17 +591,18 @@ class _NameEditorSheetState extends ConsumerState<_NameEditorSheet> {
     final c = BrickColors.of(context);
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(AppSpacing.screen, AppSpacing.s20, AppSpacing.screen,
-            AppSpacing.s20 + MediaQuery.of(context).viewInsets.bottom),
+        padding: EdgeInsets.fromLTRB(AppSpacing.s24, AppSpacing.s24, AppSpacing.s24,
+            AppSpacing.s24 + MediaQuery.of(context).viewInsets.bottom),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(context.l10n.nameEditorTitle, style: AppText.title),
+            Text(context.l10n.nameEditorTitle,
+                style: AppText.h1.copyWith(color: c.ink), textAlign: TextAlign.center),
             const SizedBox(height: AppSpacing.s4),
             Text(context.l10n.nameEditorSubtitle,
-                style: AppText.caption.copyWith(color: c.inkSoft)),
-            const SizedBox(height: AppSpacing.s16),
+                style: AppText.caption.copyWith(color: c.inkSoft), textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.s20),
             Row(
               children: [
                 Expanded(
@@ -733,50 +610,38 @@ class _NameEditorSheetState extends ConsumerState<_NameEditorSheet> {
                     controller: _ctrl,
                     autofocus: true,
                     autocorrect: false,
-                    style: AppText.body,
+                    style: AppText.title.copyWith(color: c.ink),
                     cursorColor: c.primary,
                     textInputAction: TextInputAction.done,
                     onSubmitted: (_) => _save(),
                     decoration: InputDecoration(
                       hintText: context.l10n.nameEditorHint,
-                      hintStyle: AppText.body.copyWith(color: c.faint),
+                      hintStyle: AppText.title.copyWith(color: c.muted),
                       filled: true,
                       fillColor: c.card,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.s16, vertical: AppSpacing.s12),
+                          horizontal: AppSpacing.s16, vertical: AppSpacing.s16),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
                         borderSide: BorderSide(color: c.line),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        borderSide: BorderSide(color: c.primary),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        borderSide: BorderSide(color: c.primary, width: 2),
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: AppSpacing.s8),
-                Semantics(
-                  button: true,
-                  label: context.l10n.shuffleName,
-                  child: Pressable(
-                    onTap: () => setState(() => _ctrl.text = NameGenerator.random()),
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: c.card,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                        border: Border.all(color: c.line),
-                      ),
-                      child: Icon(Icons.shuffle, size: 20, color: c.ink),
-                    ),
-                  ),
+                const SizedBox(width: AppSpacing.s12),
+                SquircleButton(
+                  icon: Icons.casino_rounded,
+                  size: 56,
+                  onTap: () => setState(() => _ctrl.text = NameGenerator.random()),
+                  semanticLabel: context.l10n.shuffleName,
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.s16),
+            const SizedBox(height: AppSpacing.s20),
             AppButton(context.l10n.save, icon: Icons.check, expand: true, onPressed: _save),
           ],
         ),
@@ -787,22 +652,18 @@ class _NameEditorSheetState extends ConsumerState<_NameEditorSheet> {
 
 // ── Footer ────────────────────────────────────────────────────────────────────
 
-/// About / version footer.
 class _AboutFooter extends StatelessWidget {
   const _AboutFooter();
 
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(top: AppSpacing.s24),
-      child: Column(
-        children: [
-          Text('BrickBack', style: AppText.label.copyWith(color: c.inkSoft)),
-          const SizedBox(height: AppSpacing.s4),
-          Text('v$kAppVersion', style: AppText.caption.copyWith(color: c.muted)),
-        ],
-      ),
+    return Column(
+      children: [
+        Text('BrickBack', style: AppText.label.copyWith(color: c.inkSoft)),
+        const SizedBox(height: AppSpacing.s4),
+        Text('v$kAppVersion', style: AppText.caption.copyWith(color: c.muted)),
+      ],
     );
   }
 }

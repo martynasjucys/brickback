@@ -2,22 +2,23 @@ import 'package:flutter/material.dart';
 import '../core/offline/brick_image_provider.dart';
 import '../theme/app_theme.dart';
 
-/// Branded primitive widgets (F2) — a Flutter port of the Swift oracle
-/// `apps/ios/BrickBack/DesignSystem/Primitives/Primitives.swift`. Token-driven,
-/// no Material chrome. The public API is unchanged from the wireframe versions —
-/// this pass swaps their internals for the LEGO-toy identity: every interactive
-/// surface is a **brick plate** ([BrickSurface]) that sits raised on a darker
-/// bottom lip and clicks down when pressed.
+/// Branded primitive widgets — the **LEGO "Build Together" clone** kit (Redesign
+/// V1). Two surface treatments carry the whole look:
 ///
-/// Colors resolve through `BrickColors.of(context)` so the primitives render
+/// - [BrickSurface] — a raised "brick plate" that clicks down when pressed. Used
+///   for every button / action tile / FAB (the yellow hero CTAs, the squircle
+///   action buttons). This is the LEGO 3D-button motif.
+/// - [SoftCard] (and [AppCard]) — a crisp white card floating on a soft blue
+///   shadow. Used for list rows, info panels, settings groups.
+///
+/// Colours resolve through `BrickColors.of(context)` so everything renders
 /// correctly in light **and** dark with no per-call-site branching.
 
-// ── BrickSurface (the signature) ────────────────────────────────────────────
+// ── BrickSurface (the raised plate) ──────────────────────────────────────────
 
-/// A raised "brick plate": a rounded face sitting [depth] points above a darker
-/// [edge] lip — the app's core surface treatment. When [pressed], the face
-/// travels down onto its lip (the satisfying "click into place"), while the
-/// overall height stays constant so layout never shifts.
+/// A raised brick plate: a rounded face sitting [depth] points above a darker
+/// [edge] lip. When [pressed], the face travels down onto its lip while overall
+/// height stays constant so layout never shifts.
 class BrickSurface extends StatelessWidget {
   const BrickSurface({
     super.key,
@@ -36,13 +37,12 @@ class BrickSurface extends StatelessWidget {
   final double radius;
   final double depth;
   final bool pressed;
-  final Color? stroke; // optional hairline around the face
+  final Color? stroke;
 
   @override
   Widget build(BuildContext context) {
     final shape = BorderRadius.circular(radius);
     return DecoratedBox(
-      // The lip: full height, stays put.
       decoration: BoxDecoration(color: edge, borderRadius: shape),
       child: Padding(
         padding: EdgeInsets.only(bottom: depth),
@@ -66,8 +66,7 @@ class BrickSurface extends StatelessWidget {
   }
 }
 
-/// Scale-on-press wrapper (kept for content that isn't a brick — thumbnails,
-/// icon taps). No-op (plain child) when [onTap] is null.
+/// Scale-on-press wrapper (thumbnails, icon taps). No-op when [onTap] is null.
 class Pressable extends StatefulWidget {
   const Pressable({super.key, required this.child, this.onTap, this.scale = 0.97});
   final Widget child;
@@ -96,14 +95,13 @@ class _PressableState extends State<Pressable> {
   }
 }
 
-/// A brick-plate button that clicks down when pressed. `ghost` skips the plate
-/// and just dims. Drives the press state for its [BrickSurface].
+/// A brick-plate button that clicks down when pressed. `ghost` skips the plate.
 class _BrickButton extends StatefulWidget {
   const _BrickButton({
     required this.child,
     required this.fill,
     required this.edge,
-    this.radius = AppRadius.md,
+    this.radius = AppRadius.button,
     this.depth = AppDepth.tile,
     this.stroke,
     this.ghost = false,
@@ -156,7 +154,9 @@ class _BrickButtonState extends State<_BrickButton> {
   }
 }
 
-enum AppButtonVariant { primary, secondary, ghost }
+/// primary = bright-blue confirm, hero = the yellow "go" CTA (Start Building /
+/// Join party), secondary = white, ghost = flat text.
+enum AppButtonVariant { primary, hero, secondary, ghost }
 
 class AppButton extends StatelessWidget {
   const AppButton(
@@ -178,32 +178,33 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    final isPrimary = variant == AppButtonVariant.primary;
+    final (fill, edge, fg, stroke, depth) = switch (variant) {
+      AppButtonVariant.primary => (c.primary, c.primaryEdge, c.onPrimary, null, AppDepth.cta),
+      AppButtonVariant.hero => (c.accent, c.accentEdge, c.onAccent, null, AppDepth.cta),
+      AppButtonVariant.secondary => (c.card, c.cardEdge, c.ink, c.line, AppDepth.tile),
+      AppButtonVariant.ghost => (c.card, c.cardEdge, c.ink, null, AppDepth.tile),
+    };
     final isGhost = variant == AppButtonVariant.ghost;
-    final fill = isPrimary ? c.primary : c.card;
-    final edge = isPrimary ? c.primaryEdge : c.cardEdge;
-    final stroke = (isPrimary || isGhost) ? null : c.line;
-    final fg = isPrimary ? c.onPrimary : c.ink;
 
     final content = Padding(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.s20, vertical: AppSpacing.s12),
+          horizontal: AppSpacing.s20, vertical: AppSpacing.s16),
       child: Row(
         mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (loading)
             SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2, color: fg),
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(strokeWidth: 2.4, color: fg),
             )
           else ...[
             if (icon != null) ...[
-              Icon(icon, size: 18, color: fg),
+              Icon(icon, size: 20, color: fg),
               const SizedBox(width: 8),
             ],
-            Text(label, style: AppText.label.copyWith(color: fg)),
+            Text(label, style: AppText.title.copyWith(color: fg, fontWeight: FontWeight.w800)),
           ],
         ],
       ),
@@ -212,7 +213,8 @@ class AppButton extends StatelessWidget {
     return _BrickButton(
       fill: fill,
       edge: edge,
-      radius: AppRadius.md,
+      radius: AppRadius.lg,
+      depth: depth,
       stroke: stroke,
       ghost: isGhost,
       onTap: loading ? null : onPressed,
@@ -221,6 +223,107 @@ class AppButton extends StatelessWidget {
   }
 }
 
+/// A rounded-square (squircle-ish) action button — the reference's top-corner
+/// controls (back / filter / owned-check) and the search FAB. A raised brick
+/// tile that clicks down. Pass [child] to override the centred [icon].
+class SquircleButton extends StatelessWidget {
+  const SquircleButton({
+    super.key,
+    this.icon,
+    this.child,
+    required this.onTap,
+    this.fill,
+    this.edge,
+    this.fg,
+    this.stroke,
+    this.size = 56,
+    this.iconSize = 24,
+    this.semanticLabel,
+  });
+
+  final IconData? icon;
+  final Widget? child;
+  final VoidCallback? onTap;
+  final Color? fill;
+  final Color? edge;
+  final Color? fg;
+  final Color? stroke;
+  final double size;
+  final double iconSize;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Semantics(
+      button: true,
+      label: semanticLabel,
+      child: _BrickButton(
+        fill: fill ?? c.card,
+        edge: edge ?? c.cardEdge,
+        radius: AppRadius.button,
+        depth: AppDepth.tile,
+        stroke: stroke,
+        onTap: onTap,
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Center(
+            child: child ?? Icon(icon, size: iconSize, color: fg ?? c.ink),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Soft card (white, floating on a soft blue shadow) ────────────────────────
+
+/// The crisp white card that floats over the pale-blue page — the reference's
+/// list rows, info panels, settings groups. `onTap` adds a scale-press.
+class SoftCard extends StatelessWidget {
+  const SoftCard({
+    super.key,
+    required this.child,
+    this.padding = const EdgeInsets.all(AppSpacing.s16),
+    this.radius = AppRadius.card,
+    this.onTap,
+    this.color,
+  });
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  final double radius;
+  final VoidCallback? onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    final box = DecoratedBox(
+      decoration: BoxDecoration(
+        color: color ?? c.card,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: c.shadow.withValues(alpha: 0.10),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+          BoxShadow(
+            color: c.shadow.withValues(alpha: 0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Padding(padding: padding, child: child),
+    );
+    if (onTap == null) return box;
+    return Pressable(onTap: onTap, child: box);
+  }
+}
+
+/// Kept name for existing call sites — now a soft white card.
 class AppCard extends StatelessWidget {
   const AppCard({super.key, required this.child, this.padding, this.onTap});
   final Widget child;
@@ -229,56 +332,188 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = BrickColors.of(context);
-    final body = Padding(
+    return SoftCard(
       padding: padding ?? const EdgeInsets.all(AppSpacing.s16),
-      child: child,
-    );
-    if (onTap == null) {
-      return BrickSurface(
-        fill: c.card,
-        edge: c.cardEdge,
-        radius: AppRadius.lg,
-        depth: AppDepth.brick,
-        stroke: c.line,
-        child: body,
-      );
-    }
-    return _BrickButton(
-      fill: c.card,
-      edge: c.cardEdge,
-      radius: AppRadius.lg,
-      depth: AppDepth.brick,
-      stroke: c.line,
       onTap: onTap,
-      child: body,
+      child: child,
     );
   }
 }
 
+/// A pill badge. `filled` paints a solid colour with white text (the reference's
+/// RETIRED chip); the default is a soft tinted chip.
 class AppBadge extends StatelessWidget {
-  const AppBadge(this.text, {super.key, this.color});
+  const AppBadge(this.text, {super.key, this.color, this.filled = false});
   final String text;
   final Color? color;
+  final bool filled;
   @override
   Widget build(BuildContext context) {
     final c = color ?? BrickColors.of(context).inkSoft;
+    if (filled) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(AppRadius.pill)),
+        child: Text(
+          text,
+          style: AppText.label.copyWith(color: Colors.white, letterSpacing: 0.6),
+        ),
+      );
+    }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: c.withValues(alpha: 0.12),
+        color: c.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(AppRadius.pill),
-        border: Border.all(color: c.withValues(alpha: 0.30)),
       ),
       child: Text(
         text,
-        style: AppText.caption.copyWith(
-            color: c, fontSize: 11, fontWeight: FontWeight.w700),
+        style: AppText.caption.copyWith(color: c, fontWeight: FontWeight.w700),
       ),
     );
   }
 }
 
+/// A centered bold section title — the reference's "Account" / "Language" /
+/// "Legal" dividers.
+class SectionTitle extends StatelessWidget {
+  const SectionTitle(this.text, {super.key, this.align = TextAlign.center});
+  final String text;
+  final TextAlign align;
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Text(text, style: AppText.h2.copyWith(color: c.ink), textAlign: align);
+  }
+}
+
+/// An icon → label → value cell for the set-detail stats row (Pieces / Year / …).
+class StatCell extends StatelessWidget {
+  const StatCell({super.key, required this.icon, required this.label, required this.value, this.color});
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? color;
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    return Semantics(
+      container: true,
+      label: '$label $value',
+      child: ExcludeSemantics(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 22, color: color ?? c.ink),
+            const SizedBox(height: AppSpacing.s8),
+            Text(label, style: AppText.caption.copyWith(color: c.inkSoft)),
+            const SizedBox(height: 2),
+            Text(value, style: AppText.title.copyWith(color: c.ink, fontWeight: FontWeight.w800)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A LEGO-stud toggle — a rounded track with a chunky yellow stud thumb when on.
+class BrickToggle extends StatelessWidget {
+  const BrickToggle({super.key, required this.value, required this.onChanged, this.semanticLabel});
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = BrickColors.of(context);
+    const w = 58.0, h = 34.0, thumb = 26.0;
+    return Semantics(
+      toggled: value,
+      label: semanticLabel,
+      button: true,
+      child: GestureDetector(
+        onTap: () => onChanged(!value),
+        child: AnimatedContainer(
+          duration: Motion.gate(context, Motion.pressDuration),
+          width: w,
+          height: h,
+          decoration: BoxDecoration(
+            color: value ? c.accent.withValues(alpha: 0.30) : c.faint,
+            borderRadius: BorderRadius.circular(AppRadius.pill),
+            border: Border.all(color: value ? c.accentEdge : c.line),
+          ),
+          child: AnimatedAlign(
+            duration: Motion.gate(context, Motion.pressDuration),
+            curve: Motion.pressCurve,
+            alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(3),
+              child: Container(
+                width: thumb,
+                height: thumb,
+                decoration: BoxDecoration(
+                  color: value ? c.accent : c.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: value ? c.accentEdge : c.line, width: 1.5),
+                ),
+                child: Center(
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: (value ? c.accentEdge : c.muted).withValues(alpha: 0.6),
+                        width: 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Collapsing header (profile + set details) ────────────────────────────────
+
+/// A `SliverPersistentHeaderDelegate` that hands its [builder] the collapse
+/// progress `t` (0 = fully expanded, 1 = collapsed) so a screen can crossfade /
+/// shrink its own header content as the list scrolls under it. Pinned.
+class CollapsingHeaderDelegate extends SliverPersistentHeaderDelegate {
+  CollapsingHeaderDelegate({
+    required this.minExtent,
+    required this.maxExtent,
+    required this.builder,
+  });
+
+  @override
+  final double minExtent;
+  @override
+  final double maxExtent;
+
+  /// `(context, t)` where t ∈ [0,1]; 0 expanded, 1 collapsed.
+  final Widget Function(BuildContext context, double t) builder;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    final range = (maxExtent - minExtent);
+    final t = range <= 0 ? 1.0 : (shrinkOffset / range).clamp(0.0, 1.0);
+    return SizedBox.expand(child: builder(context, t));
+  }
+
+  @override
+  bool shouldRebuild(CollapsingHeaderDelegate old) =>
+      old.minExtent != minExtent || old.maxExtent != maxExtent || old.builder != builder;
+}
+
+// ── Legacy simple header (secondary screens) ─────────────────────────────────
+
+/// A plain page header used by the deeper screens (parts, minifigs, rebuild,
+/// review, paywall, invite). A white squircle back button + a heavy title.
 class ScreenHeader extends StatelessWidget {
   const ScreenHeader(this.title, {super.key, this.subtitle, this.trailing, this.onBack});
   final String title;
@@ -296,10 +531,13 @@ class ScreenHeader extends StatelessWidget {
         children: [
           if (onBack != null)
             Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.s8),
-              child: Pressable(
+              padding: const EdgeInsets.only(right: AppSpacing.s12),
+              child: SquircleButton(
+                icon: Icons.arrow_back_rounded,
+                size: 44,
+                iconSize: 22,
                 onTap: onBack,
-                child: Icon(Icons.arrow_back, color: c.ink),
+                semanticLabel: MaterialLocalizations.of(context).backButtonTooltip,
               ),
             ),
           Expanded(
@@ -346,17 +584,15 @@ class EmptyState extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Icon on a soft brand-tinted round plate — the empty state's one
-              // spot of colour.
               Container(
-                width: 84,
-                height: 84,
+                width: 96,
+                height: 96,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: c.brand.withValues(alpha: 0.18),
+                  color: c.brand.withValues(alpha: 0.14),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(icon, size: 34, color: c.brandDeep),
+                child: Icon(icon, size: 40, color: c.brand),
               ),
               const SizedBox(height: AppSpacing.s20),
               Text(title,
@@ -380,22 +616,18 @@ class EmptyState extends StatelessWidget {
   }
 }
 
-/// Linear progress bar — warm track, blue-in-motion fill, green when complete.
+/// Linear progress bar — blue-in-motion fill, green when complete.
 class AppProgressBar extends StatelessWidget {
   const AppProgressBar({
     super.key,
     required this.value,
-    this.height = 8,
+    this.height = 10,
     this.track,
     this.tint,
   });
   final double value; // 0..1
   final double height;
-
-  /// The unfilled track. Defaults to the warm skeleton fill.
   final Color? track;
-
-  /// The filled portion. `null` auto-picks green when complete, else blue-in-motion.
   final Color? tint;
 
   @override
@@ -410,7 +642,6 @@ class AppProgressBar extends StatelessWidget {
         child: Stack(
           children: [
             Positioned.fill(child: ColoredBox(color: track ?? c.faint)),
-            // Sweep the fill as the count changes (instant under Reduce Motion).
             TweenAnimationBuilder<double>(
               tween: Tween<double>(end: v),
               duration: Motion.gate(context, Motion.progressDuration),
@@ -452,13 +683,12 @@ class ProgressRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
     final v = value.clamp(0.0, 1.0);
-    final arc = tint ?? (v >= 1.0 ? c.success : c.info); // colour from target
+    final arc = tint ?? (v >= 1.0 ? c.success : c.info);
     final trackColor = track ?? c.faint;
     final label = textColor ?? c.ink;
     return SizedBox(
       width: size,
       height: size,
-      // Sweep the arc + roll the label as progress changes (instant under Reduce Motion).
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(end: v),
         duration: Motion.gate(context, Motion.progressDuration),
@@ -470,7 +700,7 @@ class ProgressRing extends StatelessWidget {
               '${(t * 100).round()}%',
               style: AppText.label.copyWith(
                 fontSize: size * 0.28,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
                 color: label,
               ),
             ),
@@ -520,20 +750,16 @@ class _RingPainter extends CustomPainter {
 }
 
 /// Square catalog thumbnail. Renders the real image when [imageUrl] is set,
-/// falling back to a branded placeholder box on null or load failure.
-///
-/// **F4:** the byte-loading path routes through [BrickImageProvider] — a
-/// disk-first provider backed by the durable offline store (store, then
-/// network with write-through). Once a set's images are prefetched they render
-/// with no network. Only the fetch seam changed here; the F2 chrome (radius,
-/// stroke, placeholder, hairline) is untouched.
+/// falling back to a branded placeholder box. The byte path routes through
+/// [BrickImageProvider] (disk-first offline store).
 class SetThumb extends StatelessWidget {
   const SetThumb(
-      {super.key, this.imageUrl, this.size = 56, this.label, this.radius = AppRadius.md});
+      {super.key, this.imageUrl, this.size = 56, this.label, this.radius = AppRadius.md, this.background});
   final String? imageUrl;
   final double size;
   final String? label;
   final double radius;
+  final Color? background;
 
   Widget _placeholder(BrickColors c) => Container(
         width: size,
@@ -547,83 +773,73 @@ class SetThumb extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
     final shape = BorderRadius.circular(radius);
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: shape,
-          child: SizedBox(
-            width: size,
-            height: size,
-            child: imageUrl == null
-                ? _placeholder(c)
-                : ColoredBox(
-                    color: c.card,
-                    child: Image(
-                      image: BrickImageProvider(imageUrl!),
-                      fit: BoxFit.contain,
-                      // Fade nothing in on a synchronous disk hit; still smooth
-                      // for a network load. Placeholder on decode/network error.
-                      errorBuilder: (_, _, _) => _placeholder(c),
-                    ),
-                  ),
-          ),
-        ),
-        // Hairline that defines the plate on cream.
-        Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                borderRadius: shape,
-                border: Border.all(color: c.line),
+    return ClipRRect(
+      borderRadius: shape,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: imageUrl == null
+            ? _placeholder(c)
+            : ColoredBox(
+                color: background ?? c.card,
+                child: Image(
+                  image: BrickImageProvider(imageUrl!),
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, _, _) => _placeholder(c),
+                ),
               ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
 
-/// Branded search field — a brick plate with a magnifier + clearable field.
+/// Branded search field — a soft white rounded field. The magnifier is the
+/// separate FAB in the reference, so the leading icon is off by default.
 class SearchField extends StatelessWidget {
   const SearchField(
       {super.key,
       this.hint = 'Search…',
       this.controller,
       this.onChanged,
-      this.autofocus = false});
+      this.autofocus = false,
+      this.showLeadingIcon = false});
   final String hint;
   final TextEditingController? controller;
   final ValueChanged<String>? onChanged;
   final bool autofocus;
+  final bool showLeadingIcon;
   @override
   Widget build(BuildContext context) {
     final c = BrickColors.of(context);
-    return BrickSurface(
-      fill: c.card,
-      edge: c.cardEdge,
-      radius: AppRadius.md,
-      depth: AppDepth.tile,
-      stroke: c.line,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: c.card,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: [
+          BoxShadow(color: c.shadow.withValues(alpha: 0.10), blurRadius: 14, offset: const Offset(0, 5)),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s12),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.s16),
         child: Row(
           children: [
-            Icon(Icons.search, size: 18, color: c.muted),
-            const SizedBox(width: 8),
+            if (showLeadingIcon) ...[
+              Icon(Icons.search, size: 20, color: c.muted),
+              const SizedBox(width: 8),
+            ],
             Expanded(
               child: TextField(
                 controller: controller,
                 onChanged: onChanged,
                 autofocus: autofocus,
-                style: AppText.body.copyWith(color: c.ink),
+                style: AppText.title.copyWith(color: c.ink, fontWeight: FontWeight.w600),
                 cursorColor: c.primary,
                 decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
                   hintText: hint,
-                  hintStyle: AppText.body.copyWith(color: c.muted),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                  hintStyle: AppText.title.copyWith(color: c.muted, fontWeight: FontWeight.w600),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 16),
                 ),
               ),
             ),
@@ -634,11 +850,11 @@ class SearchField extends StatelessWidget {
   }
 }
 
-/// The app wordmark — chunky white lettering (only the two B's capitalised),
-/// sized to sit on the brand-blue header.
+/// The app wordmark — chunky white lettering on the brand-blue header.
 class BrickBackWordmark extends StatelessWidget {
-  const BrickBackWordmark({super.key, this.size = 30});
+  const BrickBackWordmark({super.key, this.size = 30, this.color = Colors.white});
   final double size;
+  final Color color;
   @override
   Widget build(BuildContext context) {
     return Text(
@@ -647,7 +863,7 @@ class BrickBackWordmark extends StatelessWidget {
       style: TextStyle(
         fontSize: size,
         fontWeight: FontWeight.w900,
-        color: Colors.white,
+        color: color,
         letterSpacing: 0.5,
         height: 1.0,
       ),

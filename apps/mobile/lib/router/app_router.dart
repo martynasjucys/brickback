@@ -26,12 +26,10 @@ import '../widgets/design_gallery.dart';
 
 final _rootKey = GlobalKey<NavigatorState>();
 
-/// The detail-pane navigator (F3). All routes — the bottom-tab [AppShell] and the
-/// deep routes pushed on top of it — live under the top-level [AdaptiveShell]
-/// `ShellRoute`, so on a wide iPad a third-level push renders **inside** the detail
-/// pane beside the persistent sidebar, while on the phone it is (as before) a
-/// full-screen push over the tab shell. The container is width-conditional; the
-/// route tree is not, so screen navigation calls are identical in both shells.
+/// The shared navigator for all routes — the bottom-tab [AppShell] and the deep
+/// routes pushed on top of it. Keeping them under one `ShellRoute` means a deep push
+/// (e.g. review → report) is a full-screen push over the tab shell on every device
+/// size; the floating bottom nav is the sole navigation container everywhere.
 final _shellKey = GlobalKey<NavigatorState>();
 
 /// Detail-pane screens render their own `ColoredBox`/`SafeArea` chrome without a
@@ -62,11 +60,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      // Top-level shell = the adaptive container (sidebar+detail on wide, plain
-      // pass-through on narrow). Everything below renders in the detail pane.
+      // Top-level shell: a pass-through that only exists to host the deep routes on
+      // a shared navigator (_shellKey) over the tab shell.
       ShellRoute(
         navigatorKey: _shellKey,
-        builder: (context, state, child) => AdaptiveShell(child: child),
+        builder: (context, state, child) => child,
         routes: [
           StatefulShellRoute.indexedStack(
             builder: (context, state, shell) => AppShell(navigationShell: shell),
